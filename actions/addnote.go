@@ -8,7 +8,7 @@ import (
 )
 
 // AddNote inserts a new note and its metadata into the database
-func AddNote(db *sql.DB, title, content string, importance int, dueDate string) {
+func AddNote(db *sql.DB, title, content string, urgency int, dueDate string) {
 	tx, err := db.Begin()
 	if err != nil {
 		log.Fatalf("Failed to begin transaction: %v", err)
@@ -32,7 +32,7 @@ func AddNote(db *sql.DB, title, content string, importance int, dueDate string) 
 	}
 
 	// Insert into meta table
-	insertMeta := `INSERT INTO meta (note_id, importance_level, due_date) VALUES (?, ?, ?)`
+	insertMeta := `INSERT INTO meta (note_id, urgency, due_date) VALUES (?, ?, ?)`
 	var dueDateParsed interface{}
 	if dueDate != "" {
 		dueDateParsed, err = time.Parse("2006-01-02", dueDate)
@@ -44,7 +44,7 @@ func AddNote(db *sql.DB, title, content string, importance int, dueDate string) 
 		dueDateParsed = nil
 	}
 
-	_, err = tx.Exec(insertMeta, noteID, importance, dueDateParsed)
+	_, err = tx.Exec(insertMeta, noteID, urgency, dueDateParsed)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Failed to insert into meta: %v", err)

@@ -10,10 +10,10 @@ import (
 // ListNotes retrieves and displays all notes from the database
 func ListNotes(db *sql.DB) {
 	query := `
-    SELECT n.id, n.title, n.content, n.created_at, n.updated_at, m.importance_level, m.due_date
+    SELECT n.id, n.title, n.content, n.created_at, n.updated_at, m.urgency, m.due_date
     FROM notes n
     JOIN meta m ON n.id = m.note_id
-    ORDER BY m.importance_level DESC, m.due_date ASC;
+    ORDER BY m.urgency DESC, m.due_date ASC;
     `
 
 	rows, err := db.Query(query)
@@ -24,18 +24,18 @@ func ListNotes(db *sql.DB) {
 
 	fmt.Println("===== Your Notes =====")
 	for rows.Next() {
-		var id, importance int
+		var id, urgency int
 		var title, content string
 		var createdAt, updatedAt time.Time
 		var dueDate sql.NullTime
 
-		err := rows.Scan(&id, &title, &content, &createdAt, &updatedAt, &importance, &dueDate)
+		err := rows.Scan(&id, &title, &content, &createdAt, &updatedAt, &urgency, &dueDate)
 		if err != nil {
 			log.Fatalf("Failed to scan row: %v", err)
 		}
 
-		fmt.Printf("\nID: %d\nTitle: %s\nContent: %s\nCreated At: %s\nLast Updated: %s\nImportance: %d\n",
-			id, title, content, createdAt.Format("2006-01-02"), updatedAt.Format("2006-01-02"), importance)
+		fmt.Printf("\nID: %d\nTitle: %s\nContent: %s\nCreated At: %s\nLast Updated: %s\nUrgency: %d\n",
+			id, title, content, createdAt.Format("2006-01-02"), updatedAt.Format("2006-01-02"), urgency)
 		if dueDate.Valid {
 			fmt.Printf("Due Date: %s\n", dueDate.Time.Format("2006-01-02"))
 		} else {

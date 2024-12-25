@@ -28,12 +28,14 @@ func main() {
 
 	switch command {
 	case "init":
-		database.InitializeDatabase(db)
+		database.Initialize(db)
+	case "wipe":
+		fmt.Println("wipe not yet implemented")
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		title := addCmd.String("title", "", "Title of the note")
 		content := addCmd.String("content", "", "Content of the note")
-		importance := addCmd.Int("importance", 1, "Importance level (1-3)")
+		urgency := addCmd.Int("urgency", 1, "Urgency (0-3)")
 		dueDate := addCmd.String("due", "", "Due date (YYYY-MM-DD)")
 
 		addCmd.Parse(os.Args[2:])
@@ -43,16 +45,16 @@ func main() {
 			os.Exit(1)
 		}
 
-		if *importance < 1 || *importance > 3 {
-			fmt.Println("Importance level must be between 1 and 3.")
+		if *urgency < 1 || *urgency > 3 {
+			fmt.Println("Urgency must be between 0 and 3.")
 			os.Exit(1)
 		}
 
-		actions.AddNote(db, *title, *content, *importance, *dueDate)
+		actions.AddNote(db, *title, *content, *urgency, *dueDate)
 	case "list":
 		actions.ListNotes(db)
 	default:
-		fmt.Println("Unknown command. Usage: cybernote [init|add|list]")
+		fmt.Println("Unknown command. Usage: datashard [init|add|list]")
 		os.Exit(1)
 	}
 }
