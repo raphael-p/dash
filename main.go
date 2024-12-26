@@ -23,12 +23,13 @@ func main() {
 		log.Fatalf("Failed to open database: %v", err)
 	}
 	defer db.Close()
+	database.DB = db
 
 	command := os.Args[1]
 
 	switch command {
 	case "init":
-		database.Initialize(db)
+		database.Initialize()
 	case "wipe":
 		fmt.Println("wipe not yet implemented")
 	case "add":
@@ -50,9 +51,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		actions.AddNote(db, *title, *content, *urgency, *dueDate)
+		actions.AddNote(*title, *content, *urgency, *dueDate)
 	case "list":
-		actions.ListNotes(db)
+		actions.ListNotes()
 	default:
 		fmt.Println("Unknown command. Usage: datashard [init|add|list]")
 		os.Exit(1)

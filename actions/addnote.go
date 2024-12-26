@@ -1,15 +1,16 @@
 package actions
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/raphael-p/datashard/database"
 )
 
 // AddNote inserts a new note and its metadata into the database
-func AddNote(db *sql.DB, title, content string, urgency int, dueDate string) {
-	tx, err := db.Begin()
+func AddNote(title, content string, urgency int, dueDate string) {
+	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Fatalf("Failed to begin transaction: %v", err)
 	}
@@ -19,7 +20,7 @@ func AddNote(db *sql.DB, title, content string, urgency int, dueDate string) {
 	createdAt := time.Now()
 	updatedAt := createdAt
 
-	res, err := tx.Exec(insertNote, title, content, createdAt, updatedAt)
+	res, err := database.ExecWithLazyInit(tx, insertNote, title, content, createdAt, updatedAt)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("Failed to insert into notes: %v", err)

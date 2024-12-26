@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/raphael-p/datashard/database"
 )
 
 // ListNotes retrieves and displays all notes from the database
-func ListNotes(db *sql.DB) {
+func ListNotes() {
 	query := `
     SELECT n.id, n.title, n.content, n.created_at, n.updated_at, m.urgency, m.due_date
     FROM notes n
@@ -16,7 +18,7 @@ func ListNotes(db *sql.DB) {
     ORDER BY m.urgency DESC, m.due_date ASC;
     `
 
-	rows, err := db.Query(query)
+	rows, err := database.QueryWithLazyInit(query)
 	if err != nil {
 		log.Fatalf("Failed to query notes: %v", err)
 	}

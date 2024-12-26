@@ -9,6 +9,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var DB *sql.DB
+
 type Urgency int
 
 const (
@@ -18,7 +20,7 @@ const (
 	MostUrgent
 )
 
-func Initialize(db *sql.DB) {
+func Initialize() {
 	var urgency Urgency = 2
 	if urgency == Urgent {
 		fmt.Println("a")
@@ -34,7 +36,7 @@ func Initialize(db *sql.DB) {
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL
 		);`
-	execAsync(db, createNotesTable, "error creating notes table", &wg)
+	execAsync(DB, createNotesTable, "error creating notes table", &wg)
 
 	createMetaTable := `
 		CREATE TABLE IF NOT EXISTS meta (
@@ -43,7 +45,7 @@ func Initialize(db *sql.DB) {
 			due_date DATE,
 			FOREIGN KEY(note_id) REFERENCES notes(id) ON DELETE CASCADE
 		);`
-	execAsync(db, createMetaTable, "error creating meta table", &wg)
+	execAsync(DB, createMetaTable, "error creating meta table", &wg)
 
 	wg.Wait()
 	log.Println("database initialized successfully.")
