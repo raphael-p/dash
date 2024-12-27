@@ -31,7 +31,7 @@ func main() {
 	case "init":
 		database.Initialize()
 	case "wipe":
-		fmt.Println("wipe not yet implemented")
+		database.Wipe()
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		title := addCmd.String("title", "", "Title of the note")
