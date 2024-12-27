@@ -18,7 +18,7 @@ func ListNotes() {
     ORDER BY m.urgency DESC, m.due_date ASC;
     `
 
-	rows, err := database.QueryWithLazyInit(query)
+	rows, err := database.QueryWithLazyInit(nil, query)
 	if err != nil {
 		log.Fatalf("Failed to query notes: %v", err)
 	}

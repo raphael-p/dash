@@ -15,18 +15,33 @@ func lazyInit(err error) bool {
 	return false
 }
 
-func QueryWithLazyInit(query string, args ...any) (*sql.Rows, error) {
-	res, err := DB.Query(query, args...)
+func getExecutor(tx DBExecutor) DBExecutor {
+	if tx != nil {
+		return tx
+	}
+	return DB
+}
+
+type DBExecutor interface {
+	Query(string, ...any) (*sql.Rows, error)
+	QueryRow(query string, args ...any) *sql.Row
+	Exec(query string, args ...any) (sql.Result, error)
+}
+
+func QueryWithLazyInit(tx DBExecutor, query string, args ...any) (*sql.Rows, error) {
+	ex := getExecutor(tx)
+	res, err := ex.Query(query, args...)
 	if lazyInit(err) {
-		res, err = DB.Query(query, args...)
+		res, err = ex.Query(query, args...)
 	}
 	return res, err
 }
 
-func ExecWithLazyInit(tx *sql.Tx, query string, args ...any) (sql.Result, error) {
-	res, err := tx.Exec(query, args...)
+func ExecWithLazyInit(tx DBExecutor, query string, args ...any) (sql.Result, error) {
+	ex := getExecutor(tx)
+	res, err := ex.Exec(query, args...)
 	if lazyInit(err) {
-		res, err = tx.Exec(query, args...)
+		res, err = ex.Exec(query, args...)
 	}
 	return res, err
 }
