@@ -9,13 +9,12 @@ import (
 
 var DB *sql.DB
 
-type Urgency int
+type Importance int
 
 const (
-	NotUrgent Urgency = iota
-	SomewhatUrgent
-	Urgent
-	MostUrgent
+	Low Importance = iota
+	Medium
+	High
 )
 
 type DBInitOperation struct {
@@ -42,7 +41,7 @@ var createMetaTable = DBInitOperation{
 	up: `
 		CREATE TABLE IF NOT EXISTS meta (
 			note_id INTEGER PRIMARY KEY,
-			urgency INTEGER NOT NULL CHECK(urgency BETWEEN 0 AND 3),
+			importance INTEGER NOT NULL CHECK(importance BETWEEN 0 AND 2),
 			due_date DATE,
 			FOREIGN KEY(note_id) REFERENCES notes(id) ON DELETE CASCADE
 		);`,

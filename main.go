@@ -36,7 +36,7 @@ func main() {
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		title := addCmd.String("title", "", "Title of the note")
 		content := addCmd.String("content", "", "Content of the note")
-		urgency := addCmd.Int("urgency", 1, "Urgency (0-3)")
+		importance := addCmd.Int("importance", 0, "Importance (0-2)")
 		dueDate := addCmd.String("due", "", "Due date (YYYY-MM-DD)")
 
 		addCmd.Parse(os.Args[2:])
@@ -46,12 +46,7 @@ func main() {
 			os.Exit(1)
 		}
 
-		if *urgency < 1 || *urgency > 3 {
-			fmt.Println("Urgency must be between 0 and 3.")
-			os.Exit(1)
-		}
-
-		actions.AddNote(*title, *content, *urgency, *dueDate)
+		actions.AddNote(*title, *content, *importance, *dueDate)
 	case "list":
 		actions.ListNotes()
 	default:
