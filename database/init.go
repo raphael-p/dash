@@ -61,7 +61,7 @@ func Initialize() {
 			log.Fatalf("initialisation error on '%s': %v", op.name, err)
 		}
 	}
-	log.Println("database initialized successfully.")
+	log.Println("database initialized successfully")
 }
 
 func Wipe() {
@@ -71,6 +71,6 @@ func Wipe() {
 			log.Fatalf("rollback error on '%s': %v", op.name, err)
 		}
 	}
-	log.Println("database wiped.")
+	log.Println("database wiped")
 	Initialize()
 }

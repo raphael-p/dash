@@ -20,7 +20,7 @@ func ListNotes() {
 
 	rows, err := database.QueryWithLazyInit(nil, query)
 	if err != nil {
-		log.Fatalf("Failed to query notes: %v", err)
+		log.Fatalf("failed to query notes: %v", err)
 	}
 	defer rows.Close()
 
@@ -33,19 +33,19 @@ func ListNotes() {
 
 		err := rows.Scan(&id, &title, &content, &createdAt, &updatedAt, &urgency, &dueDate)
 		if err != nil {
-			log.Fatalf("Failed to scan row: %v", err)
+			log.Fatalf("failed to scan row: %v", err)
 		}
 
 		fmt.Printf("\nID: %d\nTitle: %s\nContent: %s\nCreated At: %s\nLast Updated: %s\nUrgency: %d\n",
 			id, title, content, createdAt.Format("2006-01-02"), updatedAt.Format("2006-01-02"), urgency)
 		if dueDate.Valid {
-			fmt.Printf("Due Date: %s\n", dueDate.Time.Format("2006-01-02"))
+			fmt.Printf("due date: %s\n", dueDate.Time.Format("2006-01-02"))
 		} else {
-			fmt.Println("Due Date: None")
+			fmt.Println("due date: None")
 		}
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Fatalf("Row error: %v", err)
+		log.Fatalf("row error: %v", err)
 	}
 }

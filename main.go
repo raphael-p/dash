@@ -20,7 +20,7 @@ func main() {
 
 	db, err := sql.Open("sqlite3", "./datashard.db")
 	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
+		log.Fatalf("failed to open database: %v", err)
 	}
 	defer db.Close()
 	database.DB = db
