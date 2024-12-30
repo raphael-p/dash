@@ -14,7 +14,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: datashard [init|add|list]")
+		fmt.Println("usage: datashard [init|add|list]")
 		os.Exit(1)
 	}
 
@@ -50,7 +50,7 @@ func main() {
 	case "list":
 		actions.ListNotes()
 	default:
-		fmt.Println("Unknown command. Usage: datashard [init|add|list]")
+		fmt.Println("unknown command, usage: datashard [init|add|list]")
 		os.Exit(1)
 	}
 }
