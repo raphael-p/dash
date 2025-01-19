@@ -37,9 +37,9 @@ func ListNotes() {
 		}
 
 		fmt.Printf("\nID: %d\nTitle: %s\nContent: %s\nCreated At: %s\nLast Updated: %s\nImportance: %d\n",
-			id, title, content, createdAt.Format("2006-01-02"), updatedAt.Format("2006-01-02"), importance)
+			id, title, content, createdAt.Format(time.DateTime), updatedAt.Format(time.DateTime), importance)
 		if dueDate.Valid {
-			fmt.Printf("due date: %s\n", dueDate.Time.Format("2006-01-02"))
+			fmt.Printf("due date: %s\n", dueDate.Time.Format(time.DateOnly))
 		} else {
 			fmt.Println("due date: None")
 		}

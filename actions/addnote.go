@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -21,35 +20,35 @@ var days = map[string]time.Weekday{
 	"friday":    time.Friday,
 	"saturday":  time.Saturday,
 }
-var reDaysFromToday = regexp.MustCompile(`\b(\d+)d`)
-var reWeeksFromToday = regexp.MustCompile(`\b(\d+)w`)
-var reDiffFromToday = regexp.MustCompile(`^(\b(\d+)d)?\s?(\b(\d+)w)?$`)
 
-func interpretDate(dateQuery string) (time.Time, error) {
+// regex for deadline expressed relative to today (e.g "1d 2w" or "1d")
+var reRelativeDeadline = regexp.MustCompile(`^(\b(\d+)d)?\s?(\b(\d+)w)?$`)
+
+func interpretDatePrompt(datePrompt string) (time.Time, error) {
 	var parsedDate time.Time
 	var err error
 
 	// try to interpret in yyyy-mm-dd format
-	if dateQuery != "" {
-		parsedDate, err = time.Parse("2006-01-02", dateQuery)
+	if datePrompt != "" {
+		parsedDate, err = time.Parse(time.DateOnly, datePrompt)
 		if err == nil {
 			return parsedDate, nil
 		}
 	}
 
-	dateQuery = strings.ToLower(dateQuery)
+	datePrompt = strings.ToLower(datePrompt)
 	currentDate := time.Now()
 
 	// check for "today" or "tomorrow"
-	if dateQuery == "today" {
+	if datePrompt == "today" {
 		return currentDate, nil
-	} else if dateQuery == "tomorrow" {
+	} else if datePrompt == "tomorrow" {
 		dueDate := currentDate.AddDate(0, 0, 1)
 		return dueDate, nil
 	}
 
 	// check for weekday
-	dueWeekday, ok := days[dateQuery]
+	dueWeekday, ok := days[datePrompt]
 	if ok {
 		currentWeekday := currentDate.Weekday()
 		diff := (int(dueWeekday) - int(currentWeekday) + 7) % 7
@@ -63,7 +62,7 @@ func interpretDate(dateQuery string) (time.Time, error) {
 
 	// check for days or weeks from today
 	var diff uint64
-	diffMatch := reDiffFromToday.FindStringSubmatch(dateQuery)
+	diffMatch := reRelativeDeadline.FindStringSubmatch(datePrompt)
 	if len(diffMatch) == 5 {
 		daysFromToday, _ := strconv.ParseUint(diffMatch[2], 10, 64)
 		diff += daysFromToday
@@ -76,12 +75,12 @@ func interpretDate(dateQuery string) (time.Time, error) {
 		return dueDate, nil
 	}
 
-	err = errors.New(fmt.Sprintf("could not determine a date from '%s'", dateQuery))
+	err = fmt.Errorf("could not determine a date from '%s'", datePrompt)
 	return parsedDate, err
 }
 
 // AddNote inserts a new note and its metadata into the database
-func AddNote(title, content string, importance int, dueDate string) {
+func AddNote(title, content string, importance int, dueDatePrompt string) {
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Fatalf("failed to begin transaction: %v", err)
@@ -105,19 +104,18 @@ func AddNote(title, content string, importance int, dueDate string) {
 	}
 
 	// Insert into meta table
-	var dueDateParsed interface{}
-	if dueDate != "" {
-		dueDateParsed, err = interpretDate(dueDate)
+	var dueDate any
+	if dueDatePrompt != "" {
+		dueDateParsed, err := interpretDatePrompt(dueDatePrompt)
 		if err != nil {
 			tx.Rollback()
 			log.Fatalf("unvalid due date format, use YYYY-MM-DD")
 		}
-	} else {
-		dueDateParsed = nil
+		dueDate = dueDateParsed.Format(time.DateOnly)
 	}
 
 	insertMeta := `INSERT INTO meta (note_id, importance, due_date) VALUES (?, ?, ?)`
-	_, err = tx.Exec(insertMeta, noteID, importance, dueDateParsed)
+	_, err = tx.Exec(insertMeta, noteID, importance, dueDate)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("failed to insert into meta: %v", err)
