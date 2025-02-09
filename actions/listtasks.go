@@ -9,23 +9,24 @@ import (
 	"github.com/raphael-p/datashard/database"
 )
 
-type listMode int
+type ListMode int
 
 const (
-	todo listMode = iota
-	done
-	all
+	ListTodo ListMode = iota
+	ListDone
+	ListAll
 )
 
-func listTasks(listMode listMode) {
+func ListTasks(listMode ListMode, searchQuery string) {
 	query := `
     SELECT n.id, n.name, n.description, n.created_at, n.updated_at, m.importance, m.due_date, m.completed_at
     FROM tasks n
     JOIN meta m ON n.id = m.task_id
+	WHERE n.name LIKE ?
     ORDER BY m.importance DESC, m.due_date ASC;
     `
 
-	rows, err := database.QueryWithLazyInit(nil, query)
+	rows, err := database.QueryWithLazyInit(nil, query, "%"+searchQuery+"%")
 	if err != nil {
 		log.Fatalf("failed to query tasks: %v", err)
 	}
@@ -38,14 +39,13 @@ func listTasks(listMode listMode) {
 		var createdAt, updatedAt time.Time
 		var dueDate, completedAt sql.NullTime
 
-		isDone := completedAt.Valid
-		if (listMode == todo && isDone) || (listMode == done && !isDone) {
-			continue
-		}
-
 		err := rows.Scan(&id, &name, &description, &createdAt, &updatedAt, &importance, &dueDate, &completedAt)
 		if err != nil {
 			log.Fatalf("failed to scan row: %v", err)
+		}
+		isDone := completedAt.Valid
+		if (listMode == ListTodo && isDone) || (listMode == ListDone && !isDone) {
+			continue
 		}
 
 		fmt.Printf("\nid: %d\nname: %s\nimportance: %d\n", id, name, importance)
@@ -73,14 +73,4 @@ func listTasks(listMode listMode) {
 	if err = rows.Err(); err != nil {
 		log.Fatalf("row error: %v", err)
 	}
-}
-
-func ListTodo() {
-	listTasks(todo)
-}
-func ListDone() {
-	listTasks(done)
-}
-func ListAll() {
-	listTasks(all)
 }

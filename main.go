@@ -34,22 +34,44 @@ func main() {
 		database.Wipe()
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
-		name := addCmd.String("name", "", "Name of the task")
-		description := addCmd.String("description", "", "Description of the task")
-		importance := addCmd.Int("importance", 0, "Importance (0-2)")
-		dueDate := addCmd.String("due", "", "Due date (YYYY-MM-DD)")
+		name := addCmd.String("name", "", "name of the task")
+		description := addCmd.String("description", "", "description of the task")
+		importance := addCmd.Int("importance", 0, "importance (0-2)")
+		dueDate := addCmd.String("due", "", "due date (YYYY-MM-DD)")
 
 		addCmd.Parse(os.Args[2:])
 
 		if *name == "" {
-			addCmd.Usage() // exits with status 2
+			addCmd.Usage()
+			os.Exit(1)
 		}
 
 		actions.AddTask(*name, *description, *importance, *dueDate)
 	case "list":
-		actions.ListTodo()
+		listCmd := flag.NewFlagSet("list", flag.ExitOnError)
+		query := listCmd.String("query", "", "search query to filter results on")
+		showAll := listCmd.Bool("a", false, "show all tasks, including those already done")
+		showDone := listCmd.Bool("d", false, "only show done tasks")
+
+		listCmd.Parse(os.Args[2:])
+		if *showAll && *showDone {
+			fmt.Println("ambiguous command, do not use both -a and -d flags")
+			listCmd.Usage()
+			os.Exit(1)
+		}
+
+		var listMode actions.ListMode
+		if *showAll {
+			listMode = actions.ListAll
+		} else if *showDone {
+			listMode = actions.ListDone
+		} else {
+			listMode = actions.ListTodo
+		}
+
+		actions.ListTasks(listMode, *query)
 	default:
-		fmt.Println("unknown command, usage: datashard [init|add|list]")
+		fmt.Println("unknown command, usage: datashard [init|wipe|add|list]")
 		os.Exit(1)
 	}
 }
