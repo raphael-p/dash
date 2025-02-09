@@ -80,18 +80,18 @@ func interpretDatePrompt(datePrompt string) (time.Time, error) {
 }
 
 // AddTask inserts a new task and its metadata into the database
-func AddTask(title, content string, importance int, dueDatePrompt string) {
+func AddTask(name, description string, importance int, dueDatePrompt string) {
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Fatalf("failed to begin transaction: %v", err)
 	}
 
 	// Insert into tasks table
-	insertTask := `INSERT INTO tasks (title, content, created_at, updated_at) VALUES (?, ?, ?, ?)`
+	insertTask := `INSERT INTO tasks (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)`
 	createdAt := time.Now()
 	updatedAt := createdAt
 
-	res, err := database.ExecWithLazyInit(tx, insertTask, title, content, createdAt, updatedAt)
+	res, err := database.ExecWithLazyInit(tx, insertTask, name, description, createdAt, updatedAt)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("failed to insert into tasks: %v", err)
@@ -126,5 +126,5 @@ func AddTask(title, content string, importance int, dueDatePrompt string) {
 		log.Fatalf("failed to commit transaction: %v", err)
 	}
 
-	fmt.Printf("task '%s' added successfully with ID %d\n", title, taskID)
+	fmt.Printf("task '%s' added successfully with ID %d\n", name, taskID)
 }

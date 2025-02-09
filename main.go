@@ -34,19 +34,19 @@ func main() {
 		database.Wipe()
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
-		title := addCmd.String("title", "", "Title of the task")
-		content := addCmd.String("content", "", "Content of the task")
+		name := addCmd.String("name", "", "Name of the task")
+		description := addCmd.String("description", "", "Description of the task")
 		importance := addCmd.Int("importance", 0, "Importance (0-2)")
 		dueDate := addCmd.String("due", "", "Due date (YYYY-MM-DD)")
 
 		addCmd.Parse(os.Args[2:])
 
-		if *title == "" || *content == "" {
+		if *name == "" || *description == "" {
 			addCmd.Usage()
 			os.Exit(1)
 		}
 
-		actions.AddTask(*title, *content, *importance, *dueDate)
+		actions.AddTask(*name, *description, *importance, *dueDate)
 	case "list":
 		actions.ListTasks()
 	default:

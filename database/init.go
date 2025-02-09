@@ -28,8 +28,8 @@ var createTasks = DBInitOperation{
 	up: `
 		CREATE TABLE IF NOT EXISTS tasks (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			title TEXT NOT NULL,
-			content TEXT NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT,
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL
 		);`,
