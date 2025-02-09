@@ -41,7 +41,7 @@ func main() {
 
 		addCmd.Parse(os.Args[2:])
 
-		if *name == "" || *description == "" {
+		if *name == "" {
 			addCmd.Usage()
 			os.Exit(1)
 		}
