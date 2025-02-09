@@ -9,22 +9,22 @@ import (
 	"github.com/raphael-p/datashard/database"
 )
 
-// ListNotes retrieves and displays all notes from the database
-func ListNotes() {
+// ListTasks retrieves and displays all tasks from the database
+func ListTasks() {
 	query := `
     SELECT n.id, n.title, n.content, n.created_at, n.updated_at, m.importance, m.due_date
-    FROM notes n
-    JOIN meta m ON n.id = m.note_id
+    FROM tasks n
+    JOIN meta m ON n.id = m.task_id
     ORDER BY m.importance DESC, m.due_date ASC;
     `
 
 	rows, err := database.QueryWithLazyInit(nil, query)
 	if err != nil {
-		log.Fatalf("failed to query notes: %v", err)
+		log.Fatalf("failed to query tasks: %v", err)
 	}
 	defer rows.Close()
 
-	fmt.Println("===== Your Notes =====")
+	fmt.Println("===== Your Tasks =====")
 	for rows.Next() {
 		var id, importance int
 		var title, content string

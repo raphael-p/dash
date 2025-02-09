@@ -79,25 +79,25 @@ func interpretDatePrompt(datePrompt string) (time.Time, error) {
 	return parsedDate, err
 }
 
-// AddNote inserts a new note and its metadata into the database
-func AddNote(title, content string, importance int, dueDatePrompt string) {
+// AddTask inserts a new task and its metadata into the database
+func AddTask(title, content string, importance int, dueDatePrompt string) {
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Fatalf("failed to begin transaction: %v", err)
 	}
 
-	// Insert into notes table
-	insertNote := `INSERT INTO notes (title, content, created_at, updated_at) VALUES (?, ?, ?, ?)`
+	// Insert into tasks table
+	insertTask := `INSERT INTO tasks (title, content, created_at, updated_at) VALUES (?, ?, ?, ?)`
 	createdAt := time.Now()
 	updatedAt := createdAt
 
-	res, err := database.ExecWithLazyInit(tx, insertNote, title, content, createdAt, updatedAt)
+	res, err := database.ExecWithLazyInit(tx, insertTask, title, content, createdAt, updatedAt)
 	if err != nil {
 		tx.Rollback()
-		log.Fatalf("failed to insert into notes: %v", err)
+		log.Fatalf("failed to insert into tasks: %v", err)
 	}
 
-	noteID, err := res.LastInsertId()
+	taskID, err := res.LastInsertId()
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("failed to retrieve last insert ID: %v", err)
@@ -114,8 +114,8 @@ func AddNote(title, content string, importance int, dueDatePrompt string) {
 		dueDate = dueDateParsed.Format(time.DateOnly)
 	}
 
-	insertMeta := `INSERT INTO meta (note_id, importance, due_date) VALUES (?, ?, ?)`
-	_, err = tx.Exec(insertMeta, noteID, importance, dueDate)
+	insertMeta := `INSERT INTO meta (task_id, importance, due_date) VALUES (?, ?, ?)`
+	_, err = tx.Exec(insertMeta, taskID, importance, dueDate)
 	if err != nil {
 		tx.Rollback()
 		log.Fatalf("failed to insert into meta: %v", err)
@@ -126,5 +126,5 @@ func AddNote(title, content string, importance int, dueDatePrompt string) {
 		log.Fatalf("failed to commit transaction: %v", err)
 	}
 
-	fmt.Printf("note '%s' added successfully with ID %d\n", title, noteID)
+	fmt.Printf("task '%s' added successfully with ID %d\n", title, taskID)
 }

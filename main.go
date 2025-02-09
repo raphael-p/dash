@@ -34,8 +34,8 @@ func main() {
 		database.Wipe()
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
-		title := addCmd.String("title", "", "Title of the note")
-		content := addCmd.String("content", "", "Content of the note")
+		title := addCmd.String("title", "", "Title of the task")
+		content := addCmd.String("content", "", "Content of the task")
 		importance := addCmd.Int("importance", 0, "Importance (0-2)")
 		dueDate := addCmd.String("due", "", "Due date (YYYY-MM-DD)")
 
@@ -46,9 +46,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		actions.AddNote(*title, *content, *importance, *dueDate)
+		actions.AddTask(*title, *content, *importance, *dueDate)
 	case "list":
-		actions.ListNotes()
+		actions.ListTasks()
 	default:
 		fmt.Println("unknown command, usage: datashard [init|add|list]")
 		os.Exit(1)
