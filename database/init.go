@@ -9,14 +9,6 @@ import (
 
 var DB *sql.DB
 
-type Importance int
-
-const (
-	Low Importance = iota
-	Medium
-	High
-)
-
 type DBInitOperation struct {
 	name,
 	up,
@@ -31,27 +23,14 @@ var createTasks = DBInitOperation{
 			name TEXT NOT NULL,
 			description TEXT,
 			created_at DATETIME NOT NULL,
-			updated_at DATETIME NOT NULL
+			updated_at DATETIME NOT NULL,
+			completed_at DATETIME
 		);`,
 	down: `DROP TABLE IF EXISTS tasks`,
 }
 
-var createMetaTable = DBInitOperation{
-	name: "create meta table",
-	up: `
-		CREATE TABLE IF NOT EXISTS meta (
-			task_id INTEGER PRIMARY KEY,
-			importance INTEGER NOT NULL CHECK(importance BETWEEN 0 AND 2),
-			due_date DATE,
-			completed_at DATETIME,
-			FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
-		);`,
-	down: `DROP TABLE IF EXISTS meta`,
-}
-
 var initOperations = []DBInitOperation{
 	createTasks,
-	createMetaTable,
 }
 
 func Initialize() {

@@ -19,11 +19,10 @@ const (
 
 func ListTasks(listMode ListMode, searchQuery string) {
 	query := `
-    SELECT n.id, n.name, n.description, n.created_at, n.updated_at, m.importance, m.due_date, m.completed_at
-    FROM tasks n
-    JOIN meta m ON n.id = m.task_id
-	WHERE n.name LIKE ?
-    ORDER BY m.importance DESC, m.due_date ASC;
+    SELECT id, name, description, created_at, updated_at, completed_at
+    FROM tasks
+	WHERE name LIKE ?
+    ORDER BY id ASC;
     `
 
 	rows, err := database.QueryWithLazyInit(nil, query, "%"+searchQuery+"%")
@@ -34,12 +33,12 @@ func ListTasks(listMode ListMode, searchQuery string) {
 
 	fmt.Println("===== your tasks =====")
 	for rows.Next() {
-		var id, importance int
+		var id int
 		var name, description string
 		var createdAt, updatedAt time.Time
-		var dueDate, completedAt sql.NullTime
+		var completedAt sql.NullTime
 
-		err := rows.Scan(&id, &name, &description, &createdAt, &updatedAt, &importance, &dueDate, &completedAt)
+		err := rows.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt)
 		if err != nil {
 			log.Fatalf("failed to scan row: %v", err)
 		}
@@ -48,20 +47,14 @@ func ListTasks(listMode ListMode, searchQuery string) {
 			continue
 		}
 
-		fmt.Printf("\nid: %d\nname: %s\nimportance: %d\n", id, name, importance)
+		fmt.Printf("\nid: %d\nname: %s\n", id, name)
 
 		if description != "" {
 			fmt.Printf("description: %s\n", description)
 		}
 
-		if dueDate.Valid {
-			fmt.Printf("due date: %s\n", dueDate.Time.Format(time.DateOnly))
-		} else {
-			fmt.Println("due date: None")
-		}
-
 		if isDone {
-			fmt.Printf("completed At: %s\n", completedAt.Time.Format(time.DateTime))
+			fmt.Printf("completed at: %s\n", completedAt.Time.Format(time.DateTime))
 		}
 
 		fmt.Printf("created at: %s\nlast updated: %s\n",

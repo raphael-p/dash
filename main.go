@@ -36,17 +36,15 @@ func main() {
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		name := addCmd.String("name", "", "name of the task")
 		description := addCmd.String("description", "", "description of the task")
-		importance := addCmd.Int("importance", 0, "importance (0-2)")
-		dueDate := addCmd.String("due", "", "due date (YYYY-MM-DD)")
 
 		addCmd.Parse(os.Args[2:])
 
 		if *name == "" {
 			addCmd.Usage()
-			os.Exit(1)
+			os.Exit(2)
 		}
 
-		actions.AddTask(*name, *description, *importance, *dueDate)
+		actions.AddTask(*name, *description)
 	case "list":
 		listCmd := flag.NewFlagSet("list", flag.ExitOnError)
 		query := listCmd.String("query", "", "search query to filter results on")
@@ -57,7 +55,7 @@ func main() {
 		if *showAll && *showDone {
 			fmt.Println("ambiguous command, do not use both -a and -d flags")
 			listCmd.Usage()
-			os.Exit(1)
+			os.Exit(2)
 		}
 
 		var listMode actions.ListMode
