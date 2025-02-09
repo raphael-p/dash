@@ -42,13 +42,12 @@ func main() {
 		addCmd.Parse(os.Args[2:])
 
 		if *name == "" {
-			addCmd.Usage()
-			os.Exit(1)
+			addCmd.Usage() // exits with status 2
 		}
 
 		actions.AddTask(*name, *description, *importance, *dueDate)
 	case "list":
-		actions.ListTasks()
+		actions.ListTodo()
 	default:
 		fmt.Println("unknown command, usage: datashard [init|add|list]")
 		os.Exit(1)

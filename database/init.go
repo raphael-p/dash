@@ -43,6 +43,7 @@ var createMetaTable = DBInitOperation{
 			task_id INTEGER PRIMARY KEY,
 			importance INTEGER NOT NULL CHECK(importance BETWEEN 0 AND 2),
 			due_date DATE,
+			completed_at DATETIME,
 			FOREIGN KEY(task_id) REFERENCES tasks(id) ON DELETE CASCADE
 		);`,
 	down: `DROP TABLE IF EXISTS meta`,

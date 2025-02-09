@@ -79,14 +79,12 @@ func interpretDatePrompt(datePrompt string) (time.Time, error) {
 	return parsedDate, err
 }
 
-// AddTask inserts a new task and its metadata into the database
 func AddTask(name, description string, importance int, dueDatePrompt string) {
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Fatalf("failed to begin transaction: %v", err)
 	}
 
-	// Insert into tasks table
 	insertTask := `INSERT INTO tasks (name, description, created_at, updated_at) VALUES (?, ?, ?, ?)`
 	createdAt := time.Now()
 	updatedAt := createdAt
