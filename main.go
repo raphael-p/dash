@@ -68,8 +68,18 @@ func main() {
 		}
 
 		actions.ListTasks(listMode, *query)
+	case "done":
+		doneCmd := flag.NewFlagSet("done", flag.ExitOnError)
+		id := doneCmd.Int64("id", 0, "id of task to mark as done")
+
+		doneCmd.Parse(os.Args[2:])
+		if *id == 0 {
+			doneCmd.Usage()
+			os.Exit(2)
+		}
+		actions.MarkTaskAsDone(*id)
 	default:
-		fmt.Println("unknown command, usage: datashard [init|wipe|add|list]")
+		fmt.Println("unknown command, usage: datashard [init|wipe|add|list|done]")
 		os.Exit(1)
 	}
 }

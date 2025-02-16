@@ -33,7 +33,7 @@ func ListTasks(listMode ListMode, searchQuery string) {
 
 	fmt.Println("===== your tasks =====")
 	for rows.Next() {
-		var id int
+		var id int64
 		var name, description string
 		var createdAt, updatedAt time.Time
 		var completedAt sql.NullTime
