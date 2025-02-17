@@ -7,35 +7,71 @@ import (
 )
 
 type Task struct {
-	Id                   int64
-	Name, Description    string
-	CreatedAt, UpdatedAt time.Time
-	CompletedAt          sql.NullTime
+	Id          int64        `json:"id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
+	CompletedAt sql.NullTime `json:"completed_at"`
 }
 
-func GetTask(id int64) (Task, error) {
-	query := `
-    SELECT name, description, created_at, updated_at, completed_at
-    FROM tasks
-	WHERE id = ?;
-    `
+type scannable interface {
+	Scan(dest ...interface{}) error
+}
 
+func scanRow(row scannable) (Task, error) {
 	var task Task
-	if id <= 0 {
-		return task, fmt.Errorf("task id must be > 0, got %d", id)
-	}
-
+	var id int64
 	var name, description string
 	var createdAt, updatedAt time.Time
 	var completedAt sql.NullTime
-	row := DB.QueryRow(query, id)
-	err := row.Scan(&name, &description, &createdAt, &updatedAt, &completedAt)
+
+	err := row.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt)
 	if err != nil {
 		return task, err
 	}
-
 	task = Task{id, name, description, createdAt, updatedAt, completedAt}
 	return task, nil
+}
+
+func GetTask(id int64) (Task, error) {
+	if id <= 0 {
+		return Task{}, fmt.Errorf("task id must be > 0, got %d", id)
+	}
+
+	query := `
+    SELECT id, name, description, created_at, updated_at, completed_at
+    FROM tasks
+	WHERE id = ?;
+    `
+	row := DB.QueryRow(query, id)
+	return scanRow(row)
+}
+
+func GetTasks(searchQuery string) ([]Task, error) {
+	query := `
+    SELECT id, name, description, created_at, updated_at, completed_at
+    FROM tasks
+	WHERE name LIKE ?
+    ORDER BY id ASC;
+    `
+
+	var tasks []Task
+	rows, err := DB.Query(query, "%"+searchQuery+"%")
+	if err != nil {
+		return tasks, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		task, err := scanRow(rows)
+		if err != nil {
+			return tasks, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, rows.Err()
 }
 
 func (t *Task) MarkAsDone() error {

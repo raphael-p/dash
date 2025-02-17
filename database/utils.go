@@ -2,12 +2,10 @@ package database
 
 import (
 	"database/sql"
-	"log"
 	"strings"
-	"sync"
 )
 
-func lazyInit(err error) bool {
+func LazyInit(err error) bool {
 	if err != nil && strings.Contains(err.Error(), "no such table") {
 		Initialize()
 		return true
@@ -28,31 +26,11 @@ type DBExecutor interface {
 	Exec(query string, args ...any) (sql.Result, error)
 }
 
-func QueryWithLazyInit(tx DBExecutor, query string, args ...any) (*sql.Rows, error) {
-	ex := getExecutor(tx)
-	res, err := ex.Query(query, args...)
-	if lazyInit(err) {
-		res, err = ex.Query(query, args...)
-	}
-	return res, err
-}
-
 func ExecWithLazyInit(tx DBExecutor, query string, args ...any) (sql.Result, error) {
 	ex := getExecutor(tx)
 	res, err := ex.Exec(query, args...)
-	if lazyInit(err) {
+	if LazyInit(err) {
 		res, err = ex.Exec(query, args...)
 	}
 	return res, err
-}
-
-func execAsync(db *sql.DB, command, errMessage string, wg *sync.WaitGroup) {
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		_, err := db.Exec(command)
-		if err != nil {
-			log.Fatalf("%s: %v", errMessage, err)
-		}
-	}()
 }

@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -18,52 +17,37 @@ const (
 )
 
 func ListTasks(listMode ListMode, searchQuery string) {
-	query := `
-    SELECT id, name, description, created_at, updated_at, completed_at
-    FROM tasks
-	WHERE name LIKE ?
-    ORDER BY id ASC;
-    `
-
-	rows, err := database.QueryWithLazyInit(nil, query, "%"+searchQuery+"%")
+	tasks, err := database.GetTasks(searchQuery)
 	if err != nil {
+		database.LazyInit(err)
 		log.Fatalf("failed to query tasks: %v", err)
 	}
-	defer rows.Close()
 
-	fmt.Println("===== your tasks =====")
-	for rows.Next() {
-		var id int64
-		var name, description string
-		var createdAt, updatedAt time.Time
-		var completedAt sql.NullTime
-
-		err := rows.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt)
-		if err != nil {
-			log.Fatalf("failed to scan row: %v", err)
-		}
-		isDone := completedAt.Valid
+	// filteredTasks := make([]database.Task, 0, len(tasks))
+	for _, task := range tasks {
+		isDone := task.CompletedAt.Valid
 		if (listMode == ListTodo && isDone) || (listMode == ListDone && !isDone) {
 			continue
 		}
+		// filteredTasks = append(filteredTasks, task)
 
-		fmt.Printf("\nid: %d\nname: %s\n", id, name)
+		fmt.Printf("\nid: %d\nname: %s\n", task.Id, task.Name)
 
-		if description != "" {
-			fmt.Printf("description: %s\n", description)
+		if task.Description != "" {
+			fmt.Printf("description: %s\n", task.Description)
 		}
 
 		if isDone {
-			fmt.Printf("completed at: %s\n", completedAt.Time.Format(time.DateTime))
+			fmt.Printf("completed at: %s\n", task.CompletedAt.Time.Format(time.DateTime))
 		}
 
 		fmt.Printf("created at: %s\nlast updated: %s\n",
-			createdAt.Format(time.DateTime),
-			updatedAt.Format(time.DateTime),
+			task.CreatedAt.Format(time.DateTime),
+			task.UpdatedAt.Format(time.DateTime),
 		)
 	}
-
-	if err = rows.Err(); err != nil {
-		log.Fatalf("row error: %v", err)
-	}
+	// err = json.NewEncoder(log.Writer()).Encode(filteredTasks)
+	// if err != nil {
+	// 	log.Fatalf("failed to JSON encode tasks: %v", err)
+	// }
 }

@@ -10,6 +10,7 @@ import (
 func DeleteTask(id int64) {
 	task, err := database.GetTask(id)
 	if err != nil {
+		database.LazyInit(err)
 		fmt.Printf("noop: task (id: %d) not found, nothing to delete\n", id)
 		return
 	}
