@@ -78,6 +78,16 @@ func main() {
 			os.Exit(2)
 		}
 		actions.MarkTaskAsDone(*id)
+	case "delete":
+		deleteCmd := flag.NewFlagSet("delete", flag.ExitOnError)
+		id := deleteCmd.Int64("id", 0, "id of task to delete")
+
+		deleteCmd.Parse(os.Args[2:])
+		if *id == 0 {
+			deleteCmd.Usage()
+			os.Exit(2)
+		}
+		actions.DeleteTask(*id)
 	default:
 		fmt.Println("unknown command, usage: datashard [init|wipe|add|list|done]")
 		os.Exit(1)

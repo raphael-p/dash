@@ -21,7 +21,6 @@ func GetTask(id int64) (Task, error) {
     `
 
 	var task Task
-
 	if id <= 0 {
 		return task, fmt.Errorf("task id must be > 0, got %d", id)
 	}
@@ -40,9 +39,24 @@ func GetTask(id int64) (Task, error) {
 }
 
 func (t *Task) MarkAsDone() error {
-	updateTask := `UPDATE tasks SET updated_at = ?, completed_at = ? WHERE id = ?`
+	updateTask := `
+	UPDATE tasks 
+	SET updated_at = ?, completed_at = ? 
+	WHERE id = ?
+	`
+
 	updatedAt := time.Now()
 	completedAt := updatedAt
 	_, err := DB.Exec(updateTask, updatedAt, completedAt, t.Id)
+	return err
+}
+
+func (t *Task) Delete() error {
+	deleteTask := `
+	DELETE FROM tasks
+	WHERE id = ?
+	`
+
+	_, err := DB.Exec(deleteTask, t.Id)
 	return err
 }

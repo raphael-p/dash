@@ -10,12 +10,12 @@ import (
 func MarkTaskAsDone(id int64) {
 	task, err := database.GetTask(id)
 	if err != nil {
-		fmt.Printf("noop, task (id: %d) not found, nothing to mark as done\n", id)
+		fmt.Printf("noop: task (id: %d) not found, nothing to mark as done\n", id)
 		return
 	}
 
 	if task.CompletedAt.Valid {
-		fmt.Printf("noop, task (id: %d) already marked as done\n", id)
+		fmt.Printf("noop: task (id: %d) already marked as done\n", id)
 		return
 	}
 
