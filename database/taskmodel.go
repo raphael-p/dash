@@ -34,6 +34,27 @@ func scanRow(row scannable) (Task, error) {
 	return task, nil
 }
 
+func CreateTask(name, description string) (Task, error) {
+	insertTask := `
+	INSERT INTO tasks (name, description, created_at, updated_at) 
+	VALUES (?, ?, ?, ?)
+	`
+
+	createdAt := time.Now()
+	updatedAt := createdAt
+	res, err := DB.Exec(insertTask, name, description, createdAt, updatedAt)
+	if err != nil {
+		return Task{}, err
+	}
+
+	taskID, err := res.LastInsertId()
+	if err != nil {
+		return Task{}, fmt.Errorf("failed to retrieve last insert ID: %v", err)
+	}
+
+	return Task{taskID, name, description, createdAt, updatedAt, sql.NullTime{}}, nil
+}
+
 func GetTask(id int64) (Task, error) {
 	if id <= 0 {
 		return Task{}, fmt.Errorf("task id must be > 0, got %d", id)

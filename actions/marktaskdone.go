@@ -6,6 +6,7 @@ import (
 )
 
 func MarkTaskAsDone(id int64) {
+	logger.Debugf("MarkTaskAsDone invoked with id: %d", id)
 	task, err := database.GetTask(id)
 	if err != nil {
 		database.LazyInit(err)
