@@ -2,9 +2,9 @@ package database
 
 import (
 	"database/sql"
-	"log"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/raphael-p/datashard/logger"
 )
 
 var DB *sql.DB
@@ -33,23 +33,23 @@ var initOperations = []DBInitOperation{
 	createTasks,
 }
 
-func Initialize() {
+func Initialise() {
 	for _, op := range initOperations {
 		_, err := DB.Exec(op.up)
 		if err != nil {
-			log.Fatalf("initialisation error on '%s': %v", op.name, err)
+			logger.Fatalf("database initialisation error on '%s': %v", op.name, err)
 		}
 	}
-	log.Println("database initialized successfully")
+	logger.Info("database initialised successfully")
 }
 
 func Wipe() {
 	for _, op := range initOperations {
 		_, err := DB.Exec(op.down)
 		if err != nil {
-			log.Fatalf("rollback error on '%s': %v", op.name, err)
+			logger.Fatalf("rollback error on '%s': %v", op.name, err)
 		}
 	}
-	log.Println("database wiped")
-	Initialize()
+	logger.Info("database wiped")
+	Initialise()
 }

@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/raphael-p/datashard/actions"
 	"github.com/raphael-p/datashard/database"
+	"github.com/raphael-p/datashard/logger"
 )
 
 func main() {
@@ -18,9 +18,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	logger.Create(".", false)
+	defer logger.Close()
+
 	db, err := sql.Open("sqlite3", "./datashard.db")
 	if err != nil {
-		log.Fatalf("failed to open database: %v", err)
+		logger.Fatalf("failed to open database: %v", err)
 	}
 	defer db.Close()
 	database.DB = db
@@ -29,7 +32,7 @@ func main() {
 
 	switch command {
 	case "init":
-		database.Initialize()
+		database.Initialise()
 	case "wipe":
 		database.Wipe()
 	case "add":

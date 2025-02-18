@@ -3,11 +3,14 @@ package database
 import (
 	"database/sql"
 	"strings"
+
+	"github.com/raphael-p/datashard/logger"
 )
 
 func LazyInit(err error) bool {
 	if err != nil && strings.Contains(err.Error(), "no such table") {
-		Initialize()
+		logger.Warning("no database found, intialising")
+		Initialise()
 		return true
 	}
 	return false

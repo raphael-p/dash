@@ -2,10 +2,10 @@ package actions
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/raphael-p/datashard/database"
+	"github.com/raphael-p/datashard/logger"
 )
 
 type ListMode int
@@ -20,16 +20,15 @@ func ListTasks(listMode ListMode, searchQuery string) {
 	tasks, err := database.GetTasks(searchQuery)
 	if err != nil {
 		database.LazyInit(err)
-		log.Fatalf("failed to query tasks: %v", err)
+		logger.Fatalf("failed to query tasks: %v", err)
 	}
 
-	// filteredTasks := make([]database.Task, 0, len(tasks))
+	logger.Trace("printing task list")
 	for _, task := range tasks {
 		isDone := task.CompletedAt.Valid
 		if (listMode == ListTodo && isDone) || (listMode == ListDone && !isDone) {
 			continue
 		}
-		// filteredTasks = append(filteredTasks, task)
 
 		fmt.Printf("\nid: %d\nname: %s\n", task.Id, task.Name)
 
@@ -46,8 +45,4 @@ func ListTasks(listMode ListMode, searchQuery string) {
 			task.UpdatedAt.Format(time.DateTime),
 		)
 	}
-	// err = json.NewEncoder(log.Writer()).Encode(filteredTasks)
-	// if err != nil {
-	// 	log.Fatalf("failed to JSON encode tasks: %v", err)
-	// }
 }
