@@ -9,7 +9,6 @@ func DeleteTask(id int64) {
 	logger.Debugf("DeleteTask invoked with id: %d", id)
 	task, err := database.GetTask(id)
 	if err != nil {
-		database.LazyInit(err)
 		logger.Debugf("noop: task (id: %d) not found, nothing to delete\n", id)
 		return
 	}

@@ -10,10 +10,6 @@ import (
 func AddTask(name, description string) {
 	logger.Debugf("AddTask invoked with name: %s, description: %s", name, description)
 	task, err := database.CreateTask(name, description)
-	if database.LazyInit(err) {
-		logger.Trace("retrying task creation")
-		task, err = database.CreateTask(name, description)
-	}
 	if err != nil {
 		logger.Fatal(err.Error())
 	}

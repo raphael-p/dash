@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/raphael-p/datashard/logger"
 )
 
 type Task struct {
@@ -42,7 +44,12 @@ func CreateTask(name, description string) (Task, error) {
 
 	createdAt := time.Now()
 	updatedAt := createdAt
+	logger.Debugf("creating task with name '%s'", name)
 	res, err := DB.Exec(insertTask, name, description, createdAt, updatedAt)
+	if lazyInit(err) {
+		logger.Trace("retrying task creation")
+		res, err = DB.Exec(insertTask, name, description, createdAt, updatedAt)
+	}
 	if err != nil {
 		return Task{}, err
 	}
@@ -65,8 +72,14 @@ func GetTask(id int64) (Task, error) {
     FROM tasks
 	WHERE id = ?;
     `
+	logger.Debugf("retrieving task (id: %d)", id)
 	row := DB.QueryRow(query, id)
-	return scanRow(row)
+	task, err := scanRow(row)
+	if lazyInit(err) {
+		logger.Trace("retrying task retrieval")
+		task, err = scanRow(row)
+	}
+	return task, err
 }
 
 func GetTasks(searchQuery string) ([]Task, error) {
@@ -78,7 +91,12 @@ func GetTasks(searchQuery string) ([]Task, error) {
     `
 
 	var tasks []Task
+	logger.Trace("retrieving tasks")
 	rows, err := DB.Query(query, "%"+searchQuery+"%")
+	if lazyInit(err) {
+		logger.Trace("retrying task retrieval")
+		rows, err = DB.Query(query, "%"+searchQuery+"%")
+	}
 	if err != nil {
 		return tasks, err
 	}

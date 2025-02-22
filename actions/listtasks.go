@@ -20,7 +20,6 @@ func ListTasks(listMode ListMode, searchQuery string) {
 	logger.Debugf("ListTasks invoked with listMode: %d, searchQuery: %s", listMode, searchQuery)
 	tasks, err := database.GetTasks(searchQuery)
 	if err != nil {
-		database.LazyInit(err)
 		logger.Fatalf("failed to query tasks: %v", err)
 	}
 

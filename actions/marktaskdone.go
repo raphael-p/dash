@@ -9,7 +9,6 @@ func MarkTaskAsDone(id int64) {
 	logger.Debugf("MarkTaskAsDone invoked with id: %d", id)
 	task, err := database.GetTask(id)
 	if err != nil {
-		database.LazyInit(err)
 		logger.Debugf("noop: task (id: %d) not found, nothing to mark as done\n", id)
 		return
 	}
