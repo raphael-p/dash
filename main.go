@@ -10,6 +10,7 @@ import (
 	"github.com/raphael-p/datashard/actions"
 	"github.com/raphael-p/datashard/database"
 	"github.com/raphael-p/datashard/logger"
+	"github.com/raphael-p/datashard/tui"
 )
 
 func main() {
@@ -31,6 +32,8 @@ func main() {
 	command := os.Args[1]
 
 	switch command {
+	case "tui":
+		tui.Home()
 	case "init":
 		database.Initialise()
 	case "wipe":
@@ -69,7 +72,6 @@ func main() {
 		} else {
 			listMode = actions.ListTodo
 		}
-
 		actions.ListTasks(listMode, *query)
 	case "done":
 		doneCmd := flag.NewFlagSet("done", flag.ExitOnError)

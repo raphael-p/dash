@@ -135,3 +135,27 @@ func (t *Task) Delete() error {
 	_, err := DB.Exec(deleteTask, t.Id)
 	return err
 }
+
+func (t *Task) Stringify() string {
+	str := fmt.Sprintf("id: %d, name: %s", t.Id, t.Name)
+
+	if t.Description != "" {
+		str = fmt.Sprintf("%s, description: %s", str, t.Description)
+	}
+
+	isDone := t.CompletedAt.Valid
+	if isDone {
+		str = fmt.Sprintf(
+			"%s, completed at: %s",
+			str,
+			t.CompletedAt.Time.Format(time.DateTime),
+		)
+	}
+
+	return fmt.Sprintf(
+		"%s, created at: %s, last updated: %s",
+		str,
+		t.CreatedAt.Format(time.DateTime),
+		t.UpdatedAt.Format(time.DateTime),
+	)
+}
