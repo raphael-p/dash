@@ -11,6 +11,7 @@ import (
 	"github.com/raphael-p/datashard/database"
 	"github.com/raphael-p/datashard/logger"
 	"github.com/raphael-p/datashard/tui"
+	"github.com/raphael-p/datashard/utils"
 )
 
 func main() {
@@ -38,6 +39,8 @@ func main() {
 		database.Initialise()
 	case "wipe":
 		database.Wipe()
+	case "use-sample-data":
+		utils.FillDatabaseWithSampleData()
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		name := addCmd.String("name", "", "name of the task")
@@ -94,7 +97,7 @@ func main() {
 		}
 		actions.DeleteTask(*id)
 	default:
-		fmt.Println("unknown command, usage: datashard [init|wipe|add|list|done]")
+		fmt.Println("unknown command, usage: datashard [tui|init|use-sample-data|wipe|add|list|done|delete]")
 		os.Exit(1)
 	}
 }
