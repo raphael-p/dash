@@ -1,59 +1,64 @@
 package tui
 
-import "github.com/rivo/tview"
+import (
+	"github.com/gdamore/tcell/v2"
+	"github.com/rivo/tview"
+)
 
-func createInputPanel(app *tview.Application, logPanel, displayPanel *tview.TextView) viewController {
-	vc := viewController{app, tview.NewForm(), logPanel, displayPanel}
-	vc.inputPanel.SetBorder(true)
-	vc.navigateToHome()()
-	return vc
+type SetupablePanel interface {
+	SetTitle(string) *tview.Box
+	SetBorder(bool) *tview.Box
+	SetBorderColor(tcell.Color) *tview.Box
 }
 
-func (vc viewController) addBackButton() {
-	vc.inputPanel.AddButton("Back", vc.navigateToHome())
+func setupPanel[T SetupablePanel](panel T, name string) {
+	panel.SetTitle(name)
+	panel.SetBorder(true).SetBorderColor(tcell.ColorLimeGreen)
 }
 
-func (vc viewController) addExitButton() {
-	vc.inputPanel.AddButton("Exit", func() {
-		vc.app.Stop()
-	})
-}
-
-func (vc viewController) navigate(newTitle string, callback func()) func() {
+func (vc *viewController) navigateToHome() func() {
 	return func() {
-		vc.inputPanel.Clear(true)
-		vc.inputPanel.SetTitle(newTitle)
-		callback()
-		vc.addExitButton()
-		vc.app.SetFocus(vc.inputPanel)
+		navigationList := tview.NewList()
+		setupPanel(navigationList, "Control Panel")
+
+		navigationList.AddItem("Add Task", "", '1', vc.navigateToAddTask())
+		navigationList.AddItem("Delete Task", "", '2', vc.navigateToDeleteTask())
+		navigationList.AddItem("Quit", "", 'q', func() { vc.app.Stop() })
+
+		vc.switchFocusPanel(navigationList)
 	}
 }
 
-func (vc viewController) navigateToHome() func() {
-	return vc.navigate("Task Management", func() {
-		vc.inputPanel.AddButton("Add Task", vc.navigateToAddTask())
-		vc.inputPanel.AddButton("Delete Task", vc.navigateToDeleteTask())
-	})
-}
+func (vc *viewController) navigateToAddTask() func() {
+	return func() {
+		addTaskForm := tview.NewForm()
+		setupPanel(addTaskForm, "Add New Task")
 
-func (vc viewController) navigateToAddTask() func() {
-	return vc.navigate("Add New Task", func() {
 		taskNameInput := tview.NewInputField().SetLabel("Task Name: ")
-		vc.inputPanel.AddFormItem(taskNameInput)
+		addTaskForm.AddFormItem(taskNameInput)
 
 		taskDescriptionInput := tview.NewInputField().SetLabel("Description: ")
-		vc.inputPanel.AddFormItem(taskDescriptionInput)
+		addTaskForm.AddFormItem(taskDescriptionInput)
 
-		vc.inputPanel.AddButton("Add Task", vc.addTask(taskNameInput, taskDescriptionInput))
-		vc.addBackButton()
-	})
+		addTaskForm.AddButton("Add Task", vc.addTask(taskNameInput, taskDescriptionInput))
+		addTaskForm.AddButton("Back", vc.navigateToHome())
+		addTaskForm.AddButton("Quit", func() { vc.app.Stop() })
+
+		vc.switchFocusPanel(addTaskForm)
+	}
 }
 
-func (vc viewController) navigateToDeleteTask() func() {
-	return vc.navigate("Delete Task", func() {
+func (vc *viewController) navigateToDeleteTask() func() {
+	return func() {
+		deleteTaskForm := tview.NewForm()
+		setupPanel(deleteTaskForm, "Delete Task")
+
 		taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
-		vc.inputPanel.AddFormItem(taskIDInput)
-		vc.inputPanel.AddButton("Delete", vc.deleteTask(taskIDInput))
-		vc.addBackButton()
-	})
+		deleteTaskForm.AddFormItem(taskIDInput)
+		deleteTaskForm.AddButton("Delete", vc.deleteTask(taskIDInput))
+		deleteTaskForm.AddButton("Back", vc.navigateToHome())
+		deleteTaskForm.AddButton("Quit", func() { vc.app.Stop() })
+
+		vc.switchFocusPanel(deleteTaskForm)
+	}
 }

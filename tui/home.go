@@ -7,9 +7,10 @@ import (
 
 type viewController struct {
 	app          *tview.Application
-	inputPanel   *tview.Form
+	inputPanel   tview.Primitive
 	logPanel     *tview.TextView
 	displayPanel *tview.TextView
+	rightFlex    *tview.Flex
 }
 
 func Home() {
@@ -24,20 +25,28 @@ func Home() {
 		SetDynamicColors(true)
 	logPanel.SetBorder(true)
 
-	inputPanel := createInputPanel(app, logPanel, displayPanel)
-
-	rightFlex := tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(inputPanel.inputPanel, 0, 2, true).
-		AddItem(logPanel, 0, 1, false)
+	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	vc := &viewController{app, nil, logPanel, displayPanel, rightFlex}
 
 	flex := tview.NewFlex().
 		AddItem(displayPanel, 0, 2, false).
 		AddItem(rightFlex, 0, 1, true)
 
-	inputPanel.refreshTasks()
+	vc.refreshTasks()
+	vc.navigateToHome()()
 
 	if err := app.SetRoot(flex, true).Run(); err != nil {
 		logger.Fatal(err.Error())
 	}
+}
+
+func (vc *viewController) switchFocusPanel(newPrimitive tview.Primitive) {
+	oldPrimitive := vc.inputPanel
+	if oldPrimitive != nil {
+		vc.rightFlex.RemoveItem(oldPrimitive)
+	}
+	vc.rightFlex.Clear().AddItem(newPrimitive, 0, 2, true)
+	vc.rightFlex.AddItem(vc.logPanel, 0, 1, false)
+	vc.app.SetFocus(newPrimitive)
+	vc.inputPanel = newPrimitive
 }
