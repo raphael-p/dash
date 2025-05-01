@@ -19,7 +19,7 @@ func setupPanel[T SetupablePanel](panel T, name string) {
 func (vc *viewController) navigateToHome() func() {
 	return func() {
 		navigationList := tview.NewList()
-		setupPanel(navigationList, "Control Panel")
+		setupPanel(navigationList, "Manage Your Tasks")
 
 		navigationList.AddItem("Add Task", "", '1', vc.navigateToAddTask())
 		navigationList.AddItem("Delete Task", "", '2', vc.navigateToDeleteTask())
