@@ -16,20 +16,31 @@ func setupPanel[T SetupablePanel](panel T, name string) {
 	panel.SetBorder(true).SetBorderColor(tcell.ColorLimeGreen)
 }
 
-func (vc *viewController) navigateToHome() func() {
+func (ac *appController) switchInputPanel(newPrimitive tview.Primitive) {
+	oldPrimitive := ac.inputPanel
+	if oldPrimitive != nil {
+		ac.rightFlex.RemoveItem(oldPrimitive)
+	}
+	ac.rightFlex.Clear().AddItem(newPrimitive, 0, 2, true)
+	ac.rightFlex.AddItem(ac.logPanel, 0, 1, false)
+	ac.app.SetFocus(newPrimitive)
+	ac.inputPanel = newPrimitive
+}
+
+func (ac *appController) navigateToHomeFunc() func() {
 	return func() {
 		navigationList := tview.NewList()
 		setupPanel(navigationList, "Manage Your Tasks")
 
-		navigationList.AddItem("Add Task", "", '1', vc.navigateToAddTask())
-		navigationList.AddItem("Delete Task", "", '2', vc.navigateToDeleteTask())
-		navigationList.AddItem("Quit", "", 'q', func() { vc.app.Stop() })
+		navigationList.AddItem("Add Task", "", '1', ac.navigateToAddTaskFunc())
+		navigationList.AddItem("Delete Task", "", '2', ac.navigateToDeleteTaskFunc())
+		navigationList.AddItem("Quit", "", 'q', func() { ac.app.Stop() })
 
-		vc.switchInputPanel(navigationList)
+		ac.switchInputPanel(navigationList)
 	}
 }
 
-func (vc *viewController) navigateToAddTask() func() {
+func (ac *appController) navigateToAddTaskFunc() func() {
 	return func() {
 		addTaskForm := tview.NewForm()
 		setupPanel(addTaskForm, "Add New Task")
@@ -40,25 +51,25 @@ func (vc *viewController) navigateToAddTask() func() {
 		taskDescriptionInput := tview.NewInputField().SetLabel("Description: ")
 		addTaskForm.AddFormItem(taskDescriptionInput)
 
-		addTaskForm.AddButton("Add Task", vc.addTask(taskNameInput, taskDescriptionInput))
-		addTaskForm.AddButton("Back", vc.navigateToHome())
-		addTaskForm.AddButton("Quit", func() { vc.app.Stop() })
+		addTaskForm.AddButton("Add Task", ac.addTaskFunc(taskNameInput, taskDescriptionInput))
+		addTaskForm.AddButton("Back", ac.navigateToHomeFunc())
+		addTaskForm.AddButton("Quit", func() { ac.app.Stop() })
 
-		vc.switchInputPanel(addTaskForm)
+		ac.switchInputPanel(addTaskForm)
 	}
 }
 
-func (vc *viewController) navigateToDeleteTask() func() {
+func (ac *appController) navigateToDeleteTaskFunc() func() {
 	return func() {
 		deleteTaskForm := tview.NewForm()
 		setupPanel(deleteTaskForm, "Delete Task")
 
 		taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
 		deleteTaskForm.AddFormItem(taskIDInput)
-		deleteTaskForm.AddButton("Delete", vc.deleteTask(taskIDInput))
-		deleteTaskForm.AddButton("Back", vc.navigateToHome())
-		deleteTaskForm.AddButton("Quit", func() { vc.app.Stop() })
+		deleteTaskForm.AddButton("Delete", ac.deleteTaskFunc(taskIDInput))
+		deleteTaskForm.AddButton("Back", ac.navigateToHomeFunc())
+		deleteTaskForm.AddButton("Quit", func() { ac.app.Stop() })
 
-		vc.switchInputPanel(deleteTaskForm)
+		ac.switchInputPanel(deleteTaskForm)
 	}
 }

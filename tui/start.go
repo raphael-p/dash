@@ -5,7 +5,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-type viewController struct {
+type appController struct {
 	app          *tview.Application
 	inputPanel   tview.Primitive
 	logPanel     *tview.TextView
@@ -13,7 +13,7 @@ type viewController struct {
 	rightFlex    *tview.Flex
 }
 
-func Home() {
+func Start() {
 	app := tview.NewApplication()
 
 	displayPanel := tview.NewTextView().
@@ -26,27 +26,16 @@ func Home() {
 	logPanel.SetBorder(true)
 
 	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	vc := &viewController{app, nil, logPanel, displayPanel, rightFlex}
+	ac := &appController{app, nil, logPanel, displayPanel, rightFlex}
 
 	flex := tview.NewFlex().
 		AddItem(displayPanel, 0, 2, false).
 		AddItem(rightFlex, 0, 1, true)
 
-	vc.refreshTasks()
-	vc.navigateToHome()()
+	ac.refreshTasks()
+	ac.navigateToHomeFunc()()
 
 	if err := app.SetRoot(flex, true).Run(); err != nil {
 		logger.Fatal(err.Error())
 	}
-}
-
-func (vc *viewController) switchInputPanel(newPrimitive tview.Primitive) {
-	oldPrimitive := vc.inputPanel
-	if oldPrimitive != nil {
-		vc.rightFlex.RemoveItem(oldPrimitive)
-	}
-	vc.rightFlex.Clear().AddItem(newPrimitive, 0, 2, true)
-	vc.rightFlex.AddItem(vc.logPanel, 0, 1, false)
-	vc.app.SetFocus(newPrimitive)
-	vc.inputPanel = newPrimitive
 }

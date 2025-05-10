@@ -34,7 +34,7 @@ func main() {
 
 	switch command {
 	case "tui":
-		tui.Home()
+		tui.Start()
 	case "init":
 		database.Initialise()
 	case "wipe":
