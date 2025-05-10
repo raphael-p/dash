@@ -18,7 +18,7 @@ func Start() {
 
 	displayPanel := tview.NewTextView().
 		SetWordWrap(true)
-	displayPanel.SetBorder(true).SetTitle("Tasks")
+	displayPanel.SetBorder(true).SetBorderPadding(1, 1, 2, 2)
 
 	logPanel := tview.NewTextView().
 		SetScrollable(true).
@@ -32,7 +32,6 @@ func Start() {
 		AddItem(displayPanel, 0, 2, false).
 		AddItem(rightFlex, 0, 1, true)
 
-	ac.refreshTasks()
 	ac.navigateToHomeFunc()()
 
 	if err := app.SetRoot(flex, true).Run(); err != nil {

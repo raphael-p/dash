@@ -29,14 +29,31 @@ func (ac *appController) switchInputPanel(newPrimitive tview.Primitive) {
 
 func (ac *appController) navigateToHomeFunc() func() {
 	return func() {
+		ac.refreshTasks()
 		navigationList := tview.NewList()
 		setupPanel(navigationList, "Manage Your Tasks")
 
+		navigationList.AddItem("View Task", "", '0', ac.navigateToViewTaskFunc())
 		navigationList.AddItem("Add Task", "", '1', ac.navigateToAddTaskFunc())
 		navigationList.AddItem("Delete Task", "", '2', ac.navigateToDeleteTaskFunc())
 		navigationList.AddItem("Quit", "", 'q', func() { ac.app.Stop() })
 
 		ac.switchInputPanel(navigationList)
+	}
+}
+
+func (ac *appController) navigateToViewTaskFunc() func() {
+	return func() {
+		viewTaskForm := tview.NewForm()
+		setupPanel(viewTaskForm, "View Task")
+
+		taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
+		viewTaskForm.AddFormItem(taskIDInput)
+		viewTaskForm.AddButton("View", ac.viewTaskFunc(taskIDInput))
+		viewTaskForm.AddButton("Back", ac.navigateToHomeFunc())
+		viewTaskForm.AddButton("Quit", func() { ac.app.Stop() })
+
+		ac.switchInputPanel(viewTaskForm)
 	}
 }
 

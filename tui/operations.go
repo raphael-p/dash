@@ -10,6 +10,7 @@ import (
 
 func (ac *appController) refreshTasks() {
 	ac.displayPanel.Clear()
+	ac.displayPanel.SetTitle("Tasks")
 
 	tasks, err := database.GetTasks("")
 	if err != nil {
@@ -21,8 +22,28 @@ func (ac *appController) refreshTasks() {
 		fmt.Fprintln(ac.displayPanel, "No tasks. Good job :)")
 		return
 	}
-	for i, task := range tasks {
-		fmt.Fprintf(ac.displayPanel, "[%d] %s\n", i+1, task.Stringify())
+	for _, task := range tasks {
+		fmt.Fprintf(ac.displayPanel, "[%d] %s\n", task.Id, task.Name)
+	}
+}
+
+func (ac *appController) viewTaskFunc(taskIDInput *tview.InputField) func() {
+	return func() {
+		id, err := extractIDFromInput(taskIDInput)
+		if err != nil {
+			ac.logPanel.SetText(fmt.Sprint("[red]Your input is invalid: ", err))
+			return
+		}
+
+		task, err := database.GetTask(int64(id))
+		if err != nil {
+			ac.logPanel.SetText(fmt.Sprint("[red]Could not retrieve task: ", err))
+			return
+		}
+
+		ac.displayPanel.Clear()
+		ac.displayPanel.SetTitle(fmt.Sprintf("Task %d: %s", task.Id, task.Name))
+		task.Display(ac.displayPanel)
 	}
 }
 
@@ -42,23 +63,15 @@ func (ac *appController) addTaskFunc(taskNameInput, taskDescriptionInput *tview.
 			return
 		}
 		ac.logPanel.SetText(fmt.Sprintf("New task [%d] created.", task.Id))
-		ac.refreshTasks()
 		ac.navigateToHomeFunc()()
 	}
 }
 
 func (ac *appController) deleteTaskFunc(taskIDInput *tview.InputField) func() {
 	return func() {
-		ac.logPanel.SetText("")
-		idStr := taskIDInput.GetText()
-		if idStr == "" {
-			ac.logPanel.SetText("[red]Please enter a task ID to delete.")
-			return
-		}
-
-		id, err := strconv.Atoi(idStr)
-		if err != nil || id < 1 {
-			ac.logPanel.SetText("[red]Invalid task ID.")
+		id, err := extractIDFromInput(taskIDInput)
+		if err != nil {
+			ac.logPanel.SetText(fmt.Sprint("[red]Your input is invalid: ", err))
 			return
 		}
 
@@ -69,7 +82,23 @@ func (ac *appController) deleteTaskFunc(taskIDInput *tview.InputField) func() {
 			return
 		}
 		ac.logPanel.SetText(fmt.Sprintf("Task [%d] deleted.", id))
-		ac.refreshTasks()
 		ac.navigateToHomeFunc()()
 	}
+}
+
+func extractIDFromInput(input *tview.InputField) (int, error) {
+	idStr := input.GetText()
+	if idStr == "" {
+		return 0, fmt.Errorf("task ID is empty")
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil || id < 1 {
+		return 0, fmt.Errorf("task ID is not an integer")
+	}
+
+	if id < 1 {
+		return 0, fmt.Errorf("task ID must be greater than one (1)")
+	}
+	return id, nil
 }

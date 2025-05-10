@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/raphael-p/datashard/logger"
@@ -136,26 +137,20 @@ func (t *Task) Delete() error {
 	return err
 }
 
-func (t *Task) Stringify() string {
-	str := fmt.Sprintf("id: %d, name: %s", t.Id, t.Name)
-
+func (t *Task) Display(w io.Writer) {
 	if t.Description != "" {
-		str = fmt.Sprintf("%s, description: %s", str, t.Description)
+		fmt.Fprintf(w, "%s\n\n", t.Description)
 	}
 
 	isDone := t.CompletedAt.Valid
 	if isDone {
-		str = fmt.Sprintf(
-			"%s, completed at: %s",
-			str,
+		fmt.Fprintf(
+			w,
+			"Completed at: %s\n",
 			t.CompletedAt.Time.Format(time.DateTime),
 		)
 	}
 
-	return fmt.Sprintf(
-		"%s, created at: %s, last updated: %s",
-		str,
-		t.CreatedAt.Format(time.DateTime),
-		t.UpdatedAt.Format(time.DateTime),
-	)
+	fmt.Fprintf(w, "Created at: %s\n", t.CreatedAt.Format(time.DateTime))
+	fmt.Fprintf(w, "Last updated: %s\n", t.UpdatedAt.Format(time.DateTime))
 }
