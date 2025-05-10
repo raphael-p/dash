@@ -25,7 +25,7 @@ func (vc *viewController) navigateToHome() func() {
 		navigationList.AddItem("Delete Task", "", '2', vc.navigateToDeleteTask())
 		navigationList.AddItem("Quit", "", 'q', func() { vc.app.Stop() })
 
-		vc.switchFocusPanel(navigationList)
+		vc.switchInputPanel(navigationList)
 	}
 }
 
@@ -44,7 +44,7 @@ func (vc *viewController) navigateToAddTask() func() {
 		addTaskForm.AddButton("Back", vc.navigateToHome())
 		addTaskForm.AddButton("Quit", func() { vc.app.Stop() })
 
-		vc.switchFocusPanel(addTaskForm)
+		vc.switchInputPanel(addTaskForm)
 	}
 }
 
@@ -59,6 +59,6 @@ func (vc *viewController) navigateToDeleteTask() func() {
 		deleteTaskForm.AddButton("Back", vc.navigateToHome())
 		deleteTaskForm.AddButton("Quit", func() { vc.app.Stop() })
 
-		vc.switchFocusPanel(deleteTaskForm)
+		vc.switchInputPanel(deleteTaskForm)
 	}
 }

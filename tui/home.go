@@ -40,7 +40,7 @@ func Home() {
 	}
 }
 
-func (vc *viewController) switchFocusPanel(newPrimitive tview.Primitive) {
+func (vc *viewController) switchInputPanel(newPrimitive tview.Primitive) {
 	oldPrimitive := vc.inputPanel
 	if oldPrimitive != nil {
 		vc.rightFlex.RemoveItem(oldPrimitive)
