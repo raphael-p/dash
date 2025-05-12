@@ -7,32 +7,29 @@ import (
 
 type appController struct {
 	app          *tview.Application
-	inputPanel   tview.Primitive
-	logPanel     *tview.TextView
-	displayPanel *tview.TextView
-	rightFlex    *tview.Flex
+	inputPanel   *inputPanel
+	infoPanel    *infoPanel
+	displayPanel *displayPanel
 }
 
 func Start() {
 	app := tview.NewApplication()
 
-	displayPanel := tview.NewTextView().
-		SetWordWrap(true)
-	displayPanel.SetBorder(true).SetBorderPadding(1, 1, 2, 2)
+	displayPanel := makeDisplayPanel()
+	infoPanel := makeInfoPanel()
+	inputPanel := makeInputPanel()
 
-	logPanel := tview.NewTextView().
-		SetScrollable(true).
-		SetDynamicColors(true)
-	logPanel.SetBorder(true)
+	ac := &appController{app, inputPanel, infoPanel, displayPanel}
 
-	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow)
-	ac := &appController{app, nil, logPanel, displayPanel, rightFlex}
-
+	rightFlex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(inputPanel.panel, 0, 2, true).
+		AddItem(infoPanel.panel, 0, 1, false)
 	flex := tview.NewFlex().
-		AddItem(displayPanel, 0, 2, false).
+		AddItem(displayPanel.panel, 0, 2, false).
 		AddItem(rightFlex, 0, 1, true)
 
-	ac.navigateToHomeFunc()()
+	ac.navigateToHomeFunc(true)()
 
 	if err := app.SetRoot(flex, true).Run(); err != nil {
 		logger.Fatal(err.Error())

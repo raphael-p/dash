@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/raphael-p/datashard/logger"
@@ -137,20 +136,11 @@ func (t *Task) Delete() error {
 	return err
 }
 
-func (t *Task) Display(w io.Writer) {
-	if t.Description != "" {
-		fmt.Fprintf(w, "%s\n\n", t.Description)
+func (t *Task) GetFormattedTimes() (createdAt string, updatedAt string, completedAt string) {
+	createdAt = t.CreatedAt.Format(time.DateTime)
+	updatedAt = t.UpdatedAt.Format(time.DateTime)
+	if t.CompletedAt.Valid {
+		completedAt = t.CompletedAt.Time.Format(time.DateTime)
 	}
-
-	isDone := t.CompletedAt.Valid
-	if isDone {
-		fmt.Fprintf(
-			w,
-			"Completed at: %s\n",
-			t.CompletedAt.Time.Format(time.DateTime),
-		)
-	}
-
-	fmt.Fprintf(w, "Created at: %s\n", t.CreatedAt.Format(time.DateTime))
-	fmt.Fprintf(w, "Last updated: %s\n", t.UpdatedAt.Format(time.DateTime))
+	return createdAt, updatedAt, completedAt
 }

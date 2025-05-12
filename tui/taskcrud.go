@@ -8,42 +8,18 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (ac *appController) refreshTasks() {
-	ac.displayPanel.Clear()
-	ac.displayPanel.SetTitle("Tasks")
-
-	tasks, err := database.GetTasks("")
-	if err != nil {
-		ac.logPanel.SetText(fmt.Sprint("[red]", err))
-		return
-	}
-
-	if len(tasks) == 0 {
-		fmt.Fprintln(ac.displayPanel, "No tasks. Good job :)")
-		return
-	}
-	for _, task := range tasks {
-		fmt.Fprintf(ac.displayPanel, "[%d] %s\n", task.Id, task.Name)
-	}
-}
-
 func (ac *appController) viewTaskFunc(taskIDInput *tview.InputField) func() {
 	return func() {
 		id, err := extractIDFromInput(taskIDInput)
 		if err != nil {
-			ac.logPanel.SetText(fmt.Sprint("[red]Your input is invalid: ", err))
+			ac.infoPanel.error(fmt.Sprint("Your input is invalid: ", err))
 			return
 		}
 
-		task, err := database.GetTask(int64(id))
+		err = ac.displayPanel.showTask(int64(id))
 		if err != nil {
-			ac.logPanel.SetText(fmt.Sprint("[red]Could not retrieve task: ", err))
-			return
+			ac.infoPanel.error(err)
 		}
-
-		ac.displayPanel.Clear()
-		ac.displayPanel.SetTitle(fmt.Sprintf("Task %d: %s", task.Id, task.Name))
-		task.Display(ac.displayPanel)
 	}
 }
 
@@ -53,17 +29,17 @@ func (ac *appController) addTaskFunc(taskNameInput, taskDescriptionInput *tview.
 		description := taskDescriptionInput.GetText()
 
 		if name == "" || description == "" {
-			ac.logPanel.SetText("[red]Please provide a name and description of the task.")
+			ac.infoPanel.warning("Please provide a name and description of the task.")
 			return
 		}
 
 		task, err := database.CreateTask(name, description)
 		if err != nil {
-			ac.logPanel.SetText(fmt.Sprint("[red]", err))
+			ac.infoPanel.error(err)
 			return
 		}
-		ac.logPanel.SetText(fmt.Sprintf("New task [%d] created.", task.Id))
-		ac.navigateToHomeFunc()()
+		ac.infoPanel.message(fmt.Sprintf("New task [%d] created.", task.Id))
+		ac.navigateToHomeFunc(false)()
 	}
 }
 
@@ -71,18 +47,17 @@ func (ac *appController) deleteTaskFunc(taskIDInput *tview.InputField) func() {
 	return func() {
 		id, err := extractIDFromInput(taskIDInput)
 		if err != nil {
-			ac.logPanel.SetText(fmt.Sprint("[red]Your input is invalid: ", err))
+			ac.infoPanel.warning(fmt.Sprint("Your input is invalid: ", err))
 			return
 		}
 
 		t := database.Task{Id: int64(id)}
 		err = t.Delete()
 		if err != nil {
-			ac.logPanel.SetText(fmt.Sprint("[red]", err))
+			ac.infoPanel.error(err)
 			return
 		}
-		ac.logPanel.SetText(fmt.Sprintf("Task [%d] deleted.", id))
-		ac.navigateToHomeFunc()()
+		ac.infoPanel.message(fmt.Sprintf("Task [%d] deleted.", id))
 	}
 }
 
