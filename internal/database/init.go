@@ -4,7 +4,7 @@ import (
 	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/raphael-p/datashard/logger"
+	"github.com/raphael-p/datashard/pkg/logger"
 )
 
 var DB *sql.DB

@@ -1,29 +1,33 @@
-package tui
+package panels
 
 import (
 	"fmt"
 
-	"github.com/raphael-p/datashard/database"
+	"github.com/raphael-p/datashard/internal/database"
 	"github.com/rivo/tview"
 )
 
-type displayPanel struct {
+type DisplayPanel struct {
 	panel *tview.TextView
 }
 
-func makeDisplayPanel() *displayPanel {
+func NewDisplayPanel() *DisplayPanel {
 	panel := tview.NewTextView().SetWordWrap(true)
 	panel.SetBorder(true).SetBorderPadding(1, 1, 2, 2)
-	return &displayPanel{panel}
+	return &DisplayPanel{panel}
 }
 
-func (dp *displayPanel) listTasks() error {
+func (dp *DisplayPanel) GetPanel() *tview.TextView {
+	return dp.panel
+}
+
+func (dp *DisplayPanel) ListTasks() error {
 	dp.panel.Clear()
 	dp.panel.SetTitle(" Tasks ")
 
 	tasks, err := database.GetTasks("")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not retrieve tasks: %s", err)
 	}
 
 	if len(tasks) == 0 {
@@ -37,7 +41,7 @@ func (dp *displayPanel) listTasks() error {
 	return nil
 }
 
-func (dp *displayPanel) showTask(taskId int64) error {
+func (dp *DisplayPanel) ShowTask(taskId int64) error {
 	task, err := database.GetTask(int64(taskId))
 	if err != nil {
 		return fmt.Errorf("could not retrieve task %d: %s", taskId, err)

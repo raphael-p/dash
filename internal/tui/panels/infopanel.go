@@ -1,4 +1,4 @@
-package tui
+package panels
 
 import (
 	"fmt"
@@ -6,31 +6,35 @@ import (
 	"github.com/rivo/tview"
 )
 
-type infoPanel struct {
+type InfoPanel struct {
 	panel    *tview.Frame
 	textView *tview.TextView
 }
 
-func makeInfoPanel() *infoPanel {
+func NewInfoPanel() *InfoPanel {
 	textView := tview.NewTextView().
 		SetScrollable(true).
 		SetDynamicColors(true)
 	panel := tview.NewFrame(textView)
-	return &infoPanel{panel, textView}
+	return &InfoPanel{panel, textView}
 }
 
-func (ip *infoPanel) warning(err any) {
+func (ip *InfoPanel) GetPanel() *tview.Frame {
+	return ip.panel
+}
+
+func (ip *InfoPanel) Warn(err string) {
 	ip.textView.SetText(fmt.Sprint("[yellow]⚠️ ", err))
 }
 
-func (ip *infoPanel) error(err any) {
+func (ip *InfoPanel) Error(err error) {
 	ip.textView.SetText(fmt.Sprint("[red]❌ ", err))
 }
 
-func (ip *infoPanel) message(info string) {
+func (ip *InfoPanel) Info(info string) {
 	ip.textView.SetText(fmt.Sprint("❕ ", info))
 }
 
-func (ip *infoPanel) clear() {
+func (ip *InfoPanel) Clear() {
 	ip.textView.Clear()
 }

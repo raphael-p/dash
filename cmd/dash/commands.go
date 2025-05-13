@@ -1,46 +1,22 @@
-// main.go
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"os"
 
-	"github.com/raphael-p/datashard/actions"
-	"github.com/raphael-p/datashard/database"
-	"github.com/raphael-p/datashard/logger"
-	"github.com/raphael-p/datashard/tui"
-	"github.com/raphael-p/datashard/utils"
+	"github.com/raphael-p/datashard/internal/cli/actions"
+	"github.com/raphael-p/datashard/internal/database"
 )
 
-func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("usage: datashard [init|add|list]")
-		os.Exit(1)
-	}
-
-	logger.Create(".", false)
-	defer logger.Close()
-
-	db, err := sql.Open("sqlite3", "./datashard.db")
-	if err != nil {
-		logger.Fatalf("failed to open database: %v", err)
-	}
-	defer db.Close()
-	database.DB = db
-
-	command := os.Args[1]
-
+func handleCommand(command string) {
 	switch command {
-	case "tui":
-		tui.Start()
 	case "init":
 		database.Initialise()
 	case "wipe":
 		database.Wipe()
 	case "use-sample-data":
-		utils.FillDatabaseWithSampleData()
+		database.FillWithSampleData()
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		name := addCmd.String("name", "", "name of the task")

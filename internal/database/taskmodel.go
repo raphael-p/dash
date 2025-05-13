@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/raphael-p/datashard/logger"
+	"github.com/raphael-p/datashard/pkg/logger"
 )
 
 type Task struct {
@@ -15,25 +15,6 @@ type Task struct {
 	CreatedAt   time.Time    `json:"created_at"`
 	UpdatedAt   time.Time    `json:"updated_at"`
 	CompletedAt sql.NullTime `json:"completed_at"`
-}
-
-type scannable interface {
-	Scan(dest ...interface{}) error
-}
-
-func scanRow(row scannable) (Task, error) {
-	var task Task
-	var id int64
-	var name, description string
-	var createdAt, updatedAt time.Time
-	var completedAt sql.NullTime
-
-	err := row.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt)
-	if err != nil {
-		return task, err
-	}
-	task = Task{id, name, description, createdAt, updatedAt, completedAt}
-	return task, nil
 }
 
 func CreateTask(name, description string) (Task, error) {
