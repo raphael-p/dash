@@ -23,7 +23,7 @@ func startTUI() {
 
 	controller.
 		NewController(app, inputPanel, infoPanel, displayPanel).
-		NavigateToHome()
+		MainMenu()
 
 	if err := app.SetRoot(flex, true).Run(); err != nil {
 		logger.Fatal(err.Error())

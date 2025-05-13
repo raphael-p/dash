@@ -20,3 +20,22 @@ func NewController(
 ) *Controller {
 	return &Controller{app, inputPanel, infoPanel, displayPanel}
 }
+
+func (c *Controller) MainMenu() {
+	c.refreshTasks()
+
+	navigationList := tview.NewList()
+	navigationList.AddItem("View Task", "", '0', func() { c.viewTaskForm() })
+	navigationList.AddItem("Add Task", "", '1', func() { c.addTaskForm() })
+	navigationList.AddItem("Delete Task", "", '2', func() { c.deleteTaskForm() })
+	navigationList.AddItem("Quit", "", 'q', func() { c.app.Stop() })
+
+	c.inputPanel.Set("Manage Your Tasks", navigationList)
+}
+
+func (c *Controller) refreshTasks() {
+	err := c.displayPanel.ListTasks()
+	if err != nil {
+		c.infoPanel.Error(err)
+	}
+}

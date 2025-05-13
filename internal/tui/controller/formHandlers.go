@@ -8,51 +8,53 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (ac *Controller) viewTask(taskIDInput *tview.InputField) {
+func (c *Controller) submitViewTask(taskIDInput *tview.InputField) {
 	id, err := extractIDFromInput(taskIDInput)
 	if err != nil {
-		ac.infoPanel.Warn(fmt.Sprint("Please enter a valid task ID: ", err))
+		c.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
 		return
 	}
 
-	err = ac.displayPanel.ShowTask(int64(id))
+	err = c.displayPanel.ShowTask(int64(id))
 	if err != nil {
-		ac.infoPanel.Error(err)
+		c.infoPanel.Error(err)
 	}
 }
 
-func (ac *Controller) addTask(taskNameInput, taskDescriptionInput *tview.InputField) {
+func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.InputField) {
 	name := taskNameInput.GetText()
 	description := taskDescriptionInput.GetText()
-
 	if name == "" || description == "" {
-		ac.infoPanel.Warn("Please provide a name and description of the task.")
+		c.infoPanel.Warn("Please provide a name and description of the task.")
 		return
 	}
 
 	task, err := database.CreateTask(name, description)
 	if err != nil {
-		ac.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
+		c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
 		return
 	}
-	ac.infoPanel.Info(fmt.Sprintf("New task [%d] created.", task.Id))
-	ac.NavigateToHome()
+	taskNameInput.SetText("")
+	taskDescriptionInput.SetText("")
+	c.refreshTasks()
+	c.infoPanel.Info(fmt.Sprintf("New task [%d] created.", task.Id))
 }
 
-func (ac *Controller) deleteTask(taskIDInput *tview.InputField) {
+func (c *Controller) submitDeleteTask(taskIDInput *tview.InputField) {
 	id, err := extractIDFromInput(taskIDInput)
 	if err != nil {
-		ac.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
+		c.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
 		return
 	}
 
 	t := database.Task{Id: int64(id)}
 	err = t.Delete()
 	if err != nil {
-		ac.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
+		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
 		return
 	}
-	ac.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
+	c.refreshTasks()
+	c.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
 }
 
 func extractIDFromInput(input *tview.InputField) (int, error) {

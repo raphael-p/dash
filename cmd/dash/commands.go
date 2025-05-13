@@ -73,7 +73,7 @@ func handleCommand(command string) {
 		}
 		actions.DeleteTask(*id)
 	default:
-		fmt.Println("unknown command, usage: datashard [tui|init|use-sample-data|wipe|add|list|done|delete]")
+		fmt.Println("unknown command, usage: datashard [init|use-sample-data|wipe|add|list|done|delete]")
 		os.Exit(1)
 	}
 }
