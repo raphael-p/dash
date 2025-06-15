@@ -18,7 +18,10 @@ func (c *Controller) submitViewTask(taskIDInput *tview.InputField) {
 	err = c.displayPanel.ShowTask(int64(id))
 	if err != nil {
 		c.infoPanel.Error(err)
+		return
 	}
+
+	taskIDInput.SetText("")
 }
 
 func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.InputField) {
@@ -34,6 +37,7 @@ func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.In
 		c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
 		return
 	}
+
 	taskNameInput.SetText("")
 	taskDescriptionInput.SetText("")
 	c.refreshTasks()
@@ -53,6 +57,8 @@ func (c *Controller) submitDeleteTask(taskIDInput *tview.InputField) {
 		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
 		return
 	}
+
+	taskIDInput.SetText("")
 	c.refreshTasks()
 	c.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
 }
