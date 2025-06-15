@@ -52,7 +52,7 @@ func (c *Controller) submitDeleteTask(taskIDInput *tview.InputField) {
 	}
 
 	t := database.Task{Id: int64(id)}
-	err = t.Delete()
+	deleted, err := t.Delete()
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
 		return
@@ -60,7 +60,12 @@ func (c *Controller) submitDeleteTask(taskIDInput *tview.InputField) {
 
 	taskIDInput.SetText("")
 	c.refreshTasks()
-	c.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
+
+	if deleted {
+		c.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
+	} else {
+		c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", id))
+	}
 }
 
 func extractIDFromInput(input *tview.InputField) (int, error) {

@@ -32,12 +32,16 @@ func DeleteTask(id int64) {
 		return
 	}
 
-	err = task.Delete()
+	deleted, err := task.Delete()
 	if err != nil {
 		logger.Debugf("failed delete task (id: %d): %v", id, err)
 	}
 
-	logger.Infof("task (id: %d) deleted\n", id)
+	if deleted {
+		logger.Infof("task (id: %d) deleted\n", id)
+	} else {
+		logger.Warningf("task (id: %d) does not exist, noop\n", id)
+	}
 }
 
 type ListMode int

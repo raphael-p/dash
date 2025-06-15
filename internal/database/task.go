@@ -107,14 +107,19 @@ func (t *Task) MarkAsDone() error {
 	return err
 }
 
-func (t *Task) Delete() error {
+func (t *Task) Delete() (bool, error) {
 	deleteTask := `
 	DELETE FROM tasks
 	WHERE id = ?
 	`
 
-	_, err := DB.Exec(deleteTask, t.Id)
-	return err
+	res, err := DB.Exec(deleteTask, t.Id)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
 }
 
 func (t *Task) GetFormattedTimes() (createdAt string, updatedAt string, completedAt string) {
