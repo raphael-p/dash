@@ -16,14 +16,16 @@ func handleCommand(command string) {
 	case "wipe":
 		database.Wipe()
 	case "use-sample-data":
-		database.FillWithSampleData()
+		sampleCmd := flag.NewFlagSet("use-sample-data", flag.ExitOnError)
+		randomEntryCount := sampleCmd.Int("randomEntryCount", 0, "number of random entries to generate on top of the default entries")
+		sampleCmd.Parse(os.Args[2:])
+		database.FillWithSampleData(*randomEntryCount)
 	case "add":
 		addCmd := flag.NewFlagSet("add", flag.ExitOnError)
 		name := addCmd.String("name", "", "name of the task")
 		description := addCmd.String("description", "", "description of the task")
 
 		addCmd.Parse(os.Args[2:])
-
 		if *name == "" {
 			addCmd.Usage()
 			os.Exit(2)

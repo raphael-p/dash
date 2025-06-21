@@ -3,9 +3,6 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- pressing enter on last form field submits
-- make log panel actually like a session log (not just one line)
-- data sampling: generate much more data
 - task pagination gui
 - task reordering gui
 - hotkeys for gui

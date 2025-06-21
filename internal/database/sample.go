@@ -1,20 +1,26 @@
 package database
 
 import (
+	"math/rand/v2"
+	"strings"
 	"time"
 
 	"github.com/raphael-p/datashard/pkg/logger"
 )
 
-func FillWithSampleData() {
+const letterSet = "abcd3fgh1jklmn0pqrstuvwxyz"
+const minWordLength = 2
+const maxWordLength = 10
+
+func FillWithSampleData(randomEntryCount int) {
 	Wipe()
-	err := fillTasksWithSampleData()
+	err := fillTasksWithSampleData(randomEntryCount)
 	if err != nil {
 		logger.Fatal(err.Error())
 	}
 }
 
-func fillTasksWithSampleData() error {
+func fillTasksWithSampleData(randomEntryCount int) error {
 	insertTask := `
 	INSERT INTO tasks (name, description, created_at, updated_at) 
 	VALUES (?, ?, ?, ?)
@@ -90,5 +96,44 @@ func fillTasksWithSampleData() error {
 		return err
 	}
 
+	rng := rand.New(rand.NewChaCha8([32]byte{1}))
+	for range randomEntryCount {
+		_, err = DB.Exec(insertTask, randomTaskGenerator(rng)...)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+func randomTaskGenerator(rng *rand.Rand) []any {
+	createdTime := time.Unix(rng.Int64N(time.Now().Unix()), 0)
+	return []any{
+		generateWords(rng, 2, 3),
+		generateWords(rng, 4, 10),
+		createdTime,
+		time.Unix(rng.Int64N(time.Now().Unix()-createdTime.Unix())+createdTime.Unix(), 0),
+	}
+}
+
+func generateWords(rng *rand.Rand, minWords, maxWords uint) string {
+	wordsCount := int(rng.UintN(maxWords-minWords+1) + minWords)
+
+	words := make([]string, wordsCount)
+	for i := 0; i < wordsCount; i++ {
+		words[i] = generateWord(rng)
+	}
+	return strings.Join(words, " ")
+}
+
+func generateWord(rng *rand.Rand) string {
+	wordLength := int(rng.UintN(maxWordLength-minWordLength+1) + minWordLength)
+
+	word := make([]byte, wordLength)
+	for i := 0; i < wordLength; i++ {
+		word[i] = letterSet[rng.UintN(uint(len(letterSet)))]
+	}
+	return string(word)
+
 }

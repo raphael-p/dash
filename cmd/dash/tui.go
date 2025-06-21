@@ -15,7 +15,7 @@ func startTUI() {
 
 	rightFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(inputPanel.GetPanel(), 0, 2, true).
+		AddItem(inputPanel.GetPanel(), 0, 3, true).
 		AddItem(infoPanel.GetPanel(), 0, 1, false)
 	flex := tview.NewFlex().
 		AddItem(displayPanel.GetPanel(), 0, 2, false).
