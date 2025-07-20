@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/raphael-p/datashard/internal/tui/panels"
 	"github.com/rivo/tview"
 )
@@ -28,13 +30,25 @@ func (c *Controller) MainMenu() {
 	navigationList.AddItem("View Task", "", '0', func() { c.viewTaskForm() })
 	navigationList.AddItem("Add Task", "", '1', func() { c.addTaskForm() })
 	navigationList.AddItem("Delete Task", "", '2', func() { c.deleteTaskForm() })
+	navigationList.AddItem("Scroll Down", "", 'j', func() {
+		err := c.displayPanel.ScrollDown()
+		if err != nil {
+			c.infoPanel.Error(fmt.Errorf("failed to scroll down: %s", err))
+		}
+	})
+	navigationList.AddItem("Scroll Up", "", 'k', func() {
+		err := c.displayPanel.ScrollUp()
+		if err != nil {
+			c.infoPanel.Error(fmt.Errorf("failed to scroll up: %s", err))
+		}
+	})
 	navigationList.AddItem("Quit", "", 'q', func() { c.app.Stop() })
 
 	c.inputPanel.Set("Manage Your Tasks", navigationList)
 }
 
 func (c *Controller) refreshTasks() {
-	err := c.displayPanel.ListTasks()
+	err := c.displayPanel.GetCurrentPage()
 	if err != nil {
 		c.infoPanel.Error(err)
 	}

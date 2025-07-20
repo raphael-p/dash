@@ -8,7 +8,7 @@ import (
 	"github.com/raphael-p/datashard/pkg/logger"
 )
 
-const taskPageLimit int = 10
+const taskPageLimit int = 30
 
 type Task struct {
 	Id          int64        `json:"id"`
