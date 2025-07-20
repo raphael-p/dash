@@ -54,7 +54,7 @@ const (
 
 func ListTasks(listMode ListMode, searchQuery string) {
 	logger.Debugf("ListTasks invoked with listMode: %d, searchQuery: %s", listMode, searchQuery)
-	tasks, err := database.GetTasks(searchQuery)
+	tasks, err := database.SearchTasks(searchQuery)
 	if err != nil {
 		logger.Fatalf("failed to query tasks: %v", err)
 	}

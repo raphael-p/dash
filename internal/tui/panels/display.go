@@ -25,7 +25,7 @@ func (dp *DisplayPanel) ListTasks() error {
 	dp.panel.Clear()
 	dp.panel.SetTitle(" Tasks ")
 
-	tasks, err := database.GetTasks("")
+	tasks, err := database.SearchTasks("")
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %s", err)
 	}

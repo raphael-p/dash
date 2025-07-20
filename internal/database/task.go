@@ -8,6 +8,8 @@ import (
 	"github.com/raphael-p/datashard/pkg/logger"
 )
 
+const taskPageLimit int = 10
+
 type Task struct {
 	Id          int64        `json:"id"`
 	Name        string       `json:"name"`
@@ -63,7 +65,30 @@ func GetTask(id int64) (Task, error) {
 	return task, err
 }
 
-func GetTasks(searchQuery string) ([]Task, error) {
+func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, bool, error) {
+	var tasks []Task
+	rows, err := DB.Query(sqlQuery, queryArgs...)
+	if lazyInit(err) {
+		logger.Trace("retrying task retrieval")
+		rows, err = DB.Query(sqlQuery, queryArgs...)
+	}
+	if err != nil {
+		return tasks, false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		task, err := scanRow(rows)
+		if err != nil {
+			return tasks, true, err
+		}
+		tasks = append(tasks, task)
+	}
+
+	return tasks, false, rows.Err()
+}
+
+func SearchTasks(searchQuery string) ([]Task, error) {
 	query := `
     SELECT id, name, description, created_at, updated_at, completed_at
     FROM tasks
@@ -71,27 +96,50 @@ func GetTasks(searchQuery string) ([]Task, error) {
     ORDER BY id ASC;
     `
 
-	var tasks []Task
-	logger.Trace("retrieving tasks")
-	rows, err := DB.Query(query, "%"+searchQuery+"%")
-	if lazyInit(err) {
-		logger.Trace("retrying task retrieval")
-		rows, err = DB.Query(query, "%"+searchQuery+"%")
-	}
+	logger.Trace("retrieving all tasks")
+	tasks, _, err := getTasksInternal(query, "%"+searchQuery+"%")
+	return tasks, err
+}
+
+func GetTasksPaginated(fromId int64) ([]Task, bool, error) {
+	query := `
+    SELECT id, name, description, created_at, updated_at, completed_at
+    FROM tasks
+	WHERE id > ?
+    ORDER BY id ASC
+	LIMIT ?;
+    `
+
+	logger.Trace(fmt.Sprintf(
+		"retrieving tasks up to %d after id %d (paginated)",
+		taskPageLimit,
+		fromId,
+	))
+	tasks, hasNext, err := getTasksInternal(query, fromId, taskPageLimit)
 	if err != nil {
-		return tasks, err
+		return tasks, hasNext, err
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		task, err := scanRow(rows)
-		if err != nil {
-			return tasks, err
+	if len(tasks) >= taskPageLimit {
+		logger.Trace("checking if there are more tasks")
+
+		hasNextQuery := `
+		SELECT 1
+		FROM tasks
+		WHERE id > ?
+		LIMIT 1;
+		`
+
+		lastId := tasks[len(tasks)-1].Id
+		err := DB.QueryRow(hasNextQuery, lastId).Scan(&hasNext)
+		if err == sql.ErrNoRows {
+			hasNext = false
+		} else if err != nil {
+			logger.Warning(fmt.Sprint("error occured while checking if there are more tasks: ", err))
 		}
-		tasks = append(tasks, task)
 	}
 
-	return tasks, rows.Err()
+	return tasks, hasNext, nil
 }
 
 func (t *Task) MarkAsDone() error {
