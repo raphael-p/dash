@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/raphael-p/datashard/internal/database"
+	"github.com/raphael-p/datashard/pkg/stringpad"
 	"github.com/rivo/tview"
 )
 
@@ -76,7 +77,7 @@ func (dp *DisplayPanel) GetNextPage() error {
 
 func (dp *DisplayPanel) listTasks(fromId int64, pageIndex uint) error {
 	dp.panel.Clear()
-	dp.panel.SetTitle(" Tasks ")
+	dp.panel.SetTitle(fmt.Sprintf(" Tasks (page %d) ", pageIndex+1))
 
 	tasks, hasNext, err := database.GetTasksPaginated(fromId)
 	if err != nil {
@@ -95,7 +96,11 @@ func (dp *DisplayPanel) listTasks(fromId int64, pageIndex uint) error {
 		fmt.Fprintf(dp.panel, "\n↑ show previous page\n\n")
 	}
 	for idx, task := range tasks {
-		fmt.Fprintf(dp.panel, "[%d] %s", task.Id, task.Name)
+		fmt.Fprint(
+			dp.panel,
+			stringpad.RightPad(fmt.Sprintf("[%d]", task.Id), 8),
+			task.Name,
+		)
 		if idx+1 < len(tasks) {
 			fmt.Fprint(dp.panel, "\n")
 		}
