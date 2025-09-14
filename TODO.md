@@ -3,7 +3,6 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- smoother scrolling
 - task reordering gui
 - hotkeys for gui
 - task queue

@@ -30,15 +30,15 @@ func (dp *DisplayPanel) GetPanel() *tview.TextView {
 
 func (dp *DisplayPanel) GetCurrentPage() error {
 	if dp.currentPageIndex == 0 {
-		return dp.ListTasks(0, 0)
+		return dp.listTasks(0, 0)
 	}
-	return dp.ListTasks(
+	return dp.listTasks(
 		dp.pages[dp.currentPageIndex-1].lastId,
 		dp.currentPageIndex,
 	)
 }
 
-func (dp *DisplayPanel) GetPreviousPage() error {
+func (dp *DisplayPanel) getPreviousPage() error {
 	if dp.currentPageIndex == 0 {
 		return nil // intentional noop
 	}
@@ -51,7 +51,7 @@ func (dp *DisplayPanel) GetPreviousPage() error {
 		fromId = dp.pages[pageIndex-1].lastId
 	}
 
-	err := dp.ListTasks(fromId, pageIndex)
+	err := dp.listTasks(fromId, pageIndex)
 	if err == nil {
 		dp.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToEnd()
@@ -66,7 +66,7 @@ func (dp *DisplayPanel) GetNextPage() error {
 	}
 
 	pageIndex := dp.currentPageIndex + 1
-	err := dp.ListTasks(currentPage.lastId, pageIndex)
+	err := dp.listTasks(currentPage.lastId, pageIndex)
 	if err == nil {
 		dp.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToBeginning()
@@ -74,7 +74,7 @@ func (dp *DisplayPanel) GetNextPage() error {
 	return err
 }
 
-func (dp *DisplayPanel) ListTasks(fromId int64, pageIndex uint) error {
+func (dp *DisplayPanel) listTasks(fromId int64, pageIndex uint) error {
 	dp.panel.Clear()
 	dp.panel.SetTitle(" Tasks ")
 
@@ -91,11 +91,17 @@ func (dp *DisplayPanel) ListTasks(fromId int64, pageIndex uint) error {
 	// store pagination metadata
 	dp.pages[pageIndex] = taskPage{tasks[len(tasks)-1].Id, hasNext}
 
+	if pageIndex > 0 {
+		fmt.Fprintf(dp.panel, "\n↑ show previous page\n\n")
+	}
 	for idx, task := range tasks {
 		fmt.Fprintf(dp.panel, "[%d] %s", task.Id, task.Name)
 		if idx+1 < len(tasks) {
 			fmt.Fprint(dp.panel, "\n")
 		}
+	}
+	if hasNext {
+		fmt.Fprintf(dp.panel, "\n\n↓ show next page\n")
 	}
 	return nil
 }
@@ -140,7 +146,7 @@ func (dp *DisplayPanel) ScrollUp() error {
 
 	// determine whether to fetch the previous page
 	if offset == 0 {
-		return dp.GetPreviousPage()
+		return dp.getPreviousPage()
 	}
 
 	dp.GetPanel().ScrollTo(offset-1, 0)
