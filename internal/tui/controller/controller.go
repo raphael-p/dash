@@ -60,7 +60,7 @@ func (c *Controller) MainMenu() {
 			if currentInput != "" {
 				c.infoPanel.SetInput(currentInput[:len(currentInput)-1])
 			}
-		case (e == tcell.KeyEnter || r == 'o') && c.infoPanel.GetInput() != "":
+		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "", r == 'o':
 			c.submitOpenTaskString(c.infoPanel.GetInput())
 			return nil
 		case r == 'a':
