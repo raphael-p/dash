@@ -29,6 +29,10 @@ func (dp *DisplayPanel) GetPanel() *tview.TextView {
 	return dp.panel
 }
 
+func (dp *DisplayPanel) ResetPagination() {
+	dp.currentPageIndex = 0
+}
+
 func (dp *DisplayPanel) GetCurrentPage() error {
 	if dp.currentPageIndex == 0 {
 		return dp.listTasks(0, 0)

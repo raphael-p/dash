@@ -53,7 +53,7 @@ func (c *Controller) MainMenu() {
 		e := event.Key()
 		r := event.Rune()
 		switch {
-		case e == tcell.KeyEscape, e == tcell.KeyTab, r == 'j', r == 'k', r == 'q':
+		case e == tcell.KeyTab, r == 'j', r == 'k', r == 'q':
 			c.infoPanel.Clear()
 		case e == tcell.KeyBackspace, e == tcell.KeyBackspace2:
 			currentInput := c.infoPanel.GetInput()
