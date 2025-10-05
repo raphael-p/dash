@@ -91,6 +91,8 @@ func (c *Controller) MainMenu() {
 		case r >= '0' && r <= '9':
 			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))
 			return nil
+		case e == tcell.KeyUp, e == tcell.KeyDown:
+			return nil
 		default:
 			c.infoPanel.Warn("invalid command")
 		}
