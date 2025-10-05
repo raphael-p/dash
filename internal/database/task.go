@@ -106,7 +106,7 @@ func GetTasksPaginated(fromId int64) ([]Task, bool, error) {
     SELECT id, name, description, created_at, updated_at, completed_at
     FROM tasks
 	WHERE id > ?
-    ORDER BY id ASC
+    ORDER BY priority_bumped_at DESC, id ASC
 	LIMIT ?;
     `
 
@@ -140,6 +140,23 @@ func GetTasksPaginated(fromId int64) ([]Task, bool, error) {
 	}
 
 	return tasks, hasNext, nil
+}
+
+func BumpTask(taskID int64) (bool, error) {
+	bumpTask := `
+	UPDATE tasks
+	SET priority_bumped_at = ?
+	WHERE id = ?;
+	`
+
+	logger.Debugf("bumping task priority (id: %d)", taskID)
+	res, err := DB.Exec(bumpTask, time.Now(), taskID)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
 }
 
 func (t *Task) MarkAsDone() error {

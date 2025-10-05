@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/datashard/internal/database"
 	"github.com/raphael-p/datashard/internal/tui/panels"
 	"github.com/rivo/tview"
 )
@@ -62,6 +63,25 @@ func (c *Controller) MainMenu() {
 		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "":
 			c.submitOpenTaskString(c.infoPanel.GetInput())
 			return nil
+		case r == 'b':
+			taskID, err := extractIDFromString(c.infoPanel.GetInput())
+			if err != nil {
+				c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
+				return nil
+			}
+
+			bumped, err := database.BumpTask(int64(taskID))
+			if err != nil {
+				c.infoPanel.Error(fmt.Errorf("failed to bump task priority: %s", err))
+				return nil
+			}
+
+			if bumped {
+				c.infoPanel.Info(fmt.Sprintf("Bumped priority of task [%d]", taskID))
+				c.refreshTasks()
+			} else {
+				c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", taskID))
+			}
 		case r >= '0' && r <= '9':
 			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))
 			return nil
