@@ -15,7 +15,7 @@ func (c *Controller) openTaskForm() {
 	onFormEnter(openTaskForm, func() { c.submitOpenTaskInput(taskIDInput) })
 	addExitButtonsToForm(c, openTaskForm)
 
-	c.inputPanel.Set("View Task", openTaskForm)
+	c.inputPanel.Set("Open Task", openTaskForm)
 }
 
 func (c *Controller) addTaskForm() {
@@ -46,7 +46,7 @@ func (c *Controller) removeTaskForm() {
 	onFormEnter(removeTaskForm, func() { c.submitRemoveTask(taskIDInput) })
 	addExitButtonsToForm(c, removeTaskForm)
 
-	c.inputPanel.Set("Delete Task", removeTaskForm)
+	c.inputPanel.Set("Remove Task", removeTaskForm)
 }
 
 func (c *Controller) editTaskForm(task database.Task) {

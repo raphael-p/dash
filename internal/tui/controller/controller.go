@@ -77,10 +77,10 @@ func (c *Controller) MainMenu() {
 			}
 
 			if bumped {
-				c.infoPanel.Info(fmt.Sprintf("Bumped priority of task [%d]", taskID))
+				c.infoPanel.Info(fmt.Sprintf("bumped priority of task [%d]", taskID))
 				c.refreshTasks()
 			} else {
-				c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", taskID))
+				c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", taskID))
 			}
 		case r >= '0' && r <= '9':
 			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))

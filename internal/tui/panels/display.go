@@ -9,7 +9,7 @@ import (
 )
 
 type taskPage struct {
-	lastId  int64
+	lastID  int64
 	hasNext bool
 }
 
@@ -34,7 +34,7 @@ func (dp *DisplayPanel) GetCurrentPage() error {
 		return dp.listTasks(0, 0)
 	}
 	return dp.listTasks(
-		dp.pages[dp.currentPageIndex-1].lastId,
+		dp.pages[dp.currentPageIndex-1].lastID,
 		dp.currentPageIndex,
 	)
 }
@@ -47,12 +47,12 @@ func (dp *DisplayPanel) getPreviousPage() error {
 	pageIndex := dp.currentPageIndex - 1
 
 	// get last ID of previous page
-	var fromId int64 = 0
+	var fromID int64 = 0
 	if pageIndex > 0 {
-		fromId = dp.pages[pageIndex-1].lastId
+		fromID = dp.pages[pageIndex-1].lastID
 	}
 
-	err := dp.listTasks(fromId, pageIndex)
+	err := dp.listTasks(fromID, pageIndex)
 	if err == nil {
 		dp.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToEnd()
@@ -67,7 +67,7 @@ func (dp *DisplayPanel) GetNextPage() error {
 	}
 
 	pageIndex := dp.currentPageIndex + 1
-	err := dp.listTasks(currentPage.lastId, pageIndex)
+	err := dp.listTasks(currentPage.lastID, pageIndex)
 	if err == nil {
 		dp.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToBeginning()
@@ -75,11 +75,11 @@ func (dp *DisplayPanel) GetNextPage() error {
 	return err
 }
 
-func (dp *DisplayPanel) listTasks(fromId int64, pageIndex uint) error {
+func (dp *DisplayPanel) listTasks(fromID int64, pageIndex uint) error {
 	dp.panel.Clear()
 	dp.panel.SetTitle(fmt.Sprintf(" Tasks (page %d) ", pageIndex+1))
 
-	tasks, hasNext, err := database.GetTasksPaginated(fromId)
+	tasks, hasNext, err := database.GetTasksPaginated(fromID)
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %s", err)
 	}
@@ -111,10 +111,10 @@ func (dp *DisplayPanel) listTasks(fromId int64, pageIndex uint) error {
 	return nil
 }
 
-func (dp *DisplayPanel) ShowTask(taskId int64) (*database.Task, error) {
-	task, err := database.GetTask(int64(taskId))
+func (dp *DisplayPanel) ShowTask(taskID int64) (*database.Task, error) {
+	task, err := database.GetTask(int64(taskID))
 	if err != nil {
-		return nil, fmt.Errorf("could not retrieve task %d: %s", taskId, err)
+		return nil, fmt.Errorf("could not retrieve task %d: %s", taskID, err)
 	}
 
 	dp.panel.Clear()

@@ -101,7 +101,7 @@ func SearchTasks(searchQuery string) ([]Task, error) {
 	return tasks, err
 }
 
-func GetTasksPaginated(fromId int64) ([]Task, bool, error) {
+func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
 	query := `
     SELECT id, name, description, created_at, updated_at, completed_at
     FROM tasks
@@ -113,9 +113,9 @@ func GetTasksPaginated(fromId int64) ([]Task, bool, error) {
 	logger.Trace(fmt.Sprintf(
 		"retrieving tasks up to %d after id %d (paginated)",
 		taskPageLimit,
-		fromId,
+		fromID,
 	))
-	tasks, hasNext, err := getTasksInternal(query, fromId, taskPageLimit)
+	tasks, hasNext, err := getTasksInternal(query, fromID, taskPageLimit)
 	if err != nil {
 		return tasks, hasNext, err
 	}
@@ -130,8 +130,8 @@ func GetTasksPaginated(fromId int64) ([]Task, bool, error) {
 		LIMIT 1;
 		`
 
-		lastId := tasks[len(tasks)-1].Id
-		err := DB.QueryRow(hasNextQuery, lastId).Scan(&hasNext)
+		lastID := tasks[len(tasks)-1].Id
+		err := DB.QueryRow(hasNextQuery, lastID).Scan(&hasNext)
 		if err == sql.ErrNoRows {
 			hasNext = false
 		} else if err != nil {

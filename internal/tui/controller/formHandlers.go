@@ -16,7 +16,7 @@ func (c *Controller) submitOpenTaskInput(taskIDInput *tview.InputField) {
 func (c *Controller) submitOpenTaskString(idString string) {
 	id, err := extractIDFromString(idString)
 	if err != nil {
-		c.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
+		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
 		return
 	}
 
@@ -32,7 +32,7 @@ func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.In
 	name := taskNameInput.GetText()
 	description := taskDescriptionInput.GetText()
 	if name == "" || description == "" {
-		c.infoPanel.Warn("Please provide a name and description of the task.")
+		c.infoPanel.Warn("please provide a name and description of the task.")
 		return
 	}
 
@@ -45,13 +45,13 @@ func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.In
 	taskNameInput.SetText("")
 	taskDescriptionInput.SetText("")
 	c.refreshTasks()
-	c.infoPanel.Info(fmt.Sprintf("New task [%d] created.", task.Id))
+	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
 }
 
 func (c *Controller) submitRemoveTask(taskIDInput *tview.InputField) {
 	id, err := extractIDFromInput(taskIDInput)
 	if err != nil {
-		c.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
+		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
 		return
 	}
 
@@ -66,9 +66,9 @@ func (c *Controller) submitRemoveTask(taskIDInput *tview.InputField) {
 	c.refreshTasks()
 
 	if deleted {
-		c.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
+		c.infoPanel.Info(fmt.Sprintf("task [%d] deleted.", id))
 	} else {
-		c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", id))
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
 }
 
@@ -76,7 +76,7 @@ func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescr
 	name := taskNameInput.GetText()
 	description := taskDescriptionInput.GetText()
 	if name == "" && description == "" {
-		c.infoPanel.Warn("Please update the name or description of the task.")
+		c.infoPanel.Warn("please update the name or description of the task.")
 		return
 	}
 
@@ -96,9 +96,9 @@ func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescr
 	c.MainMenu()
 
 	if updated {
-		c.infoPanel.Info(fmt.Sprintf("Task [%d] updated.", task.Id))
+		c.infoPanel.Info(fmt.Sprintf("task [%d] updated.", task.Id))
 	} else {
-		c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", task.Id))
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", task.Id))
 	}
 }
 
