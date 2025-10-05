@@ -52,13 +52,18 @@ func (c *Controller) MainMenu() {
 		e := event.Key()
 		r := event.Rune()
 		switch {
-		case e == tcell.KeyEscape || e == tcell.KeyTab:
+		case e == tcell.KeyEscape, e == tcell.KeyTab:
 			c.infoPanel.Clear()
+		case e == tcell.KeyBackspace, e == tcell.KeyBackspace2:
+			currentInput := c.infoPanel.GetInput()
+			if currentInput != "" {
+				c.infoPanel.SetInput(currentInput[:len(currentInput)-1])
+			}
 		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "":
 			c.submitOpenTaskString(c.infoPanel.GetInput())
 			return nil
 		case r >= '0' && r <= '9':
-			c.infoPanel.AppendInput(string(r))
+			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))
 			return nil
 		}
 		return event

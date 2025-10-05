@@ -25,20 +25,32 @@ func (ip *InfoPanel) GetPanel() *tview.Frame {
 }
 
 func (ip *InfoPanel) Warn(err string) {
+	ip.input = ""
 	ip.textView.SetText(fmt.Sprint("[yellow]⚠️ ", err))
 }
 
 func (ip *InfoPanel) Error(err error) {
+	ip.input = ""
 	ip.textView.SetText(fmt.Sprint("[red]❌ ", err))
 }
 
 func (ip *InfoPanel) Info(info string) {
+	ip.input = ""
 	ip.textView.SetText(fmt.Sprint("❕ ", info))
 }
 
 func (ip *InfoPanel) AppendInput(input string) {
 	ip.input += input
 	ip.textView.SetText(fmt.Sprint("> ", ip.input))
+}
+
+func (ip *InfoPanel) SetInput(input string) {
+	ip.input = input
+	if input != "" {
+		ip.textView.SetText(fmt.Sprint("> ", ip.input))
+	} else {
+		ip.textView.Clear()
+	}
 }
 
 func (ip *InfoPanel) GetInput() string {
