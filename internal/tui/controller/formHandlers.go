@@ -48,8 +48,8 @@ func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.In
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
 }
 
-func (c *Controller) submitRemoveTask(taskIDInput *tview.InputField) {
-	id, err := extractIDFromInput(taskIDInput)
+func (c *Controller) submitRemoveTaskString(idString string) {
+	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
 		return
@@ -62,14 +62,17 @@ func (c *Controller) submitRemoveTask(taskIDInput *tview.InputField) {
 		return
 	}
 
-	taskIDInput.SetText("")
-	c.refreshTasks()
-
 	if deleted {
 		c.infoPanel.Info(fmt.Sprintf("task [%d] deleted.", id))
+		c.refreshTasks()
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
+}
+
+func (c *Controller) submitRemoveTaskInput(taskIDInput *tview.InputField) {
+	c.submitOpenTaskString(taskIDInput.GetText())
+	taskIDInput.SetText("")
 }
 
 func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescriptionInput *tview.InputField) {

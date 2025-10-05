@@ -53,15 +53,21 @@ func (c *Controller) MainMenu() {
 		e := event.Key()
 		r := event.Rune()
 		switch {
-		case e == tcell.KeyEscape, e == tcell.KeyTab:
+		case e == tcell.KeyEscape, e == tcell.KeyTab, r == 'j', r == 'k', r == 'q':
 			c.infoPanel.Clear()
 		case e == tcell.KeyBackspace, e == tcell.KeyBackspace2:
 			currentInput := c.infoPanel.GetInput()
 			if currentInput != "" {
 				c.infoPanel.SetInput(currentInput[:len(currentInput)-1])
 			}
-		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "":
+		case (e == tcell.KeyEnter || r == 'o') && c.infoPanel.GetInput() != "":
 			c.submitOpenTaskString(c.infoPanel.GetInput())
+			return nil
+		case r == 'a':
+			c.addTaskForm()
+			return nil
+		case r == 'r':
+			c.submitRemoveTaskString(c.infoPanel.GetInput())
 			return nil
 		case r == 'b':
 			taskID, err := extractIDFromString(c.infoPanel.GetInput())
@@ -85,6 +91,8 @@ func (c *Controller) MainMenu() {
 		case r >= '0' && r <= '9':
 			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))
 			return nil
+		default:
+			c.infoPanel.Warn("invalid command")
 		}
 		return event
 	})

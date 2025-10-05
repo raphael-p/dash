@@ -43,7 +43,7 @@ func (c *Controller) removeTaskForm() {
 	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
 	removeTaskForm.AddFormItem(taskIDInput)
 
-	onFormEnter(removeTaskForm, func() { c.submitRemoveTask(taskIDInput) })
+	onFormEnter(removeTaskForm, func() { c.submitRemoveTaskInput(taskIDInput) })
 	addExitButtonsToForm(c, removeTaskForm)
 
 	c.inputPanel.Set("Remove Task", removeTaskForm)
