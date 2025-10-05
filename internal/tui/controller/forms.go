@@ -5,20 +5,20 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (c *Controller) viewTaskForm() {
-	viewTaskForm := tview.NewForm()
+func (c *Controller) openTaskForm() {
+	openTaskForm := createForm(c)
 
 	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
-	viewTaskForm.AddFormItem(taskIDInput)
+	openTaskForm.AddFormItem(taskIDInput)
 
-	onFormEnter(viewTaskForm, func() { c.submitViewTask(taskIDInput) })
-	addExitButtonsToForm(c, viewTaskForm)
+	onFormEnter(openTaskForm, func() { c.submitOpenTaskInput(taskIDInput) })
+	addExitButtonsToForm(c, openTaskForm)
 
-	c.inputPanel.Set("View Task", viewTaskForm)
+	c.inputPanel.Set("View Task", openTaskForm)
 }
 
 func (c *Controller) addTaskForm() {
-	addTaskForm := tview.NewForm()
+	addTaskForm := createForm(c)
 
 	taskNameInput := tview.NewInputField().SetLabel("Task Name: ")
 	addTaskForm.AddFormItem(taskNameInput)
@@ -36,20 +36,25 @@ func (c *Controller) addTaskForm() {
 	c.inputPanel.Set("Add New Task", addTaskForm)
 }
 
-func (c *Controller) deleteTaskForm() {
-	deleteTaskForm := tview.NewForm()
+func (c *Controller) removeTaskForm() {
+	removeTaskForm := createForm(c)
 
 	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
-	deleteTaskForm.AddFormItem(taskIDInput)
+	removeTaskForm.AddFormItem(taskIDInput)
 
-	onFormEnter(deleteTaskForm, func() { c.submitDeleteTask(taskIDInput) })
-	addExitButtonsToForm(c, deleteTaskForm)
+	onFormEnter(removeTaskForm, func() { c.submitRemoveTask(taskIDInput) })
+	addExitButtonsToForm(c, removeTaskForm)
 
-	c.inputPanel.Set("Delete Task", deleteTaskForm)
+	c.inputPanel.Set("Delete Task", removeTaskForm)
+}
+
+func createForm(c *Controller) *tview.Form {
+	c.infoPanel.Clear()
+	return tview.NewForm()
 }
 
 func addExitButtonsToForm(c *Controller, form *tview.Form) {
-	form.AddButton("Back", func() { c.infoPanel.Clear(); c.MainMenu() })
+	form.AddButton("Back", func() { c.MainMenu() })
 	form.AddButton("Quit", func() { c.app.Stop() })
 }
 

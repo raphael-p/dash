@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/tui/panels"
 	"github.com/rivo/tview"
 )
@@ -24,12 +25,13 @@ func NewController(
 }
 
 func (c *Controller) MainMenu() {
+	c.infoPanel.Clear()
 	c.refreshTasks()
 
 	navigationList := tview.NewList()
-	navigationList.AddItem("View Task", "", '0', func() { c.viewTaskForm() })
-	navigationList.AddItem("Add Task", "", '1', func() { c.addTaskForm() })
-	navigationList.AddItem("Delete Task", "", '2', func() { c.deleteTaskForm() })
+	navigationList.AddItem("Open Task", "", 'o', func() { c.openTaskForm() })
+	navigationList.AddItem("Add Task", "", 'a', func() { c.addTaskForm() })
+	navigationList.AddItem("Remove Task", "", 'r', func() { c.removeTaskForm() })
 	navigationList.AddItem("Scroll Down", "", 'j', func() {
 		err := c.displayPanel.ScrollDown()
 		if err != nil {
@@ -43,8 +45,25 @@ func (c *Controller) MainMenu() {
 		}
 	})
 	navigationList.AddItem("Quit", "", 'q', func() { c.app.Stop() })
-
 	c.inputPanel.Set("Manage Your Tasks", navigationList)
+
+	// handle typing task number directly to open a task
+	navigationList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		e := event.Key()
+		r := event.Rune()
+		switch {
+		case e == tcell.KeyEscape || e == tcell.KeyTab:
+			c.infoPanel.Clear()
+		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "":
+			c.submitOpenTaskString(c.infoPanel.GetInput())
+			c.openTaskForm()
+			return nil
+		case r >= '0' && r <= '9':
+			c.infoPanel.AppendInput(string(r))
+			return nil
+		}
+		return event
+	})
 }
 
 func (c *Controller) refreshTasks() {

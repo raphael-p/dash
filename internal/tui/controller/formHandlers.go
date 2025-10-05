@@ -8,8 +8,13 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (c *Controller) submitViewTask(taskIDInput *tview.InputField) {
-	id, err := extractIDFromInput(taskIDInput)
+func (c *Controller) submitOpenTaskInput(taskIDInput *tview.InputField) {
+	c.submitOpenTaskString(taskIDInput.GetText())
+	taskIDInput.SetText("")
+}
+
+func (c *Controller) submitOpenTaskString(idString string) {
+	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
 		return
@@ -20,8 +25,6 @@ func (c *Controller) submitViewTask(taskIDInput *tview.InputField) {
 		c.infoPanel.Error(err)
 		return
 	}
-
-	taskIDInput.SetText("")
 }
 
 func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.InputField) {
@@ -44,7 +47,7 @@ func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.In
 	c.infoPanel.Info(fmt.Sprintf("New task [%d] created.", task.Id))
 }
 
-func (c *Controller) submitDeleteTask(taskIDInput *tview.InputField) {
+func (c *Controller) submitRemoveTask(taskIDInput *tview.InputField) {
 	id, err := extractIDFromInput(taskIDInput)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("Your input is invalid: ", err))
@@ -69,12 +72,15 @@ func (c *Controller) submitDeleteTask(taskIDInput *tview.InputField) {
 }
 
 func extractIDFromInput(input *tview.InputField) (int, error) {
-	idStr := input.GetText()
-	if idStr == "" {
+	return extractIDFromString(input.GetText())
+}
+
+func extractIDFromString(idString string) (int, error) {
+	if idString == "" {
 		return 0, fmt.Errorf("task ID is empty")
 	}
 
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.Atoi(idString)
 	if err != nil || id < 1 {
 		return 0, fmt.Errorf("task ID is not an integer")
 	}
