@@ -20,11 +20,12 @@ func (c *Controller) submitOpenTaskString(idString string) {
 		return
 	}
 
-	err = c.displayPanel.ShowTask(int64(id))
+	task, err := c.displayPanel.ShowTask(int64(id))
 	if err != nil {
 		c.infoPanel.Error(err)
 		return
 	}
+	c.editTaskForm(*task)
 }
 
 func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.InputField) {
@@ -68,6 +69,36 @@ func (c *Controller) submitRemoveTask(taskIDInput *tview.InputField) {
 		c.infoPanel.Info(fmt.Sprintf("Task [%d] deleted.", id))
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", id))
+	}
+}
+
+func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescriptionInput *tview.InputField) {
+	name := taskNameInput.GetText()
+	description := taskDescriptionInput.GetText()
+	if name == "" && description == "" {
+		c.infoPanel.Warn("Please update the name or description of the task.")
+		return
+	}
+
+	if name != "" {
+		task.Name = name
+	}
+	if description != "" {
+		task.Description = description
+	}
+
+	updated, err := task.Update()
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("failed to edit task: %s", err))
+		return
+	}
+
+	c.MainMenu()
+
+	if updated {
+		c.infoPanel.Info(fmt.Sprintf("Task [%d] updated.", task.Id))
+	} else {
+		c.infoPanel.Warn(fmt.Sprintf("Task [%d] does not exist, noop.", task.Id))
 	}
 }
 

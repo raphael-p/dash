@@ -3,7 +3,10 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
+- edit task
+- handle delete when typing task number
 - task reordering gui
+    - order by priority_updated_at, have option to bump task
 - hotkeys for gui
 - task queue
 - timer: start, stop, configure
@@ -16,6 +19,8 @@ objective: build pomello timer + task manager in terminal
 - help docs
 - safeguard for task wiping
 - history of completed tasks
+    - give option to archive or delete
+    - create view for archived tasks
 - rename project
 - README
 - LICENSE + copyright line

@@ -111,10 +111,10 @@ func (dp *DisplayPanel) listTasks(fromId int64, pageIndex uint) error {
 	return nil
 }
 
-func (dp *DisplayPanel) ShowTask(taskId int64) error {
+func (dp *DisplayPanel) ShowTask(taskId int64) (*database.Task, error) {
 	task, err := database.GetTask(int64(taskId))
 	if err != nil {
-		return fmt.Errorf("could not retrieve task %d: %s", taskId, err)
+		return nil, fmt.Errorf("could not retrieve task %d: %s", taskId, err)
 	}
 
 	dp.panel.Clear()
@@ -129,7 +129,7 @@ func (dp *DisplayPanel) ShowTask(taskId int64) error {
 	}
 	fmt.Fprintf(dp.panel, "Created at: %s\n", createdAt)
 	fmt.Fprintf(dp.panel, "Last updated: %s\n", updatedAt)
-	return nil
+	return &task, nil
 }
 
 func (dp *DisplayPanel) ScrollDown() error {

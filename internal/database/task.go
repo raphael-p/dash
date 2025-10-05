@@ -155,12 +155,30 @@ func (t *Task) MarkAsDone() error {
 	return err
 }
 
+func (t *Task) Update() (bool, error) {
+	updateTask := `
+	UPDATE tasks
+	SET name = ?, description = ?, updated_at = ?
+	WHERE id = ?;
+	`
+
+	logger.Debugf("updating task (id: %d)", t.Id)
+	res, err := DB.Exec(updateTask, t.Name, t.Description, time.Now(), t.Id)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
+}
+
 func (t *Task) Delete() (bool, error) {
 	deleteTask := `
 	DELETE FROM tasks
 	WHERE id = ?
 	`
 
+	logger.Debugf("deleting task (id: %d)", t.Id)
 	res, err := DB.Exec(deleteTask, t.Id)
 	if err != nil {
 		return false, err

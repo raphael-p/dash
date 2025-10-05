@@ -56,7 +56,6 @@ func (c *Controller) MainMenu() {
 			c.infoPanel.Clear()
 		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "":
 			c.submitOpenTaskString(c.infoPanel.GetInput())
-			c.openTaskForm()
 			return nil
 		case r >= '0' && r <= '9':
 			c.infoPanel.AppendInput(string(r))

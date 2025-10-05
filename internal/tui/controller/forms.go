@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/datashard/internal/database"
 	"github.com/rivo/tview"
 )
 
@@ -46,6 +47,27 @@ func (c *Controller) removeTaskForm() {
 	addExitButtonsToForm(c, removeTaskForm)
 
 	c.inputPanel.Set("Delete Task", removeTaskForm)
+}
+
+func (c *Controller) editTaskForm(task database.Task) {
+	editTaskForm := createForm(c)
+
+	taskNameInput := tview.NewInputField().SetLabel("Task Name: ")
+	editTaskForm.AddFormItem(taskNameInput)
+
+	taskDescriptionInput := tview.NewInputField().SetLabel("Description: ")
+	editTaskForm.AddFormItem(taskDescriptionInput)
+
+	onFormEnter(editTaskForm, func() {
+		c.submitEditTask(
+			task,
+			taskNameInput,
+			taskDescriptionInput,
+		)
+	})
+	addExitButtonsToForm(c, editTaskForm)
+
+	c.inputPanel.Set("Edit Task", editTaskForm)
 }
 
 func createForm(c *Controller) *tview.Form {
