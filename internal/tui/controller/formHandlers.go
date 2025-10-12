@@ -105,8 +105,27 @@ func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescr
 	}
 }
 
-func extractIDFromInput(input *tview.InputField) (int, error) {
-	return extractIDFromString(input.GetText())
+func (c *Controller) submitBumpTask(idString string) {
+	id, err := extractIDFromString(idString)
+	if err != nil {
+		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
+		return
+	}
+
+	bumped, err := database.BumpTask(int64(id))
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("failed to bump task priority: %s", err))
+		return
+	}
+
+	c.MainMenu()
+
+	if bumped {
+		c.infoPanel.Info(fmt.Sprintf("bumped priority of task [%d]", id))
+		c.refreshTasks()
+	} else {
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
+	}
 }
 
 func extractIDFromString(idString string) (int, error) {

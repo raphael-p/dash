@@ -70,6 +70,22 @@ func (c *Controller) editTaskForm(task database.Task) {
 	c.inputPanel.Set("Edit Task", editTaskForm)
 }
 
+func (c *Controller) bumpTaskForm() {
+	bumpTaskForm := createForm(c)
+
+	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
+	bumpTaskForm.AddFormItem(taskIDInput)
+
+	onFormEnter(bumpTaskForm, func() {
+		c.submitBumpTask(
+			taskIDInput.GetText(),
+		)
+	})
+	addExitButtonsToForm(c, bumpTaskForm)
+
+	c.inputPanel.Set("Bump Task Priority", bumpTaskForm)
+}
+
 func createForm(c *Controller) *tview.Form {
 	c.infoPanel.Clear()
 	return tview.NewForm()
