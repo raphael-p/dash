@@ -3,8 +3,8 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- hotkeys for gui -> Change manage your tasks into welcome page
-- task queue
+- add bump task form
+- refactor controller.go + formHandlers.go --> move into menuActions.go
 - timer: start, stop, configure
 - timer mode
     - view current task

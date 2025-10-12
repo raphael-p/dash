@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/database"
@@ -29,46 +30,33 @@ func (c *Controller) MainMenu() {
 	c.infoPanel.Clear()
 	c.refreshTasks()
 
-	navigationList := tview.NewList()
-	navigationList.AddItem("Open Task", "", 'o', func() { c.openTaskForm() })
-	navigationList.AddItem("Add Task", "", 'a', func() { c.addTaskForm() })
-	navigationList.AddItem("Remove Task", "", 'r', func() { c.removeTaskForm() })
-	navigationList.AddItem("Scroll Down", "", 'j', func() {
-		err := c.displayPanel.ScrollDown()
-		if err != nil {
-			c.infoPanel.Error(fmt.Errorf("failed to scroll down: %s", err))
-		}
-	})
-	navigationList.AddItem("Scroll Up", "", 'k', func() {
-		err := c.displayPanel.ScrollUp()
-		if err != nil {
-			c.infoPanel.Error(fmt.Errorf("failed to scroll up: %s", err))
-		}
-	})
-	navigationList.AddItem("Quit", "", 'q', func() { c.app.Stop() })
-	c.inputPanel.Set("Manage Your Tasks", navigationList)
+	home := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf(`
+	([%[1]s::b]o[-:-:-]) open a task
+	([%[1]s::b]b[-:-:-]) bump the priority of a task
+	([%[1]s::b]r[-:-:-]) remove a task
+	([%[1]s::b]a[-:-:-]) add a new task
+	([%[1]s::b]j[-:-:-]) scroll down
+	([%[1]s::b]k[-:-:-]) scroll up
+	([%[1]s::b]q[-:-:-]) quit
+	[::d]tip: you can type the task ID before invoking a command on a task[::-]
+	`, tcell.ColorLimeGreen))
+	c.inputPanel.Set("Welcome to Dash!", home)
 
 	// handle typing task number directly to open a task
-	navigationList.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	home.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		e := event.Key()
 		r := event.Rune()
 		switch {
-		case e == tcell.KeyTab, r == 'j', r == 'k', r == 'q':
-			c.infoPanel.Clear()
+		// ADD
+		case r == 'a':
+			c.addTaskForm()
+		// BACKSPACE
 		case e == tcell.KeyBackspace, e == tcell.KeyBackspace2:
 			currentInput := c.infoPanel.GetInput()
 			if currentInput != "" {
 				c.infoPanel.SetInput(currentInput[:len(currentInput)-1])
 			}
-		case e == tcell.KeyEnter && c.infoPanel.GetInput() != "", r == 'o':
-			c.submitOpenTaskString(c.infoPanel.GetInput())
-			return nil
-		case r == 'a':
-			c.addTaskForm()
-			return nil
-		case r == 'r':
-			c.submitRemoveTaskString(c.infoPanel.GetInput())
-			return nil
+		// BUMP
 		case r == 'b':
 			taskID, err := extractIDFromString(c.infoPanel.GetInput())
 			if err != nil {
@@ -88,15 +76,49 @@ func (c *Controller) MainMenu() {
 			} else {
 				c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", taskID))
 			}
+		// OPEN
+		case r == 'o', e == tcell.KeyEnter:
+			if c.infoPanel.GetInput() != "" {
+				c.submitOpenTaskString(c.infoPanel.GetInput())
+			} else {
+				c.openTaskForm()
+			}
+		// QUIT
+		case r == 'q':
+			c.app.Stop()
+		// REMOVE
+		case r == 'r':
+			if c.infoPanel.GetInput() != "" {
+				c.submitRemoveTaskString(c.infoPanel.GetInput())
+			} else {
+				c.removeTaskForm()
+			}
+		// SCROLL TEXT
+		case e == tcell.KeyDown, e == tcell.KeyUp:
+		// SCROLL DOWN
+		case r == 'j':
+			err := c.displayPanel.ScrollDown()
+			if err != nil {
+				c.infoPanel.Error(fmt.Errorf("failed to scroll down: %s", err))
+			}
+		// SCROLL UP
+		case r == 'k':
+			err := c.displayPanel.ScrollUp()
+			if err != nil {
+				c.infoPanel.Error(fmt.Errorf("failed to scroll up: %s", err))
+			}
+		// TYPE TASK ID
 		case r >= '0' && r <= '9':
 			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))
-			return nil
-		case e == tcell.KeyUp, e == tcell.KeyDown:
-			return nil
 		default:
-			c.infoPanel.Warn("invalid command")
+			message := "invalid command: "
+			if r == 0 || (string(r) != " " && unicode.IsSpace(r)) {
+				c.infoPanel.Warn(message + event.Name())
+			} else {
+				c.infoPanel.Warn(message + "'" + string(r) + "'")
+			}
 		}
-		return event
+		return nil
 	})
 }
 
