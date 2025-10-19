@@ -5,15 +5,9 @@ import (
 	"strconv"
 
 	"github.com/raphael-p/datashard/internal/database"
-	"github.com/rivo/tview"
 )
 
-func (c *Controller) submitOpenTaskInput(taskIDInput *tview.InputField) {
-	c.submitOpenTaskString(taskIDInput.GetText())
-	taskIDInput.SetText("")
-}
-
-func (c *Controller) submitOpenTaskString(idString string) {
+func (c *Controller) openTask(idString string) {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
@@ -28,9 +22,7 @@ func (c *Controller) submitOpenTaskString(idString string) {
 	c.editTaskForm(*task)
 }
 
-func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.InputField) {
-	name := taskNameInput.GetText()
-	description := taskDescriptionInput.GetText()
+func (c *Controller) addTask(name, description string) {
 	if name == "" || description == "" {
 		c.infoPanel.Warn("please provide a name and description of the task.")
 		return
@@ -42,13 +34,11 @@ func (c *Controller) submitAddTask(taskNameInput, taskDescriptionInput *tview.In
 		return
 	}
 
-	taskNameInput.SetText("")
-	taskDescriptionInput.SetText("")
 	c.refreshTasks()
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
 }
 
-func (c *Controller) submitRemoveTaskString(idString string) {
+func (c *Controller) removeTask(idString string) {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
@@ -70,14 +60,7 @@ func (c *Controller) submitRemoveTaskString(idString string) {
 	}
 }
 
-func (c *Controller) submitRemoveTaskInput(taskIDInput *tview.InputField) {
-	c.submitOpenTaskString(taskIDInput.GetText())
-	taskIDInput.SetText("")
-}
-
-func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescriptionInput *tview.InputField) {
-	name := taskNameInput.GetText()
-	description := taskDescriptionInput.GetText()
+func (c *Controller) editTask(task database.Task, name, description string) {
 	if name == "" && description == "" {
 		c.infoPanel.Warn("please update the name or description of the task.")
 		return
@@ -105,7 +88,7 @@ func (c *Controller) submitEditTask(task database.Task, taskNameInput, taskDescr
 	}
 }
 
-func (c *Controller) submitBumpTask(idString string) {
+func (c *Controller) bumpTask(idString string) {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))

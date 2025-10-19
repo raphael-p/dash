@@ -12,7 +12,10 @@ func (c *Controller) openTaskForm() {
 	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
 	openTaskForm.AddFormItem(taskIDInput)
 
-	onFormEnter(openTaskForm, func() { c.submitOpenTaskInput(taskIDInput) })
+	onFormEnter(openTaskForm, func() {
+		c.openTask(taskIDInput.GetText())
+		taskIDInput.SetText("")
+	})
 	addExitButtonsToForm(c, openTaskForm)
 
 	c.inputPanel.Set("Open Task", openTaskForm)
@@ -28,7 +31,9 @@ func (c *Controller) addTaskForm() {
 	addTaskForm.AddFormItem(taskDescriptionInput)
 
 	onFormEnter(addTaskForm, func() {
-		c.submitAddTask(taskNameInput, taskDescriptionInput)
+		c.addTask(taskNameInput.GetText(), taskDescriptionInput.GetText())
+		taskNameInput.SetText("")
+		taskDescriptionInput.SetText("")
 		addTaskForm.SetFocus(0)     // manually set focus to first field
 		c.app.SetFocus(addTaskForm) // return automatic focus management to form
 	})
@@ -43,7 +48,10 @@ func (c *Controller) removeTaskForm() {
 	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
 	removeTaskForm.AddFormItem(taskIDInput)
 
-	onFormEnter(removeTaskForm, func() { c.submitRemoveTaskInput(taskIDInput) })
+	onFormEnter(removeTaskForm, func() {
+		c.removeTask(taskIDInput.GetText())
+		taskIDInput.SetText("")
+	})
 	addExitButtonsToForm(c, removeTaskForm)
 
 	c.inputPanel.Set("Remove Task", removeTaskForm)
@@ -59,10 +67,10 @@ func (c *Controller) editTaskForm(task database.Task) {
 	editTaskForm.AddFormItem(taskDescriptionInput)
 
 	onFormEnter(editTaskForm, func() {
-		c.submitEditTask(
+		c.editTask(
 			task,
-			taskNameInput,
-			taskDescriptionInput,
+			taskNameInput.GetText(),
+			taskDescriptionInput.GetText(),
 		)
 	})
 	addExitButtonsToForm(c, editTaskForm)
@@ -77,7 +85,7 @@ func (c *Controller) bumpTaskForm() {
 	bumpTaskForm.AddFormItem(taskIDInput)
 
 	onFormEnter(bumpTaskForm, func() {
-		c.submitBumpTask(
+		c.bumpTask(
 			taskIDInput.GetText(),
 		)
 	})

@@ -25,20 +25,28 @@ func NewController(
 	return &Controller{app, inputPanel, infoPanel, displayPanel}
 }
 
+func (c *Controller) refreshTasks() {
+	err := c.displayPanel.GetCurrentPage()
+	if err != nil {
+		c.infoPanel.Error(err)
+	}
+}
+
 func (c *Controller) MainMenu() {
 	c.infoPanel.Clear()
 	c.refreshTasks()
 
-	home := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf(`
-	([%[1]s::b]o[-:-:-]) open a task
-	([%[1]s::b]b[-:-:-]) bump the priority of a task
-	([%[1]s::b]r[-:-:-]) remove a task
-	([%[1]s::b]a[-:-:-]) add a new task
-	([%[1]s::b]j[-:-:-]) scroll down
-	([%[1]s::b]k[-:-:-]) scroll up
-	([%[1]s::b]q[-:-:-]) quit
-	[::d]tip: you can type the task ID before invoking a command on a task[::-]
-	`, tcell.ColorLimeGreen))
+	home := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf(
+		`([%[1]s::b]o[-:-:-]) open a task
+([%[1]s::b]b[-:-:-]) bump the priority of a task
+([%[1]s::b]r[-:-:-]) remove a task
+([%[1]s::b]a[-:-:-]) add a new task
+([%[1]s::b]j[-:-:-]) scroll down
+([%[1]s::b]k[-:-:-]) scroll up
+([%[1]s::b]q[-:-:-]) quit
+[::d]tip: you can type the task ID before invoking the open (o), bump (b), or remove (r) commands[::-]`,
+		tcell.ColorLimeGreen))
+	home.SetBorderPadding(1, 1, 2, 2)
 	c.inputPanel.Set("Welcome to Dash!", home)
 
 	// handle typing task number directly to open a task
@@ -58,14 +66,14 @@ func (c *Controller) MainMenu() {
 		// BUMP
 		case r == 'b':
 			if c.infoPanel.GetInput() != "" {
-				c.submitBumpTask(c.infoPanel.GetInput())
+				c.bumpTask(c.infoPanel.GetInput())
 			} else {
 				c.bumpTaskForm()
 			}
 		// OPEN
 		case r == 'o', e == tcell.KeyEnter:
 			if c.infoPanel.GetInput() != "" {
-				c.submitOpenTaskString(c.infoPanel.GetInput())
+				c.openTask(c.infoPanel.GetInput())
 			} else {
 				c.openTaskForm()
 			}
@@ -75,12 +83,13 @@ func (c *Controller) MainMenu() {
 		// REMOVE
 		case r == 'r':
 			if c.infoPanel.GetInput() != "" {
-				c.submitRemoveTaskString(c.infoPanel.GetInput())
+				c.removeTask(c.infoPanel.GetInput())
 			} else {
 				c.removeTaskForm()
 			}
 		// SCROLL TEXT
 		case e == tcell.KeyDown, e == tcell.KeyUp:
+			return event
 		// SCROLL DOWN
 		case r == 'j':
 			err := c.displayPanel.ScrollDown()
@@ -106,11 +115,4 @@ func (c *Controller) MainMenu() {
 		}
 		return nil
 	})
-}
-
-func (c *Controller) refreshTasks() {
-	err := c.displayPanel.GetCurrentPage()
-	if err != nil {
-		c.infoPanel.Error(err)
-	}
 }
