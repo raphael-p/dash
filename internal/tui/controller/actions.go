@@ -41,7 +41,7 @@ func (c *Controller) addTask(name, description string) {
 		return
 	}
 
-	c.refreshTasks()
+	c.MainMenu()
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
 }
 
@@ -107,8 +107,6 @@ func (c *Controller) bumpTask(idString string) {
 		c.infoPanel.Error(fmt.Errorf("failed to bump task priority: %s", err))
 		return
 	}
-
-	c.MainMenu()
 
 	if bumped {
 		c.infoPanel.Info(fmt.Sprintf("bumped priority of task [%d]", id))

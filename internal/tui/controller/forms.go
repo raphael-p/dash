@@ -1,118 +1,51 @@
 package controller
 
 import (
-	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/database"
-	"github.com/rivo/tview"
 )
 
 func (c *Controller) openTaskForm() {
-	openTaskForm := createForm(c)
-
-	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
-	openTaskForm.AddFormItem(taskIDInput)
-
+	openTaskForm := createTaskForm(c, fieldSelection{taskID: true})
 	onFormEnter(openTaskForm, func() {
-		c.openTask(taskIDInput.GetText())
-		taskIDInput.SetText("")
+		c.openTask(openTaskForm.getTaskID())
+		openTaskForm.clearInputs()
 	})
-	addExitButtonsToForm(c, openTaskForm)
-
 	c.inputPanel.Set("Open Task", openTaskForm)
 }
 
 func (c *Controller) addTaskForm() {
-	addTaskForm := createForm(c)
-
-	taskNameInput := tview.NewInputField().SetLabel("Task Name: ")
-	addTaskForm.AddFormItem(taskNameInput)
-
-	taskDescriptionInput := tview.NewInputField().SetLabel("Description: ")
-	addTaskForm.AddFormItem(taskDescriptionInput)
-
+	addTaskForm := createTaskForm(c, fieldSelection{taskName: true, taskDescription: true})
 	onFormEnter(addTaskForm, func() {
-		c.addTask(taskNameInput.GetText(), taskDescriptionInput.GetText())
-		taskNameInput.SetText("")
-		taskDescriptionInput.SetText("")
+		c.addTask(addTaskForm.getTaskName(), addTaskForm.getTaskDescription())
+		addTaskForm.clearInputs()
 		addTaskForm.SetFocus(0)     // manually set focus to first field
 		c.app.SetFocus(addTaskForm) // return automatic focus management to form
 	})
-	addExitButtonsToForm(c, addTaskForm)
-
 	c.inputPanel.Set("Add New Task", addTaskForm)
 }
 
 func (c *Controller) removeTaskForm() {
-	removeTaskForm := createForm(c)
-
-	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
-	removeTaskForm.AddFormItem(taskIDInput)
-
+	removeTaskForm := createTaskForm(c, fieldSelection{taskID: true})
 	onFormEnter(removeTaskForm, func() {
-		c.removeTask(taskIDInput.GetText())
-		taskIDInput.SetText("")
+		c.removeTask(removeTaskForm.getTaskID())
+		removeTaskForm.clearInputs()
 	})
-	addExitButtonsToForm(c, removeTaskForm)
-
 	c.inputPanel.Set("Remove Task", removeTaskForm)
 }
 
 func (c *Controller) editTaskForm(task database.Task) {
-	editTaskForm := createForm(c)
-
-	taskNameInput := tview.NewInputField().SetLabel("Task Name: ")
-	editTaskForm.AddFormItem(taskNameInput)
-
-	taskDescriptionInput := tview.NewInputField().SetLabel("Description: ")
-	editTaskForm.AddFormItem(taskDescriptionInput)
-
+	editTaskForm := createTaskForm(c, fieldSelection{taskName: true, taskDescription: true})
 	onFormEnter(editTaskForm, func() {
-		c.editTask(
-			task,
-			taskNameInput.GetText(),
-			taskDescriptionInput.GetText(),
-		)
+		c.editTask(task, editTaskForm.getTaskName(), editTaskForm.getTaskDescription())
 	})
-	addExitButtonsToForm(c, editTaskForm)
-
 	c.inputPanel.Set("Edit Task", editTaskForm)
 }
 
 func (c *Controller) bumpTaskForm() {
-	bumpTaskForm := createForm(c)
-
-	taskIDInput := tview.NewInputField().SetLabel("Task ID: ")
-	bumpTaskForm.AddFormItem(taskIDInput)
-
+	bumpTaskForm := createTaskForm(c, fieldSelection{taskID: true})
 	onFormEnter(bumpTaskForm, func() {
-		c.bumpTask(
-			taskIDInput.GetText(),
-		)
+		c.bumpTask(bumpTaskForm.getTaskID())
+		bumpTaskForm.clearInputs()
 	})
-	addExitButtonsToForm(c, bumpTaskForm)
-
 	c.inputPanel.Set("Bump Task Priority", bumpTaskForm)
-}
-
-func createForm(c *Controller) *tview.Form {
-	c.infoPanel.Clear()
-	return tview.NewForm()
-}
-
-func addExitButtonsToForm(c *Controller, form *tview.Form) {
-	form.AddButton("Back", func() { c.MainMenu() })
-	form.AddButton("Quit", func() { c.app.Stop() })
-}
-
-func onFormEnter(form *tview.Form, callback func()) {
-	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// used to check that the selected item is not a button
-		_, buttonIndex := form.GetFocusedItemIndex()
-
-		if event.Key() == tcell.KeyEnter && buttonIndex == -1 {
-			callback()
-			return nil
-		}
-		return event
-	})
 }
