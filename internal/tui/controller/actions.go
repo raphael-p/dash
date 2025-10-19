@@ -41,7 +41,7 @@ func (c *Controller) addTask(name, description string) {
 		return
 	}
 
-	c.MainMenu()
+	c.Home()
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
 }
 
@@ -86,7 +86,7 @@ func (c *Controller) editTask(task database.Task, name, description string) {
 		return
 	}
 
-	c.MainMenu()
+	c.Home()
 
 	if updated {
 		c.infoPanel.Info(fmt.Sprintf("task [%d] updated.", task.Id))

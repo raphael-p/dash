@@ -23,12 +23,12 @@ func startTUI() {
 		AddItem(rightFlex, 0, 1, true)
 
 	c := controller.NewController(app, inputPanel, infoPanel, displayPanel)
-	c.MainMenu()
+	c.Home()
 
 	inputPanel.GetPanel().SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			displayPanel.ResetPagination()
-			c.MainMenu()
+			c.Home()
 			return nil
 		}
 		return event

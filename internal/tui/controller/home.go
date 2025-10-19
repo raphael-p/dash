@@ -8,7 +8,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func (c *Controller) MainMenu() {
+func (c *Controller) Home() {
 	c.infoPanel.Clear()
 	c.refreshTasks()
 

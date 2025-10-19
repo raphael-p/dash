@@ -65,7 +65,7 @@ func createTaskForm(c *Controller, fieldSelection fieldSelection) taskForm {
 }
 
 func addExitButtonsToForm(c *Controller, form *tview.Form) {
-	form.AddButton("Back", func() { c.MainMenu() })
+	form.AddButton("Back", func() { c.Home() })
 	form.AddButton("Quit", func() { c.app.Stop() })
 }
 
