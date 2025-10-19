@@ -7,6 +7,13 @@ import (
 	"github.com/raphael-p/datashard/internal/database"
 )
 
+func (c *Controller) refreshTasks() {
+	err := c.displayPanel.GetCurrentPage()
+	if err != nil {
+		c.infoPanel.Error(err)
+	}
+}
+
 func (c *Controller) openTask(idString string) {
 	id, err := extractIDFromString(idString)
 	if err != nil {
