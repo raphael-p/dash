@@ -21,7 +21,7 @@ func (c *Controller) openTask(idString string) {
 		return
 	}
 
-	task, err := c.displayPanel.ShowTask(int64(id))
+	task, err := c.displayPanel.ShowTaskById(int64(id))
 	if err != nil {
 		c.infoPanel.Error(err)
 		return

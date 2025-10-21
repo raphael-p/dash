@@ -65,7 +65,7 @@ func GetTask(id int64) (Task, error) {
 	return task, err
 }
 
-func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, bool, error) {
+func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, error) {
 	var tasks []Task
 	rows, err := DB.Query(sqlQuery, queryArgs...)
 	if lazyInit(err) {
@@ -73,19 +73,19 @@ func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, bool, error) {
 		rows, err = DB.Query(sqlQuery, queryArgs...)
 	}
 	if err != nil {
-		return tasks, false, err
+		return tasks, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		task, err := scanRow(rows)
 		if err != nil {
-			return tasks, true, err
+			return tasks, err
 		}
 		tasks = append(tasks, task)
 	}
 
-	return tasks, false, rows.Err()
+	return tasks, rows.Err()
 }
 
 func SearchTasks(searchQuery string) ([]Task, error) {
@@ -97,8 +97,27 @@ func SearchTasks(searchQuery string) ([]Task, error) {
     `
 
 	logger.Trace("retrieving all tasks")
-	tasks, _, err := getTasksInternal(query, "%"+searchQuery+"%")
+	tasks, err := getTasksInternal(query, "%"+searchQuery+"%")
 	return tasks, err
+}
+
+func GetTopTask() (Task, error) {
+	query := `
+    SELECT id, name, description, created_at, updated_at, completed_at
+    FROM tasks
+    ORDER BY priority_bumped_at DESC, id ASC
+	LIMIT 1;
+    `
+
+	tasks, err := getTasksInternal(query)
+	if err != nil {
+		return Task{}, err
+	}
+	if len(tasks) == 0 {
+		return Task{}, fmt.Errorf("no task found")
+	}
+
+	return tasks[0], err
 }
 
 func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
@@ -115,11 +134,12 @@ func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
 		taskPageLimit,
 		fromID,
 	))
-	tasks, hasNext, err := getTasksInternal(query, fromID, taskPageLimit)
+	tasks, err := getTasksInternal(query, fromID, taskPageLimit)
 	if err != nil {
-		return tasks, hasNext, err
+		return tasks, false, err
 	}
 
+	var hasNext bool
 	if len(tasks) >= taskPageLimit {
 		logger.Trace("checking if there are more tasks")
 

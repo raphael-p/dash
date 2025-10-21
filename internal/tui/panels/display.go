@@ -115,12 +115,7 @@ func (dp *DisplayPanel) listTasks(fromID int64, pageIndex uint) error {
 	return nil
 }
 
-func (dp *DisplayPanel) ShowTask(taskID int64) (*database.Task, error) {
-	task, err := database.GetTask(int64(taskID))
-	if err != nil {
-		return nil, fmt.Errorf("could not retrieve task %d: %s", taskID, err)
-	}
-
+func (dp *DisplayPanel) showTask(task database.Task) (*database.Task, error) {
 	dp.panel.Clear()
 	dp.panel.SetTitle(fmt.Sprintf("Task %d: %s", task.Id, task.Name))
 	if task.Description != "" {
@@ -134,6 +129,24 @@ func (dp *DisplayPanel) ShowTask(taskID int64) (*database.Task, error) {
 	fmt.Fprintf(dp.panel, "Created at: %s\n", createdAt)
 	fmt.Fprintf(dp.panel, "Last updated: %s\n", updatedAt)
 	return &task, nil
+}
+
+func (dp *DisplayPanel) ShowTopTask() (*database.Task, error) {
+	task, err := database.GetTopTask()
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve top task: %s", err)
+	}
+
+	return dp.showTask(task)
+}
+
+func (dp *DisplayPanel) ShowTaskById(taskID int64) (*database.Task, error) {
+	task, err := database.GetTask(int64(taskID))
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve task %d: %s", taskID, err)
+	}
+
+	return dp.showTask(task)
 }
 
 func (dp *DisplayPanel) ScrollDown() error {
