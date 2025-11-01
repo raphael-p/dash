@@ -15,7 +15,7 @@ func (c *Controller) Home() {
 	home := tview.NewTextView().SetDynamicColors(true)
 	home.SetBorderPadding(1, 1, 2, 2)
 	home.SetText(fmt.Sprintf(
-		`([%[1]s::b]d[-:-:-]) dash!
+		`([%[1]s::b]d[-:-:-]) dash
 ([%[1]s::b]o[-:-:-]) open a task
 ([%[1]s::b]b[-:-:-]) bump the priority of a task
 ([%[1]s::b]r[-:-:-]) remove a task
@@ -27,7 +27,6 @@ func (c *Controller) Home() {
 		tcell.ColorLimeGreen))
 	c.inputPanel.Set("Welcome to Dash!", home)
 
-	// handle typing task number directly to open a task
 	home.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		e := event.Key()
 		r := event.Rune()
@@ -86,7 +85,7 @@ func (c *Controller) Home() {
 			if err != nil {
 				c.infoPanel.Error(fmt.Errorf("failed to start timer: %s", err))
 			} else {
-				c.startTimer()
+				c.startDash()
 			}
 		// TYPE TASK ID
 		case r >= '0' && r <= '9':
