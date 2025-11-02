@@ -5,7 +5,7 @@ import (
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/datashard/internal/tui/countdowntimer"
+	"github.com/raphael-p/datashard/internal/tui/components/countdowntimer"
 )
 
 func (c *Controller) startDash() {
