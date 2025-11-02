@@ -21,7 +21,7 @@ func (c *Controller) startDash(quit func()) {
 		lastTask = task
 	}
 
-	timer := countdowntimer.Instance()
+	timer := countdowntimer.Instance("lock in.", "dash complete. restart when ready.")
 
 	timer.SetDescription(fmt.Sprintf(
 		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo
