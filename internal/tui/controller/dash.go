@@ -5,20 +5,20 @@ import (
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/datashard/internal/tui/timer"
+	"github.com/raphael-p/datashard/internal/tui/countdowntimer"
 )
 
 func (c *Controller) startDash() {
-	t := timer.Instance()
+	timer := countdowntimer.Instance()
 
-	t.SetDescription(fmt.Sprintf(
+	timer.SetDescription(fmt.Sprintf(
 		`([%[1]s::b]a[-:-:-]) add a new task
 ([%[1]s::b]r[-:-:-]) restart timer
 ([%[1]s::b]c[-:-:-]) mark task as completed
 ([%[1]s::b]b[-:-:-]) back`,
 		tcell.ColorLimeGreen))
 
-	t.Layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	timer.Layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		r := event.Rune()
 		switch r {
 		// ADD
@@ -29,7 +29,7 @@ func (c *Controller) startDash() {
 			c.Home()
 		// RESET TIMER
 		case 'r':
-			t.Reset(c.app)
+			timer.Reset(c.app)
 		default:
 			message := "invalid command: "
 			if r == 0 || (string(r) != " " && unicode.IsSpace(r)) {
@@ -41,7 +41,7 @@ func (c *Controller) startDash() {
 		return nil
 	})
 
-	c.inputPanel.Set("Dash", t.Layout)
+	c.inputPanel.Set("Dash", timer.Layout)
 
-	t.Start(c.app)
+	timer.Start(c.app)
 }

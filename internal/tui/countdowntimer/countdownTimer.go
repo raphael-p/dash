@@ -1,4 +1,4 @@
-package timer
+package countdowntimer
 
 import (
 	"fmt"
@@ -14,16 +14,16 @@ import (
 const DURATION = time.Minute * 20
 const REFRESH_INTERVAL = time.Second * 2
 
-type timer struct {
+type countdownTimer struct {
 	Layout      *tview.Flex
 	countdown   *tview.TextView
 	description *tview.TextView
 	startTime   atomic.Int64
 }
 
-var instance timer
+var instance countdownTimer
 
-var Instance = sync.OnceValue(func() *timer {
+var Instance = sync.OnceValue(func() *countdownTimer {
 	if instance.Layout != nil {
 		return &instance
 	}
@@ -44,11 +44,11 @@ var Instance = sync.OnceValue(func() *timer {
 	return &instance
 })
 
-func (t *timer) SetDescription(text string) {
+func (t *countdownTimer) SetDescription(text string) {
 	t.description.SetText(text)
 }
 
-func (t *timer) getMinutesRemaining() string {
+func (t *countdownTimer) getMinutesRemaining() string {
 	startTime := time.Unix(t.startTime.Load(), 0)
 	timeElapsed := time.Since(startTime)
 	timeRemaining := DURATION - timeElapsed
@@ -59,17 +59,17 @@ func (t *timer) getMinutesRemaining() string {
 	}
 }
 
-func (t *timer) Reset(app *tview.Application) {
+func (t *countdownTimer) Reset(app *tview.Application) {
 	t.startTime.Store(0)
 	t.Start(app)
 }
 
-func (t *timer) Start(app *tview.Application) {
+func (t *countdownTimer) Start(app *tview.Application) {
 	if !t.startTime.CompareAndSwap(0, time.Now().Unix()) {
 		return // avoid dangling threads
 	}
 
-	go (func(app *tview.Application, t *timer) {
+	go (func(app *tview.Application, t *countdownTimer) {
 		for {
 			minutesRemaining := t.getMinutesRemaining()
 			if minutesRemaining == "0" {
