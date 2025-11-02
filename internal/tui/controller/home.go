@@ -9,7 +9,6 @@ import (
 )
 
 func (c *Controller) Home() {
-	c.infoPanel.Clear()
 	c.refreshTasks()
 
 	home := tview.NewTextView().SetDynamicColors(true)
@@ -30,10 +29,13 @@ func (c *Controller) Home() {
 	home.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		e := event.Key()
 		r := event.Rune()
+		back := c.Home
+		quit := c.app.Stop
+
 		switch {
 		// ADD
 		case r == 'a':
-			c.addTaskForm()
+			c.addTaskForm(back, quit)
 		// BACKSPACE
 		case e == tcell.KeyBackspace, e == tcell.KeyBackspace2:
 			currentInput := c.infoPanel.GetInput()
@@ -45,14 +47,14 @@ func (c *Controller) Home() {
 			if c.infoPanel.GetInput() != "" {
 				c.bumpTask(c.infoPanel.GetInput())
 			} else {
-				c.bumpTaskForm()
+				c.bumpTaskForm(back, quit)
 			}
 		// OPEN
 		case r == 'o', e == tcell.KeyEnter:
 			if c.infoPanel.GetInput() != "" {
-				c.openTask(c.infoPanel.GetInput())
+				c.openTask(c.infoPanel.GetInput(), back, quit)
 			} else {
-				c.openTaskForm()
+				c.openTaskForm(back, quit)
 			}
 		// QUIT
 		case r == 'q':
@@ -62,7 +64,7 @@ func (c *Controller) Home() {
 			if c.infoPanel.GetInput() != "" {
 				c.removeTask(c.infoPanel.GetInput())
 			} else {
-				c.removeTaskForm()
+				c.removeTaskForm(back, quit)
 			}
 		// SCROLL TEXT
 		case e == tcell.KeyDown, e == tcell.KeyUp:
@@ -81,12 +83,7 @@ func (c *Controller) Home() {
 			}
 		// START DASH
 		case r == 'd':
-			_, err := c.displayPanel.ShowTopTask()
-			if err != nil {
-				c.infoPanel.Error(fmt.Errorf("failed to start timer: %s", err))
-			} else {
-				c.startDash()
-			}
+			c.startDash(quit)
 		// TYPE TASK ID
 		case r >= '0' && r <= '9':
 			c.infoPanel.SetInput(c.infoPanel.GetInput() + string(r))

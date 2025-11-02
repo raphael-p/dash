@@ -14,49 +14,51 @@ func (c *Controller) refreshTasks() {
 	}
 }
 
-func (c *Controller) openTask(idString string) {
+func (c *Controller) openTask(idString string, back func(), quit func()) bool {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
-		return
+		return false
 	}
 
 	task, err := c.displayPanel.ShowTaskById(int64(id))
 	if err != nil {
 		c.infoPanel.Error(err)
-		return
+		return false
 	}
-	c.editTaskForm(*task)
+	c.editTaskForm(task, back, quit)
+
+	return true
 }
 
-func (c *Controller) addTask(name, description string) {
+func (c *Controller) addTask(name, description string) bool {
 	if name == "" || description == "" {
 		c.infoPanel.Warn("please provide a name and description of the task.")
-		return
+		return false
 	}
 
 	task, err := database.CreateTask(name, description)
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
-		return
+		return false
 	}
 
-	c.Home()
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
+	return true
 }
 
-func (c *Controller) removeTask(idString string) {
+func (c *Controller) removeTask(idString string) bool {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
-		return
+		return false
 	}
 
 	t := database.Task{Id: int64(id)}
 	deleted, err := t.Delete()
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
-		return
+		return false
 	}
 
 	if deleted {
@@ -65,12 +67,14 @@ func (c *Controller) removeTask(idString string) {
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
+
+	return true
 }
 
-func (c *Controller) editTask(task database.Task, name, description string) {
+func (c *Controller) editTask(task database.Task, name, description string) bool {
 	if name == "" && description == "" {
 		c.infoPanel.Warn("please update the name or description of the task.")
-		return
+		return false
 	}
 
 	if name != "" {
@@ -83,29 +87,28 @@ func (c *Controller) editTask(task database.Task, name, description string) {
 	updated, err := task.Update()
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to edit task: %s", err))
-		return
+		return false
 	}
-
-	c.Home()
 
 	if updated {
 		c.infoPanel.Info(fmt.Sprintf("task [%d] updated.", task.Id))
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", task.Id))
 	}
+	return true
 }
 
-func (c *Controller) bumpTask(idString string) {
+func (c *Controller) bumpTask(idString string) bool {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
-		return
+		return false
 	}
 
 	bumped, err := database.BumpTask(int64(id))
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to bump task priority: %s", err))
-		return
+		return false
 	}
 
 	if bumped {
@@ -114,6 +117,7 @@ func (c *Controller) bumpTask(idString string) {
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
+	return true
 }
 
 func extractIDFromString(idString string) (int, error) {

@@ -8,25 +8,39 @@ import (
 	"github.com/raphael-p/datashard/internal/tui/components/countdowntimer"
 )
 
-func (c *Controller) startDash() {
+func (c *Controller) startDash(quit func()) {
+	task, err := c.displayPanel.ShowTopTask()
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
+		return
+	}
+
 	timer := countdowntimer.Instance()
 
 	timer.SetDescription(fmt.Sprintf(
-		`([%[1]s::b]a[-:-:-]) add a new task
+		`([%[1]s::b]c[-:-:-]) mark task as completed
+([%[1]s::b]e[-:-:-]) edit task
 ([%[1]s::b]r[-:-:-]) restart timer
-([%[1]s::b]c[-:-:-]) mark task as completed
+([%[1]s::b]a[-:-:-]) add a new task
 ([%[1]s::b]b[-:-:-]) back`,
 		tcell.ColorLimeGreen))
 
 	timer.Layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		r := event.Rune()
+		back := func() {
+			c.startDash(quit)
+		}
+
 		switch r {
 		// ADD
 		case 'a':
-			c.addTaskForm()
+			c.addTaskForm(back, quit)
 		// BACK
 		case 'b':
 			c.Home()
+		// EDIT
+		case 'e':
+			c.editTaskForm(task, back, quit)
 		// RESET TIMER
 		case 'r':
 			timer.Reset(c.app)
