@@ -105,6 +105,7 @@ func GetTopTask() (Task, error) {
 	query := `
     SELECT id, name, description, created_at, updated_at, completed_at
     FROM tasks
+	WHERE completed_at IS NULL
     ORDER BY priority_bumped_at DESC, id ASC
 	LIMIT 1;
     `
@@ -124,7 +125,7 @@ func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
 	query := `
     SELECT id, name, description, created_at, updated_at, completed_at
     FROM tasks
-	WHERE id > ?
+	WHERE id > ? AND completed_at IS NULL
     ORDER BY priority_bumped_at DESC, id ASC
 	LIMIT ?;
     `
@@ -189,6 +190,18 @@ func (t *Task) MarkAsDone() error {
 	updatedAt := time.Now()
 	completedAt := updatedAt
 	_, err := DB.Exec(updateTask, updatedAt, completedAt, t.Id)
+	return err
+}
+
+func (t *Task) UndoMarkAsDone() error {
+	updateTask := `
+	UPDATE tasks 
+	SET updated_at = ?, completed_at = NULL 
+	WHERE id = ?
+	`
+
+	updatedAt := time.Now()
+	_, err := DB.Exec(updateTask, updatedAt, t.Id)
 	return err
 }
 

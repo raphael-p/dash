@@ -5,8 +5,11 @@ import (
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/datashard/internal/database"
 	"github.com/raphael-p/datashard/internal/tui/components/countdowntimer"
 )
+
+var lastTask database.Task
 
 func (c *Controller) startDash(quit func()) {
 	task, err := c.displayPanel.ShowTopTask()
@@ -14,11 +17,14 @@ func (c *Controller) startDash(quit func()) {
 		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
 		return
 	}
+	if lastTask.Id == 0 {
+		lastTask = task
+	}
 
 	timer := countdowntimer.Instance()
 
 	timer.SetDescription(fmt.Sprintf(
-		`([%[1]s::b]c[-:-:-]) mark task as completed
+		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo
 ([%[1]s::b]e[-:-:-]) edit task
 ([%[1]s::b]r[-:-:-]) restart timer
 ([%[1]s::b]a[-:-:-]) add a new task
@@ -27,20 +33,40 @@ func (c *Controller) startDash(quit func()) {
 
 	timer.Layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		r := event.Rune()
-		back := func() {
+		refresh := func() {
 			c.startDash(quit)
 		}
 
 		switch r {
 		// ADD
 		case 'a':
-			c.addTaskForm(back, quit)
+			c.addTaskForm(refresh, quit)
 		// BACK
 		case 'b':
 			c.Home()
+		// DONE
+		case 'd':
+			err := task.MarkAsDone()
+			if err != nil {
+				c.infoPanel.Error(fmt.Errorf("failed to mark task as done: %s", err))
+			} else {
+				lastTask = task
+				refresh()
+			}
+		// UNDONE
+		case 'u':
+			if lastTask.Id == task.Id {
+				break // noop
+			}
+			err := lastTask.UndoMarkAsDone()
+			if err != nil {
+				c.infoPanel.Error(fmt.Errorf("failed to undo mark task as done: %s", err))
+			} else {
+				refresh()
+			}
 		// EDIT
 		case 'e':
-			c.editTaskForm(task, back, quit)
+			c.editTaskForm(task, refresh, quit)
 		// RESET TIMER
 		case 'r':
 			timer.Reset(c.app)
