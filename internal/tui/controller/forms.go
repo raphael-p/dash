@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/raphael-p/datashard/internal/database"
-	"github.com/raphael-p/datashard/internal/tui/components/taskform"
+	"github.com/raphael-p/datashard/pkg/tviewcomponents/components/taskform"
 )
 
 func (c *Controller) openTaskForm(back func(), quit func()) {

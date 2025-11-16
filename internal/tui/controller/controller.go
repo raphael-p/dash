@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"time"
+
 	"github.com/raphael-p/datashard/internal/tui/panels"
 	"github.com/rivo/tview"
 )
@@ -10,6 +12,7 @@ type Controller struct {
 	inputPanel   *panels.InputPanel
 	infoPanel    *panels.InfoPanel
 	displayPanel *panels.DisplayPanel
+	dashDuration time.Duration
 }
 
 func NewController(
@@ -17,6 +20,7 @@ func NewController(
 	inputPanel *panels.InputPanel,
 	infoPanel *panels.InfoPanel,
 	displayPanel *panels.DisplayPanel,
+	dashDuration time.Duration,
 ) *Controller {
-	return &Controller{app, inputPanel, infoPanel, displayPanel}
+	return &Controller{app, inputPanel, infoPanel, displayPanel, dashDuration}
 }

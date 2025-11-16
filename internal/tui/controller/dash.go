@@ -6,7 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/database"
-	"github.com/raphael-p/datashard/internal/tui/components/countdowntimer"
+	"github.com/raphael-p/datashard/pkg/tviewcomponents/components/countdowntimer"
 )
 
 var lastTask database.Task
@@ -21,7 +21,7 @@ func (c *Controller) startDash(quit func()) {
 		lastTask = task
 	}
 
-	timer := countdowntimer.Instance("lock in.", "dash complete. restart when ready.")
+	timer := countdowntimer.Instance("lock in.", "dash complete. restart when ready.", c.dashDuration)
 
 	timer.SetDescription(fmt.Sprintf(
 		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo

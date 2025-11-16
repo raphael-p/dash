@@ -3,12 +3,8 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- add bump task form
-- refactor controller.go + formHandlers.go --> move into menuActions.go
-- timer: start, stop, configure
-- timer mode
-    - view current task
 - meta field: time spent on task (update every 30s and on timer end, store as s, display as min)
+- decide on what to do with APIs
 - new task: add to queue, replace current, make next in line
 - enforce char limit for title and note
 - version check for initialisation
@@ -17,6 +13,9 @@ objective: build pomello timer + task manager in terminal
 - history of completed tasks
     - give option to archive or delete
     - create view for archived tasks
+- app settings
+    - default timer duration
+- config file : timer, etc
 - rename project
 - README
 - LICENSE + copyright line

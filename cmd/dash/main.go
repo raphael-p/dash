@@ -5,12 +5,20 @@ import (
 	"os"
 
 	"github.com/raphael-p/datashard/internal/database"
+	"github.com/raphael-p/datashard/pkg/configreader"
 	"github.com/raphael-p/datashard/pkg/logger"
 )
+
+type Config struct {
+	DashDuration uint32 `json:"dash_duration"`
+}
+
+var config *Config = &Config{}
 
 func main() {
 	logger.Create(".", false)
 	defer logger.Close()
+	configreader.ReadConfigFile("dash", ".", config)
 
 	db, err := sql.Open("sqlite3", "./datashard.db")
 	if err != nil {

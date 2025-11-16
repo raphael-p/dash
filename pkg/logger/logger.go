@@ -11,9 +11,11 @@ import (
 	"time"
 )
 
-const MAX_FILE_COUNT = 1000
-const MAX_FILE_BYTES = 10 * 1024 * 1024
-const MAX_MESSAGE_BYTES = 10 * 1024
+const (
+	MAX_FILE_COUNT    = 1000
+	MAX_FILE_BYTES    = 10 * 1024 * 1024
+	MAX_MESSAGE_BYTES = 10 * 1024
+)
 
 type MyLogger struct {
 	stdOutLogger *log.Logger
