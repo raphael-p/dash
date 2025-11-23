@@ -15,8 +15,9 @@ import (
 var lastTask database.Task
 
 func trackTime(c *Controller, task database.Task, dashDuration time.Duration) {
+	newTimeSpent := time.Duration(task.TimeSpentSeconds.Int16)*time.Second + dashDuration
 	task.TimeSpentSeconds = sql.NullInt16{
-		Int16: task.TimeSpentSeconds.Int16 + int16(dashDuration.Seconds()),
+		Int16: int16(newTimeSpent.Seconds()),
 		Valid: true,
 	}
 	ok, err := task.Update()
@@ -26,6 +27,12 @@ func trackTime(c *Controller, task database.Task, dashDuration time.Duration) {
 		}
 		c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", task.Id, err))
 	}
+
+	var timeSpentMessage string
+	if minutesSpent := newTimeSpent.Minutes(); minutesSpent > 1 {
+		timeSpentMessage = fmt.Sprintf(": %d minutes spent in total", int(minutesSpent))
+	}
+	c.infoPanel.Info(fmt.Sprintf("time tracking on task %d updated%s", task.Id, timeSpentMessage))
 }
 
 func setDashCommands(c *Controller, quit func(), task database.Task, resetTimer func()) func(event *tcell.EventKey) *tcell.EventKey {

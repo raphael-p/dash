@@ -3,7 +3,7 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- meta field: time spent on task (update every 30s and on timer end, store as s, display as min)
+- fix bug where task marked as done doesn't have time updated
 - decide on what to do with APIs
 - new task: add to queue, replace current, make next in line
 - enforce char limit for title and note
