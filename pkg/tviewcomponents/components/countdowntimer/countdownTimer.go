@@ -28,6 +28,7 @@ const (
 type config struct {
 	startMessage, endMessage string
 	countdownDuration        time.Duration
+	endAction                func()
 }
 
 type countdownTimer struct {
@@ -42,7 +43,10 @@ type countdownTimer struct {
 var instance countdownTimer
 var once sync.Once
 
-var Instance = func(startMessage, endMessage string, countdownDuration time.Duration) *countdownTimer {
+var Instance = func(startMessage, endMessage string, countdownDuration time.Duration, endAction func()) *countdownTimer {
+	config := config{
+		startMessage, endMessage, countdownDuration, endAction,
+	}
 	once.Do(func() {
 		countdown := tview.NewTextView()
 		countdown.SetTextColor(tcell.ColorLimeGreen)
@@ -58,12 +62,16 @@ var Instance = func(startMessage, endMessage string, countdownDuration time.Dura
 		if countdownDuration == 0 {
 			countdownDuration = DEFAULT_COUNTDOWN_DURATION
 		}
-		config := config{
-			startMessage, endMessage, countdownDuration,
-		}
 
-		instance = countdownTimer{layout, countdown, description, config, atomic.Bool{}, make(chan struct{}, 1)}
+		instance = countdownTimer{
+			Layout:             layout,
+			countdown:          countdown,
+			description:        description,
+			isRunning:          atomic.Bool{},
+			reinitialiseSignal: make(chan struct{}, 1),
+		}
 	})
+	instance.config = config
 	return &instance
 }
 
@@ -101,7 +109,6 @@ func (t *countdownTimer) Reset(app *tview.Application) {
 	case t.reinitialiseSignal <- struct{}{}:
 	default:
 	}
-	t.Start(app)
 }
 
 func initialiseRedraw(app *tview.Application, t *countdownTimer) time.Time {
@@ -165,6 +172,7 @@ func (t *countdownTimer) Start(app *tview.Application) {
 
 		app.QueueUpdateDraw(func() {
 			t.countdown.SetText(t.config.endMessage)
+			t.config.endAction()
 		})
 
 		t.isRunning.Store(false)

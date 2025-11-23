@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -96,7 +97,8 @@ func MarkTaskAsDone(id int64) {
 		return
 	}
 
-	err = task.MarkAsDone()
+	task.CompletedAt = sql.NullTime{Time: time.Now()}
+	_, err = task.Update()
 	if err != nil {
 		logger.Fatalf("failed to mark task (id: %d) as done: %v", id, err)
 	}

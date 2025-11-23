@@ -11,12 +11,14 @@ import (
 const taskPageLimit int = 30
 
 type Task struct {
-	Id          int64        `json:"id"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
-	CompletedAt sql.NullTime `json:"completed_at"`
+	Id               int64         `json:"id"`
+	Name             string        `json:"name"`
+	Description      string        `json:"description"`
+	CreatedAt        time.Time     `json:"created_at"`
+	UpdatedAt        time.Time     `json:"updated_at"`
+	CompletedAt      sql.NullTime  `json:"completed_at"`
+	PriotityBumpedAt sql.NullTime  `json:"priority_bumped_at"`
+	TimeSpentSeconds sql.NullInt16 `json:"time_spent_seconds"`
 }
 
 func CreateTask(name, description string) (Task, error) {
@@ -42,7 +44,7 @@ func CreateTask(name, description string) (Task, error) {
 		return Task{}, fmt.Errorf("failed to retrieve last insert ID: %v", err)
 	}
 
-	return Task{taskID, name, description, createdAt, updatedAt, sql.NullTime{}}, nil
+	return Task{taskID, name, description, createdAt, updatedAt, sql.NullTime{}, sql.NullTime{}, sql.NullInt16{}}, nil
 }
 
 func GetTask(id int64) (Task, error) {
@@ -50,11 +52,7 @@ func GetTask(id int64) (Task, error) {
 		return Task{}, fmt.Errorf("task id must be > 0, got %d", id)
 	}
 
-	query := `
-    SELECT id, name, description, created_at, updated_at, completed_at
-    FROM tasks
-	WHERE id = ?;
-    `
+	query := `SELECT * FROM tasks WHERE id = ?;`
 	logger.Debugf("retrieving task (id: %d)", id)
 	row := DB.QueryRow(query, id)
 	task, err := scanRow(row)
@@ -90,8 +88,7 @@ func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, error) {
 
 func SearchTasks(searchQuery string) ([]Task, error) {
 	query := `
-    SELECT id, name, description, created_at, updated_at, completed_at
-    FROM tasks
+    SELECT * FROM tasks
 	WHERE name LIKE ?
     ORDER BY id ASC;
     `
@@ -103,8 +100,7 @@ func SearchTasks(searchQuery string) ([]Task, error) {
 
 func GetTopTask() (Task, error) {
 	query := `
-    SELECT id, name, description, created_at, updated_at, completed_at
-    FROM tasks
+    SELECT * FROM tasks
 	WHERE completed_at IS NULL
     ORDER BY priority_bumped_at DESC, id ASC
 	LIMIT 1;
@@ -123,8 +119,7 @@ func GetTopTask() (Task, error) {
 
 func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
 	query := `
-    SELECT id, name, description, created_at, updated_at, completed_at
-    FROM tasks
+    SELECT * FROM tasks
 	WHERE id > ? AND completed_at IS NULL
     ORDER BY priority_bumped_at DESC, id ASC
 	LIMIT ?;
@@ -163,57 +158,28 @@ func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
 	return tasks, hasNext, nil
 }
 
-func BumpTask(taskID int64) (bool, error) {
-	bumpTask := `
-	UPDATE tasks
-	SET priority_bumped_at = ?
-	WHERE id = ?;
-	`
-
-	logger.Debugf("bumping task priority (id: %d)", taskID)
-	res, err := DB.Exec(bumpTask, time.Now(), taskID)
-	if err != nil {
-		return false, err
-	}
-
-	count, err := res.RowsAffected()
-	return count > 0, err
-}
-
-func (t *Task) MarkAsDone() error {
-	updateTask := `
-	UPDATE tasks 
-	SET updated_at = ?, completed_at = ? 
-	WHERE id = ?
-	`
-
-	updatedAt := time.Now()
-	completedAt := updatedAt
-	_, err := DB.Exec(updateTask, updatedAt, completedAt, t.Id)
-	return err
-}
-
-func (t *Task) UndoMarkAsDone() error {
-	updateTask := `
-	UPDATE tasks 
-	SET updated_at = ?, completed_at = NULL 
-	WHERE id = ?
-	`
-
-	updatedAt := time.Now()
-	_, err := DB.Exec(updateTask, updatedAt, t.Id)
-	return err
-}
-
 func (t *Task) Update() (bool, error) {
 	updateTask := `
-	UPDATE tasks
-	SET name = ?, description = ?, updated_at = ?
-	WHERE id = ?;
-	`
+    UPDATE tasks
+    SET name = :name, 
+		description = :description, 
+		updated_at = :updated_at,
+        completed_at = :completed_at, 
+		priority_bumped_at = :priority_bumped_at,
+        time_spent_seconds = :time_spent_seconds
+    WHERE id = :id;
+    `
 
 	logger.Debugf("updating task (id: %d)", t.Id)
-	res, err := DB.Exec(updateTask, t.Name, t.Description, time.Now(), t.Id)
+	res, err := DB.Exec(updateTask,
+		sql.Named("id", t.Id),
+		sql.Named("name", t.Name),
+		sql.Named("description", t.Description),
+		sql.Named("updated_at", time.Now()),
+		sql.Named("completed_at", t.CompletedAt),
+		sql.Named("priority_bumped_at", t.PriotityBumpedAt),
+		sql.Named("time_spent_seconds", t.TimeSpentSeconds),
+	)
 	if err != nil {
 		return false, err
 	}
@@ -230,6 +196,23 @@ func (t *Task) Delete() (bool, error) {
 
 	logger.Debugf("deleting task (id: %d)", t.Id)
 	res, err := DB.Exec(deleteTask, t.Id)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
+}
+
+func BumpTask(taskID int64) (bool, error) {
+	bumpTask := `
+	UPDATE tasks
+	SET priority_bumped_at = ?
+	WHERE id = ?;
+	`
+
+	logger.Debugf("bumping task priority (id: %d)", taskID)
+	res, err := DB.Exec(bumpTask, time.Now(), taskID)
 	if err != nil {
 		return false, err
 	}

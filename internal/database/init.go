@@ -25,7 +25,8 @@ var createTasks = DBInitOperation{
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			completed_at DATETIME,
-			priority_bumped_at DATETIME
+			priority_bumped_at DATETIME,
+			time_spent_seconds INTEGER
 		);`,
 	down: `DROP TABLE IF EXISTS tasks`,
 }

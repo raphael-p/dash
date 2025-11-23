@@ -18,7 +18,7 @@ func lazyInit(err error) bool {
 }
 
 type scannable interface {
-	Scan(dest ...interface{}) error
+	Scan(dest ...any) error
 }
 
 func scanRow(row scannable) (Task, error) {
@@ -27,11 +27,13 @@ func scanRow(row scannable) (Task, error) {
 	var name, description string
 	var createdAt, updatedAt time.Time
 	var completedAt sql.NullTime
+	var priotityBumpedAt sql.NullTime
+	var timeSpentSeconds sql.NullInt16
 
-	err := row.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt)
+	err := row.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt, &priotityBumpedAt, &timeSpentSeconds)
 	if err != nil {
 		return task, err
 	}
-	task = Task{id, name, description, createdAt, updatedAt, completedAt}
+	task = Task{id, name, description, createdAt, updatedAt, completedAt, priotityBumpedAt, timeSpentSeconds}
 	return task, nil
 }

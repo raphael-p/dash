@@ -10,7 +10,7 @@ import (
 )
 
 type Config struct {
-	DashDuration uint32 `json:"dash_duration"`
+	DashDurationSeconds uint16 `json:"dash_duration_seconds"`
 }
 
 var config *Config = &Config{}

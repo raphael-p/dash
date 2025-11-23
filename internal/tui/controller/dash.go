@@ -1,7 +1,10 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 	"unicode"
 
 	"github.com/gdamore/tcell/v2"
@@ -11,27 +14,27 @@ import (
 
 var lastTask database.Task
 
-func (c *Controller) startDash(quit func()) {
-	task, err := c.displayPanel.ShowTopTask()
-	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
-		return
+func trackTime(c *Controller, task database.Task, dashDuration time.Duration) {
+	task.TimeSpentSeconds = sql.NullInt16{
+		Int16: task.TimeSpentSeconds.Int16 + int16(dashDuration.Seconds()),
+		Valid: true,
 	}
-	if lastTask.Id == 0 {
-		lastTask = task
+	ok, err := task.Update()
+	if !ok || err != nil {
+		if err == nil {
+			err = errors.New("noop")
+		}
+		c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", task.Id, err))
 	}
+}
 
-	timer := countdowntimer.Instance("lock in.", "dash complete. restart when ready.", c.dashDuration)
+func setDashCommands(c *Controller, quit func(), task database.Task, resetTimer func()) func(event *tcell.EventKey) *tcell.EventKey {
+	return func(event *tcell.EventKey) *tcell.EventKey {
+		e := event.Key()
+		if e == tcell.KeyDown || e == tcell.KeyUp {
+			return event
+		}
 
-	timer.SetDescription(fmt.Sprintf(
-		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo
-([%[1]s::b]e[-:-:-]) edit task
-([%[1]s::b]r[-:-:-]) restart timer
-([%[1]s::b]a[-:-:-]) add a new task
-([%[1]s::b]b[-:-:-]) back`,
-		tcell.ColorLimeGreen))
-
-	timer.Layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		r := event.Rune()
 		refresh := func() {
 			c.startDash(quit)
@@ -46,9 +49,11 @@ func (c *Controller) startDash(quit func()) {
 			c.Home()
 		// DONE
 		case 'd':
-			err := task.MarkAsDone()
+			task.CompletedAt = sql.NullTime{Time: time.Now(), Valid: true}
+			_, err := task.Update()
 			if err != nil {
-				c.infoPanel.Error(fmt.Errorf("failed to mark task as done: %s", err))
+				task.CompletedAt = sql.NullTime{Valid: false}
+				c.infoPanel.Error(fmt.Errorf("failed to mark task %d as done: %s", task.Id, err))
 			} else {
 				lastTask = task
 				refresh()
@@ -58,8 +63,10 @@ func (c *Controller) startDash(quit func()) {
 			if lastTask.Id == task.Id {
 				break // noop
 			}
-			err := lastTask.UndoMarkAsDone()
+			lastTask.CompletedAt = sql.NullTime{Valid: false}
+			_, err := lastTask.Update()
 			if err != nil {
+				task.CompletedAt = sql.NullTime{Valid: true}
 				c.infoPanel.Error(fmt.Errorf("failed to undo mark task as done: %s", err))
 			} else {
 				refresh()
@@ -69,7 +76,8 @@ func (c *Controller) startDash(quit func()) {
 			c.editTaskForm(task, refresh, quit)
 		// RESET TIMER
 		case 'r':
-			timer.Reset(c.app)
+			resetTimer()
+			refresh()
 		default:
 			message := "invalid command: "
 			if r == 0 || (string(r) != " " && unicode.IsSpace(r)) {
@@ -79,7 +87,31 @@ func (c *Controller) startDash(quit func()) {
 			}
 		}
 		return nil
-	})
+	}
+}
+
+func (c *Controller) startDash(quit func()) {
+	task, err := c.displayPanel.ShowTopTask()
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
+		return
+	}
+	if lastTask.Id == 0 {
+		lastTask = task
+	}
+
+	endAction := func() { trackTime(c, task, c.dashDuration) }
+	timer := countdowntimer.Instance("lock in.", "dash complete. restart when ready.", c.dashDuration, endAction)
+
+	timer.SetDescription(fmt.Sprintf(
+		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo
+([%[1]s::b]e[-:-:-]) edit task
+([%[1]s::b]r[-:-:-]) restart timer
+([%[1]s::b]a[-:-:-]) add a new task
+([%[1]s::b]b[-:-:-]) back`,
+		tcell.ColorLimeGreen))
+
+	timer.Layout.SetInputCapture(setDashCommands(c, quit, task, func() { timer.Reset(c.app) }))
 
 	c.inputPanel.Set("Dash", timer.Layout)
 
