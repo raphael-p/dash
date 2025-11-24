@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"time"
 	"unicode"
 
@@ -12,30 +13,34 @@ import (
 	"github.com/raphael-p/datashard/pkg/tviewcomponents/components/countdowntimer"
 )
 
-var lastTask database.Task
+var lastTask *database.Task
 
-func trackTime(c *Controller, task database.Task, dashDuration time.Duration) {
-	newTimeSpent := time.Duration(task.TimeSpentSeconds.Int16)*time.Second + dashDuration
-	task.TimeSpentSeconds = sql.NullInt16{
-		Int16: int16(newTimeSpent.Seconds()),
-		Valid: true,
-	}
-	ok, err := task.Update()
-	if !ok || err != nil {
-		if err == nil {
-			err = errors.New("noop")
+func trackTime(c *Controller, task *database.Task) func(time.Time, bool) {
+	return func(lastRunTime time.Time, isEnd bool) {
+		newTimeSpent := time.Duration(task.TimeSpentSeconds.Int16)*time.Second + time.Since(lastRunTime)
+		task.TimeSpentSeconds = sql.NullInt16{
+			Int16: int16(math.Round(newTimeSpent.Seconds())),
+			Valid: true,
 		}
-		c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", task.Id, err))
-	}
+		ok, err := task.Update()
+		if !ok || err != nil {
+			if err == nil {
+				err = errors.New("noop")
+			}
+			c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", task.Id, err))
+		}
 
-	var timeSpentMessage string
-	if minutesSpent := newTimeSpent.Minutes(); minutesSpent > 1 {
-		timeSpentMessage = fmt.Sprintf(": %d minutes spent in total", int(minutesSpent))
+		if isEnd && newTimeSpent > time.Minute {
+			c.infoPanel.Info(fmt.Sprintf(
+				"time tracking: %d minutes spent on task %d",
+				int(newTimeSpent.Minutes()),
+				task.Id,
+			))
+		}
 	}
-	c.infoPanel.Info(fmt.Sprintf("time tracking on task %d updated%s", task.Id, timeSpentMessage))
 }
 
-func setDashCommands(c *Controller, quit func(), task database.Task, resetTimer func()) func(event *tcell.EventKey) *tcell.EventKey {
+func setDashCommands(c *Controller, task *database.Task, resetTimer func(), quit func()) func(event *tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
 		e := event.Key()
 		if e == tcell.KeyDown || e == tcell.KeyUp {
@@ -98,17 +103,23 @@ func setDashCommands(c *Controller, quit func(), task database.Task, resetTimer 
 }
 
 func (c *Controller) startDash(quit func()) {
-	task, err := c.displayPanel.ShowTopTask()
+	t, err := c.displayPanel.ShowTopTask()
+	task := &t
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
 		return
 	}
-	if lastTask.Id == 0 {
+	if lastTask == nil {
 		lastTask = task
 	}
 
-	endAction := func() { trackTime(c, task, c.dashDuration) }
-	timer := countdowntimer.Instance("lock in.", "dash complete. restart when ready.", c.dashDuration, endAction)
+	timer := countdowntimer.Instance()
+	timer.SetConfig(countdowntimer.Config{
+		StartMessage:       "lock in.",
+		EndMessage:         "dash complete. restart when ready.",
+		CountdownDuration:  c.dashDuration,
+		PeriodicSideEffect: trackTime(c, task),
+	})
 
 	timer.SetDescription(fmt.Sprintf(
 		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo
@@ -118,7 +129,7 @@ func (c *Controller) startDash(quit func()) {
 ([%[1]s::b]b[-:-:-]) back`,
 		tcell.ColorLimeGreen))
 
-	timer.Layout.SetInputCapture(setDashCommands(c, quit, task, func() { timer.Reset(c.app) }))
+	timer.Layout.SetInputCapture(setDashCommands(c, task, func() { timer.Reset(c.app) }, quit))
 
 	c.inputPanel.Set("Dash", timer.Layout)
 

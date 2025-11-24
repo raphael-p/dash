@@ -26,7 +26,7 @@ func (c *Controller) openTask(idString string, back func(), quit func()) bool {
 		c.infoPanel.Error(err)
 		return false
 	}
-	c.editTaskForm(task, back, quit)
+	c.editTaskForm(&task, back, quit)
 
 	return true
 }
@@ -71,7 +71,7 @@ func (c *Controller) removeTask(idString string) bool {
 	return true
 }
 
-func (c *Controller) editTask(task database.Task, name, description string) bool {
+func (c *Controller) editTask(task *database.Task, name, description string) bool {
 	if name == "" && description == "" {
 		c.infoPanel.Warn("please update the name or description of the task.")
 		return false

@@ -13,6 +13,7 @@ import (
 
 const (
 	DEFAULT_COUNTDOWN_DURATION   = time.Minute * 20
+	DEFAULT_SIDE_EFFECT_PERIOD   = time.Second * 30
 	REFRESH_INTERVAL_FOR_MINUTES = time.Second * 2
 	REFRESH_INTERVAL_FOR_SECONDS = time.Millisecond * 100
 	START_MESSAGE_DURATION       = time.Second * 2
@@ -25,17 +26,18 @@ const (
 	timescaleSeconds
 )
 
-type config struct {
-	startMessage, endMessage string
-	countdownDuration        time.Duration
-	endAction                func()
+type Config struct {
+	StartMessage, EndMessage string
+	CountdownDuration        time.Duration
+	PeriodicSideEffect       func(lastRunTime time.Time, isEnd bool) // function that runs periodically and on timer end
+	SideEffectPeriod         time.Duration
 }
 
 type countdownTimer struct {
 	Layout             *tview.Flex
 	countdown          *tview.TextView
 	description        *tview.TextView
-	config             config
+	config             Config
 	isRunning          atomic.Bool
 	reinitialiseSignal chan struct{}
 }
@@ -43,10 +45,7 @@ type countdownTimer struct {
 var instance countdownTimer
 var once sync.Once
 
-var Instance = func(startMessage, endMessage string, countdownDuration time.Duration, endAction func()) *countdownTimer {
-	config := config{
-		startMessage, endMessage, countdownDuration, endAction,
-	}
+var Instance = func() *countdownTimer {
 	once.Do(func() {
 		countdown := tview.NewTextView()
 		countdown.SetTextColor(tcell.ColorLimeGreen)
@@ -59,10 +58,6 @@ var Instance = func(startMessage, endMessage string, countdownDuration time.Dura
 			AddItem(countdown, 3, 0, false).
 			AddItem(description, 0, 1, false)
 
-		if countdownDuration == 0 {
-			countdownDuration = DEFAULT_COUNTDOWN_DURATION
-		}
-
 		instance = countdownTimer{
 			Layout:             layout,
 			countdown:          countdown,
@@ -71,8 +66,17 @@ var Instance = func(startMessage, endMessage string, countdownDuration time.Dura
 			reinitialiseSignal: make(chan struct{}, 1),
 		}
 	})
-	instance.config = config
 	return &instance
+}
+
+func (t *countdownTimer) SetConfig(config Config) {
+	if config.SideEffectPeriod == 0 {
+		config.SideEffectPeriod = DEFAULT_SIDE_EFFECT_PERIOD
+	}
+	if config.CountdownDuration == 0 {
+		config.CountdownDuration = DEFAULT_COUNTDOWN_DURATION
+	}
+	instance.config = config
 }
 
 func (t *countdownTimer) SetDescription(text string) {
@@ -81,7 +85,7 @@ func (t *countdownTimer) SetDescription(text string) {
 
 func (t *countdownTimer) getTimeRemaining(startTime time.Time) (string, timescale, string) {
 	timeElapsed := time.Since(startTime)
-	timeRemaining := t.config.countdownDuration - timeElapsed
+	timeRemaining := t.config.CountdownDuration - timeElapsed
 	if timeRemaining < 0 || timeElapsed < 0 {
 		return "0", 0, ""
 	}
@@ -114,7 +118,7 @@ func (t *countdownTimer) Reset(app *tview.Application) {
 func initialiseRedraw(app *tview.Application, t *countdownTimer) time.Time {
 	startTime := time.Now()
 	app.QueueUpdateDraw(func() {
-		t.countdown.SetText(t.config.startMessage)
+		t.countdown.SetText(t.config.StartMessage)
 	})
 	time.Sleep(START_MESSAGE_DURATION)
 	return startTime
@@ -141,9 +145,13 @@ func (t *countdownTimer) Start(app *tview.Application) {
 
 	go (func(app *tview.Application, t *countdownTimer) {
 		startTime := initialiseRedraw(app, t)
+		lastSideEffectRun := startTime
 
 		ticker := time.NewTicker(1)
 		defer ticker.Stop()
+
+		sideEffectTicker := time.NewTicker(t.config.SideEffectPeriod)
+		defer sideEffectTicker.Stop()
 
 		_, initialTimescale, _ := t.getTimeRemaining(startTime)
 		setTickerDuration(ticker, initialTimescale)
@@ -152,6 +160,13 @@ func (t *countdownTimer) Start(app *tview.Application) {
 			select {
 			case <-t.reinitialiseSignal:
 				startTime = initialiseRedraw(app, t)
+				sideEffectTicker.Reset(t.config.SideEffectPeriod)
+				lastSideEffectRun = startTime
+				continue
+			case <-sideEffectTicker.C:
+				now := time.Now()
+				t.config.PeriodicSideEffect(lastSideEffectRun, false)
+				lastSideEffectRun = now
 				continue
 			case <-ticker.C:
 			}
@@ -171,8 +186,8 @@ func (t *countdownTimer) Start(app *tview.Application) {
 		}
 
 		app.QueueUpdateDraw(func() {
-			t.countdown.SetText(t.config.endMessage)
-			t.config.endAction()
+			t.countdown.SetText(t.config.EndMessage)
+			t.config.PeriodicSideEffect(lastSideEffectRun, true)
 		})
 
 		t.isRunning.Store(false)

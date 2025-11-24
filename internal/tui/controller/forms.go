@@ -49,7 +49,7 @@ func (c *Controller) removeTaskForm(back func(), quit func()) {
 	c.inputPanel.Set("Remove Task", removeTaskForm)
 }
 
-func (c *Controller) editTaskForm(task database.Task, back func(), quit func()) {
+func (c *Controller) editTaskForm(task *database.Task, back func(), quit func()) {
 	c.infoPanel.Clear()
 	fieldSelection := taskform.FieldSelection{TaskName: true, TaskDescription: true}
 	editTaskForm := taskform.New(fieldSelection, back, quit)
