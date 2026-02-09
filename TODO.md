@@ -3,9 +3,10 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- fix bug where task marked as done doesn't have time updated
-- decide on what to do with APIs
 - new task: add to queue, replace current, make next in line
+- when typing a task ID, filter out irrelevant commands
+- make it 
+- bug: when creating new task, don't erase task name if description is missing
 - enforce char limit for title and note
 - version check for initialisation
 - help docs
