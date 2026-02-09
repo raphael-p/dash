@@ -10,7 +10,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/database"
-	"github.com/raphael-p/datashard/pkg/tviewcomponents/components/countdowntimer"
+	"github.com/raphael-p/datashard/pkg/tviewcomponents/countdowntimer"
 )
 
 var lastTask *database.Task
