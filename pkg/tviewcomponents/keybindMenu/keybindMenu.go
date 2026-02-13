@@ -18,31 +18,30 @@ var (
 	BindNumber    Bind = func(_ tcell.Key, r rune) bool { return r >= '0' && r <= '9' }
 )
 
-type DefaultKeybindAction = func(commandName string)
-
-type KeybindAction = func(key rune)
-
+type Fallback = func(commandName string)
 type KeybindMenu struct {
-	defaultAction   DefaultKeybindAction
+	fallback        Fallback
 	footnote        string
 	highlightColour tcell.Color
 	keybinds        []Keybind
 	isScrollable    bool
 }
 
+type Handler = func(key rune)
+type DisableKeybind = func() bool
 type Keybind struct {
-	key         rune
-	description string
+	handler     Handler
 	bind        Bind
-	callback    func(key rune)
+	description string
+	key         rune
 }
 
 func New() *KeybindMenu {
 	return &KeybindMenu{func(_ string) {}, "", 0, []Keybind{}, true}
 }
 
-func (hm *KeybindMenu) SetDefaultAction(defaultAction DefaultKeybindAction) *KeybindMenu {
-	hm.defaultAction = defaultAction
+func (hm *KeybindMenu) SetFallback(fallback Fallback) *KeybindMenu {
+	hm.fallback = fallback
 	return hm
 }
 
@@ -56,8 +55,8 @@ func (hm *KeybindMenu) SetHighlighColour(colour tcell.Color) *KeybindMenu {
 	return hm
 }
 
-func (hm *KeybindMenu) AddKeybind(key rune, description string, trigger Bind, callback KeybindAction) *KeybindMenu {
-	hm.keybinds = append(hm.keybinds, Keybind{key, description, trigger, callback})
+func (hm *KeybindMenu) AddKeybind(key rune, description string, bind Bind, handler Handler) *KeybindMenu {
+	hm.keybinds = append(hm.keybinds, Keybind{handler, bind, description, key})
 	return hm
 }
 
@@ -73,22 +72,32 @@ func (hm *KeybindMenu) Apply(parentComponent *tview.TextView) {
 
 func (hm *KeybindMenu) generateText() string {
 	var builder strings.Builder
-	for idx, keybind := range hm.keybinds {
-		if keybind.key == 0 {
-			continue
+
+	for _, keybind := range hm.keybinds {
+		hasKey := keybind.key != 0
+		hasDescription := keybind.description != ""
+		if builder.Len() != 0 && (hasKey || hasDescription) {
+			builder.WriteString("\n")
 		}
 
-		builder.WriteString(fmt.Sprintf(
-			"([%s::b]%c[-:-:-]) %s",
-			hm.highlightColour, keybind.key, keybind.description,
-		))
+		if hasKey {
+			builder.WriteString(fmt.Sprintf(
+				"([%s::b]%c[-:-:-]) ",
+				hm.highlightColour, keybind.key,
+			))
+		}
 
-		if hm.footnote != "" || idx < len(hm.keybinds)-1 {
-			builder.WriteString("\n")
+		if hasDescription {
+			builder.WriteString(keybind.description)
 		}
 	}
 
-	builder.WriteString(fmt.Sprintf("[::d]%s[::-]", hm.footnote))
+	if hm.footnote != "" {
+		if builder.Len() != 0 {
+			builder.WriteString("\n")
+		}
+		builder.WriteString(fmt.Sprintf("[::d]%s[::-]", hm.footnote))
+	}
 
 	return builder.String()
 }
@@ -105,7 +114,7 @@ func (hm *KeybindMenu) generateInputCapture() func(event *tcell.EventKey) *tcell
 		hasTriggered := false
 		for _, keybind := range hm.keybinds {
 			if key == keybind.key || keybind.bind(eventKey, key) {
-				keybind.callback(key)
+				keybind.handler(key)
 				hasTriggered = true
 				break
 			}
@@ -113,9 +122,9 @@ func (hm *KeybindMenu) generateInputCapture() func(event *tcell.EventKey) *tcell
 
 		if !hasTriggered {
 			if key == 0 || (string(key) != " " && unicode.IsSpace(key)) {
-				hm.defaultAction(event.Name())
+				hm.fallback(event.Name())
 			} else {
-				hm.defaultAction("'" + string(key) + "'")
+				hm.fallback("'" + string(key) + "'")
 			}
 		}
 
