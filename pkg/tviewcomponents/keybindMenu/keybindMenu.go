@@ -82,13 +82,13 @@ func (hm *KeybindMenu) generateText() string {
 
 		if hasKey {
 			builder.WriteString(fmt.Sprintf(
-				"([%s::b]%c[-:-:-]) ",
+				"([%s::b]%c[-:-:-])",
 				hm.highlightColour, keybind.key,
 			))
 		}
 
 		if hasDescription {
-			builder.WriteString(keybind.description)
+			builder.WriteString("\t" + keybind.description)
 		}
 	}
 
