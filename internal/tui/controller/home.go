@@ -12,11 +12,13 @@ func (c *Controller) Home() {
 	home := tview.NewTextView().SetDynamicColors(true)
 	home.SetBorderPadding(1, 1, 2, 2)
 
+	handler := &keybindHandler{c}
 	hasInput := func() bool { return c.infoPanel.GetInput() != "" }
 	fallback := func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) }
-	handler := &keybindHandler{c: c}
-	handler.refresh = func() { setHomeKeybinds(home, handler, hasInput, fallback) }
-	handler.refresh()
+
+	setWrapper := func() { setHomeKeybinds(home, handler, hasInput, fallback) }
+	c.infoPanel.SetOnInputChange(func(_ string) { setWrapper() })
+	setWrapper()
 
 	c.inputPanel.Set("Welcome to Dash!", home)
 }

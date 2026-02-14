@@ -5,8 +5,7 @@ import (
 )
 
 type keybindHandler struct {
-	c       *Controller
-	refresh func()
+	c *Controller
 }
 
 func (ka *keybindHandler) add(_ rune) {
@@ -18,7 +17,6 @@ func (ka *keybindHandler) backspace(r rune) {
 	if currentInput != "" {
 		ka.c.infoPanel.SetInput(currentInput[:len(currentInput)-1])
 	}
-	ka.refresh()
 }
 
 func (ka *keybindHandler) bump(_ rune) {
@@ -34,9 +32,7 @@ func (ka *keybindHandler) dash(_ rune) {
 }
 
 func (ka *keybindHandler) numberInput(r rune) {
-	currentInput := ka.c.infoPanel.GetInput()
-	ka.c.infoPanel.SetInput(currentInput + string(r))
-	ka.refresh()
+	ka.c.infoPanel.SetInput(ka.c.infoPanel.GetInput() + string(r))
 }
 
 func (ka *keybindHandler) open(_ rune) {

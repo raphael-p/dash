@@ -7,9 +7,10 @@ import (
 )
 
 type InfoPanel struct {
-	panel    *tview.Frame
-	textView *tview.TextView
-	input    string
+	panel         *tview.Frame
+	textView      *tview.TextView
+	input         string
+	onInputChange func(string)
 }
 
 func NewInfoPanel() *InfoPanel {
@@ -17,7 +18,11 @@ func NewInfoPanel() *InfoPanel {
 		SetScrollable(true).
 		SetDynamicColors(true)
 	panel := tview.NewFrame(textView)
-	return &InfoPanel{panel, textView, ""}
+	return &InfoPanel{panel, textView, "", func(string) {}}
+}
+
+func (ip *InfoPanel) SetOnInputChange(onInputChange func(newInput string)) {
+	ip.onInputChange = onInputChange
 }
 
 func (ip *InfoPanel) GetPanel() *tview.Frame {
@@ -25,29 +30,25 @@ func (ip *InfoPanel) GetPanel() *tview.Frame {
 }
 
 func (ip *InfoPanel) Warn(err string) {
-	ip.input = ""
+	ip.clearInput()
 	ip.textView.SetText(fmt.Sprint("[yellow]⚠️ ", err))
 }
 
 func (ip *InfoPanel) Error(err error) {
-	ip.input = ""
+	ip.clearInput()
 	ip.textView.SetText(fmt.Sprint("[red]❌ ", err))
 }
 
 func (ip *InfoPanel) Info(info string) {
-	ip.input = ""
+	ip.clearInput()
 	ip.textView.SetText(fmt.Sprint("❕ ", info))
-}
-
-func (ip *InfoPanel) AppendInput(input string) {
-	ip.input += input
-	ip.textView.SetText(fmt.Sprint("> ", ip.input))
 }
 
 func (ip *InfoPanel) SetInput(input string) {
 	ip.input = input
 	if input != "" {
 		ip.textView.SetText(fmt.Sprint("> ", ip.input))
+		ip.onInputChange(ip.input)
 	} else {
 		ip.textView.Clear()
 	}
@@ -55,6 +56,13 @@ func (ip *InfoPanel) SetInput(input string) {
 
 func (ip *InfoPanel) GetInput() string {
 	return ip.input
+}
+
+func (ip *InfoPanel) clearInput() {
+	if ip.input != "" {
+		ip.input = ""
+		ip.onInputChange("")
+	}
 }
 
 func (ip *InfoPanel) Clear() {
