@@ -124,6 +124,7 @@ func randomTaskGenerator(rng *rand.Rand) []any {
 		generateWords(rng, 4, 10),
 		createdTime,
 		time.Unix(rng.Int64N(time.Now().Unix()-createdTime.Unix())+createdTime.Unix(), 0),
+		rng.Uint64N(2000),
 	}
 }
 

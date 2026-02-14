@@ -192,6 +192,9 @@ func Error(message string) {
 
 func Fatal(message string) {
 	Error(message)
+	if Logger.stdOutLogger == nil {
+		os.Stdout.WriteString(message + "\n")
+	}
 	os.Exit(1)
 }
 
