@@ -14,29 +14,30 @@ func (c *Controller) Home() {
 
 	handler := &keybindHandler{c}
 	hasInput := func() bool { return c.infoPanel.GetInput() != "" }
-	fallback := func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) }
 
-	setWrapper := func() { setHomeKeybinds(home, handler, hasInput, fallback) }
+	setWrapper := func() { setHomeKeybinds(home, handler, hasInput) }
 	c.infoPanel.SetOnInputChange(func(_ string) { setWrapper() })
 	setWrapper()
 
 	c.inputPanel.Set("Welcome to Dash!", home)
 }
 
-func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput func() bool, fallback func(string)) {
-	menu := keybindmenu.New().SetHighlighColour(tcell.ColorLimeGreen).SetFallback(fallback)
+func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput func() bool) {
+	menu := keybindmenu.New().
+		SetHighlighColour(tcell.ColorLimeGreen).
+		SetFallback(handler.fallback)
 
 	if hasInput() {
-		menu.AddKeybind('o', "open task", keybindmenu.BindEnter, handler.open)
-		menu.AddKeybind('b', "bump task priority", keybindmenu.DefaultBind, handler.bump)
-		menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.remove)
-		menu.AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput)
-		menu.AddKeybind(0, "press backspace to clear", keybindmenu.BindBackspace, handler.backspace)
+		menu.AddKeybind('o', "open task", keybindmenu.BindEnter, handler.openTask).
+			AddKeybind('b', "bump task priority", keybindmenu.DefaultBind, handler.bumpTask).
+			AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTask).
+			AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput).
+			AddKeybind(0, "press backspace to clear", keybindmenu.BindBackspace, handler.backspace)
 	} else {
-		menu.AddKeybind('d', "dash", keybindmenu.DefaultBind, handler.dash)
-		menu.AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.add)
-		menu.AddKeybind(0, "enter a task ID", keybindmenu.BindNumber, handler.numberInput)
-		menu.AddKeybind(0, "", keybindmenu.BindBackspace, handler.backspace)
+		menu.AddKeybind('d', "dash", keybindmenu.DefaultBind, handler.startDash).
+			AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addFromHome).
+			AddKeybind(0, "enter a task ID", keybindmenu.BindNumber, handler.numberInput).
+			AddKeybind(0, "", keybindmenu.BindBackspace, handler.backspace)
 	}
 
 	menu.AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDown).

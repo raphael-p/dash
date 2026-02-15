@@ -65,7 +65,12 @@ func (hm *KeybindMenu) DisableScrolling() *KeybindMenu {
 	return hm
 }
 
-func (hm *KeybindMenu) Apply(parentComponent *tview.TextView) {
+type applyable interface {
+	SetText(string) *tview.TextView
+	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey) *tview.Box
+}
+
+func (hm *KeybindMenu) Apply(parentComponent applyable) {
 	parentComponent.SetText(hm.generateText())
 	parentComponent.SetInputCapture(hm.generateInputCapture())
 }

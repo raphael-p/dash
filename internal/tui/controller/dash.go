@@ -6,111 +6,50 @@ import (
 	"fmt"
 	"math"
 	"time"
-	"unicode"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/database"
 	"github.com/raphael-p/datashard/pkg/tviewcomponents/countdowntimer"
+	"github.com/raphael-p/datashard/pkg/tviewcomponents/keybindmenu"
 )
 
-var lastTask *database.Task
+var currentDashTask *database.Task
+var lastDashTask *database.Task
 
-func trackTime(c *Controller, task *database.Task) func(time.Time, bool) {
+func trackTime(c *Controller) func(time.Time, bool) {
 	return func(lastRunTime time.Time, isEnd bool) {
-		newTimeSpent := time.Duration(task.TimeSpentSeconds.Int16)*time.Second + time.Since(lastRunTime)
-		task.TimeSpentSeconds = sql.NullInt16{
+		newTimeSpent := time.Duration(currentDashTask.TimeSpentSeconds.Int16)*time.Second + time.Since(lastRunTime)
+		currentDashTask.TimeSpentSeconds = sql.NullInt16{
 			Int16: int16(math.Round(newTimeSpent.Seconds())),
 			Valid: true,
 		}
-		ok, err := task.Update()
+		ok, err := currentDashTask.Update()
 		if !ok || err != nil {
 			if err == nil {
 				err = errors.New("noop")
 			}
-			c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", task.Id, err))
+			c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", currentDashTask.Id, err))
 		}
 
 		if isEnd && newTimeSpent > time.Minute {
 			c.infoPanel.Info(fmt.Sprintf(
 				"time tracking: %d minutes spent on task %d",
 				int(newTimeSpent.Minutes()),
-				task.Id,
+				currentDashTask.Id,
 			))
 		}
 	}
 }
 
-func setDashCommands(c *Controller, task *database.Task, resetTimer func(), quit func()) func(event *tcell.EventKey) *tcell.EventKey {
-	return func(event *tcell.EventKey) *tcell.EventKey {
-		e := event.Key()
-		if e == tcell.KeyDown || e == tcell.KeyUp {
-			return event
-		}
-
-		r := event.Rune()
-		refresh := func() {
-			c.startDash(quit)
-		}
-
-		switch r {
-		// ADD
-		case 'a':
-			c.addTaskForm(refresh, quit)
-		// BACK
-		case 'b':
-			c.Home()
-		// DONE
-		case 'd':
-			task.CompletedAt = sql.NullTime{Time: time.Now(), Valid: true}
-			_, err := task.Update()
-			if err != nil {
-				task.CompletedAt = sql.NullTime{Valid: false}
-				c.infoPanel.Error(fmt.Errorf("failed to mark task %d as done: %s", task.Id, err))
-			} else {
-				lastTask = task
-				refresh()
-			}
-		// UNDONE
-		case 'u':
-			if lastTask.Id == task.Id {
-				break // noop
-			}
-			lastTask.CompletedAt = sql.NullTime{Valid: false}
-			_, err := lastTask.Update()
-			if err != nil {
-				task.CompletedAt = sql.NullTime{Valid: true}
-				c.infoPanel.Error(fmt.Errorf("failed to undo mark task as done: %s", err))
-			} else {
-				refresh()
-			}
-		// EDIT
-		case 'e':
-			c.editTaskForm(task, refresh, quit)
-		// RESET TIMER
-		case 'r':
-			resetTimer()
-			refresh()
-		default:
-			message := "invalid command: "
-			if r == 0 || (string(r) != " " && unicode.IsSpace(r)) {
-				c.infoPanel.Warn(message + event.Name())
-			} else {
-				c.infoPanel.Warn(message + "'" + string(r) + "'")
-			}
-		}
-		return nil
-	}
-}
-
-func (c *Controller) startDash(quit func()) {
+func (c *Controller) startDash() {
 	t, err := c.displayPanel.ShowTopTask()
-	task := &t
+	currentDashTask = &t
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
 		return
 	}
-	if lastTask == nil {
-		lastTask = task
+	if lastDashTask == nil {
+		lastDashTask = currentDashTask
 	}
 
 	timer := countdowntimer.Instance()
@@ -118,20 +57,22 @@ func (c *Controller) startDash(quit func()) {
 		StartMessage:       "lock in.",
 		EndMessage:         "dash complete. restart when ready.",
 		CountdownDuration:  c.dashDuration,
-		PeriodicSideEffect: trackTime(c, task),
+		PeriodicSideEffect: trackTime(c),
 	})
 
-	timer.SetDescription(fmt.Sprintf(
-		`([%[1]s::b]d[-:-:-]) mark task as done, ([%[1]s::b]u[-:-:-]) to undo
-([%[1]s::b]e[-:-:-]) edit task
-([%[1]s::b]r[-:-:-]) restart timer
-([%[1]s::b]a[-:-:-]) add a new task
-([%[1]s::b]b[-:-:-]) back`,
-		tcell.ColorLimeGreen))
-
-	timer.Layout.SetInputCapture(setDashCommands(c, task, func() { timer.Reset(c.app) }, quit))
+	handler := &keybindHandler{c}
+	c.infoPanel.SetOnInputChange(func(_ string) {})
+	keybindmenu.New().
+		SetHighlighColour(tcell.ColorLimeGreen).
+		SetFallback(handler.fallback).
+		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
+		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
+		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editTask).
+		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, handler.resetTimer(func() { timer.Reset(c.app) })).
+		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addFromDash).
+		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome).
+		Apply(timer)
 
 	c.inputPanel.Set("Dash", timer.Layout)
-
 	timer.Start(c.app)
 }

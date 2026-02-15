@@ -33,7 +33,7 @@ type Config struct {
 	SideEffectPeriod         time.Duration
 }
 
-type countdownTimer struct {
+type CountdownTimer struct {
 	Layout             *tview.Flex
 	countdown          *tview.TextView
 	description        *tview.TextView
@@ -42,10 +42,10 @@ type countdownTimer struct {
 	reinitialiseSignal chan struct{}
 }
 
-var instance countdownTimer
+var instance CountdownTimer
 var once sync.Once
 
-var Instance = func() *countdownTimer {
+var Instance = func() *CountdownTimer {
 	once.Do(func() {
 		countdown := tview.NewTextView()
 		countdown.SetTextColor(tcell.ColorLimeGreen)
@@ -58,7 +58,7 @@ var Instance = func() *countdownTimer {
 			AddItem(countdown, 3, 0, false).
 			AddItem(description, 0, 1, false)
 
-		instance = countdownTimer{
+		instance = CountdownTimer{
 			Layout:             layout,
 			countdown:          countdown,
 			description:        description,
@@ -69,7 +69,7 @@ var Instance = func() *countdownTimer {
 	return &instance
 }
 
-func (t *countdownTimer) SetConfig(config Config) {
+func (t *CountdownTimer) SetConfig(config Config) {
 	if config.SideEffectPeriod == 0 {
 		config.SideEffectPeriod = DEFAULT_SIDE_EFFECT_PERIOD
 	}
@@ -79,11 +79,15 @@ func (t *countdownTimer) SetConfig(config Config) {
 	instance.config = config
 }
 
-func (t *countdownTimer) SetDescription(text string) {
-	t.description.SetText(text)
+func (t *CountdownTimer) SetInputCapture(ip func(event *tcell.EventKey) *tcell.EventKey) *tview.Box {
+	return t.Layout.SetInputCapture(ip)
 }
 
-func (t *countdownTimer) getTimeRemaining(startTime time.Time) (string, timescale, string) {
+func (t *CountdownTimer) SetText(text string) *tview.TextView {
+	return t.description.SetText(text)
+}
+
+func (t *CountdownTimer) getTimeRemaining(startTime time.Time) (string, timescale, string) {
 	timeElapsed := time.Since(startTime)
 	timeRemaining := t.config.CountdownDuration - timeElapsed
 	if timeRemaining < 0 || timeElapsed < 0 {
@@ -108,14 +112,14 @@ func (t *countdownTimer) getTimeRemaining(startTime time.Time) (string, timescal
 	return fmt.Sprint(timeRemainingRounded), timescale, unitName
 }
 
-func (t *countdownTimer) Reset(app *tview.Application) {
+func (t *CountdownTimer) Reset(app *tview.Application) {
 	select {
 	case t.reinitialiseSignal <- struct{}{}:
 	default:
 	}
 }
 
-func initialiseRedraw(app *tview.Application, t *countdownTimer) time.Time {
+func initialiseRedraw(app *tview.Application, t *CountdownTimer) time.Time {
 	startTime := time.Now()
 	app.QueueUpdateDraw(func() {
 		t.countdown.SetText(t.config.StartMessage)
@@ -132,7 +136,7 @@ func setTickerDuration(ticker *time.Ticker, timescale timescale) {
 	}
 }
 
-func (t *countdownTimer) Start(app *tview.Application) {
+func (t *CountdownTimer) Start(app *tview.Application) {
 	// noop if timer is running to ensure single redraw thread
 	if !t.isRunning.CompareAndSwap(false, true) {
 		return
@@ -143,7 +147,7 @@ func (t *countdownTimer) Start(app *tview.Application) {
 	default:
 	}
 
-	go (func(app *tview.Application, t *countdownTimer) {
+	go (func(app *tview.Application, t *CountdownTimer) {
 		startTime := initialiseRedraw(app, t)
 		lastSideEffectRun := startTime
 
