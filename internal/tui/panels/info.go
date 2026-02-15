@@ -48,10 +48,10 @@ func (ip *InfoPanel) SetInput(input string) {
 	ip.input = input
 	if input != "" {
 		ip.textView.SetText(fmt.Sprint("> ", ip.input))
-		ip.onInputChange(ip.input)
 	} else {
 		ip.textView.Clear()
 	}
+	ip.onInputChange(ip.input)
 }
 
 func (ip *InfoPanel) GetInput() string {
