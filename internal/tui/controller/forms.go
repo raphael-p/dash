@@ -5,23 +5,23 @@ import (
 	"github.com/raphael-p/datashard/pkg/tviewcomponents/taskform"
 )
 
-func (c *Controller) openTaskForm(back func(), quit func()) {
+func (c *Controller) openTaskForm(back func()) {
 	c.infoPanel.Clear()
 	fieldSelection := taskform.FieldSelection{TaskID: true}
-	openTaskForm := taskform.New(fieldSelection, back, quit)
+	openTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
 	openTaskForm.OnEnter(func() {
-		c.openTask(openTaskForm.GetTaskID(), back, quit)
+		c.openTask(openTaskForm.GetTaskID(), back)
 		openTaskForm.ClearInputs()
 	})
 
 	c.inputPanel.Set("Open Task", openTaskForm)
 }
 
-func (c *Controller) addTaskForm(back func(), quit func()) {
+func (c *Controller) addTaskForm(back func()) {
 	c.infoPanel.Clear()
 	fieldSelection := taskform.FieldSelection{TaskName: true, TaskDescription: true}
-	addTaskForm := taskform.New(fieldSelection, back, quit)
+	addTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
 	addTaskForm.OnEnter(func() {
 		ok := c.addTask(addTaskForm.GetTaskName(), addTaskForm.GetTaskDescription())
@@ -36,10 +36,10 @@ func (c *Controller) addTaskForm(back func(), quit func()) {
 	c.inputPanel.Set("Add New Task", addTaskForm)
 }
 
-func (c *Controller) removeTaskForm(back func(), quit func()) {
+func (c *Controller) removeTaskForm(back func()) {
 	c.infoPanel.Clear()
 	fieldSelection := taskform.FieldSelection{TaskID: true}
-	removeTaskForm := taskform.New(fieldSelection, back, quit)
+	removeTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
 	removeTaskForm.OnEnter(func() {
 		c.removeTask(removeTaskForm.GetTaskID())
@@ -49,10 +49,10 @@ func (c *Controller) removeTaskForm(back func(), quit func()) {
 	c.inputPanel.Set("Remove Task", removeTaskForm)
 }
 
-func (c *Controller) editTaskForm(task *database.Task, back func(), quit func()) {
+func (c *Controller) editTaskForm(task *database.Task, back func()) {
 	c.infoPanel.Clear()
 	fieldSelection := taskform.FieldSelection{TaskName: true, TaskDescription: true}
-	editTaskForm := taskform.New(fieldSelection, back, quit)
+	editTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
 	editTaskForm.OnEnter(func() {
 		ok := c.editTask(task, editTaskForm.GetTaskName(), editTaskForm.GetTaskDescription())
@@ -64,10 +64,10 @@ func (c *Controller) editTaskForm(task *database.Task, back func(), quit func())
 	c.inputPanel.Set("Edit Task", editTaskForm)
 }
 
-func (c *Controller) bumpTaskForm(back func(), quit func()) {
+func (c *Controller) bumpTaskForm(back func()) {
 	c.infoPanel.Clear()
 	fieldSelection := taskform.FieldSelection{TaskID: true}
-	bumpTaskForm := taskform.New(fieldSelection, back, quit)
+	bumpTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
 	bumpTaskForm.OnEnter(func() {
 		c.bumpTask(bumpTaskForm.GetTaskID())

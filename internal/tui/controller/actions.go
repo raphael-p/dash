@@ -14,7 +14,7 @@ func (c *Controller) refreshTasks() {
 	}
 }
 
-func (c *Controller) openTask(idString string, back func(), quit func()) bool {
+func (c *Controller) openTask(idString string, back func()) bool {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
@@ -26,7 +26,7 @@ func (c *Controller) openTask(idString string, back func(), quit func()) bool {
 		c.infoPanel.Error(err)
 		return false
 	}
-	c.editTaskForm(&task, back, quit)
+	c.editTaskForm(&task, back)
 
 	return true
 }

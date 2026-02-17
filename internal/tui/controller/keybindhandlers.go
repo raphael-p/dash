@@ -11,11 +11,11 @@ type keybindHandler struct {
 }
 
 func (ka *keybindHandler) addFromDash(_ rune) {
-	ka.c.addTaskForm(ka.c.startDash, ka.c.app.Stop)
+	ka.c.addTaskForm(ka.c.startDash)
 }
 
 func (ka *keybindHandler) addFromHome(_ rune) {
-	ka.c.addTaskForm(ka.c.Home, ka.c.app.Stop)
+	ka.c.addTaskForm(ka.c.Home)
 }
 
 func (ka *keybindHandler) backToHome(_ rune) {
@@ -33,12 +33,12 @@ func (ka *keybindHandler) bumpTask(_ rune) {
 	if ka.c.infoPanel.GetInput() != "" {
 		ka.c.bumpTask(ka.c.infoPanel.GetInput())
 	} else {
-		ka.c.bumpTaskForm(ka.c.Home, ka.c.app.Stop)
+		ka.c.bumpTaskForm(ka.c.Home)
 	}
 }
 
 func (ka *keybindHandler) editTask(_ rune) {
-	ka.c.editTaskForm(currentDashTask, ka.c.startDash, ka.c.app.Stop)
+	ka.c.editTaskForm(currentDashTask, ka.c.startDash)
 }
 
 func (ka *keybindHandler) startDash(_ rune) {
@@ -67,9 +67,9 @@ func (ka *keybindHandler) numberInput(r rune) {
 
 func (ka *keybindHandler) openTask(_ rune) {
 	if ka.c.infoPanel.GetInput() != "" {
-		ka.c.openTask(ka.c.infoPanel.GetInput(), ka.c.Home, ka.c.app.Stop)
+		ka.c.openTask(ka.c.infoPanel.GetInput(), ka.c.Home)
 	} else {
-		ka.c.openTaskForm(ka.c.Home, ka.c.app.Stop)
+		ka.c.openTaskForm(ka.c.Home)
 	}
 }
 
@@ -81,7 +81,7 @@ func (ka *keybindHandler) removeTask(_ rune) {
 	if ka.c.infoPanel.GetInput() != "" {
 		ka.c.removeTask(ka.c.infoPanel.GetInput())
 	} else {
-		ka.c.removeTaskForm(ka.c.Home, ka.c.app.Stop)
+		ka.c.removeTaskForm(ka.c.Home)
 	}
 }
 
