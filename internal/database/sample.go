@@ -132,7 +132,7 @@ func generateWords(rng *rand.Rand, minWords, maxWords uint) string {
 	wordsCount := int(rng.UintN(maxWords-minWords+1) + minWords)
 
 	words := make([]string, wordsCount)
-	for i := 0; i < wordsCount; i++ {
+	for i := range wordsCount {
 		words[i] = generateWord(rng)
 	}
 	return strings.Join(words, " ")
