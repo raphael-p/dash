@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/raphael-p/datashard/internal/database"
+	"github.com/raphael-p/datashard/pkg/tviewcomponents/taskform"
 )
 
 func (c *Controller) refreshTasks() {
@@ -31,7 +32,7 @@ func (c *Controller) openTask(idString string, back func()) bool {
 	return true
 }
 
-func (c *Controller) addTask(name, description string) bool {
+func (c *Controller) addTask(name, description string, priority taskform.TaskPriority) bool {
 	if name == "" || description == "" {
 		c.infoPanel.Warn("please provide a name and description of the task.")
 		return false
@@ -41,6 +42,18 @@ func (c *Controller) addTask(name, description string) bool {
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
 		return false
+	}
+
+	if priority == taskform.PRIORITY_FIRST {
+		database.BumpTask(task.Id)
+	} else if priority == taskform.PRIORITY_NEXT {
+		topTask, err := database.GetTopTask()
+		if err != nil {
+			c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
+			return false
+		}
+		database.BumpTask(task.Id)
+		database.BumpTask(topTask.Id)
 	}
 
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))

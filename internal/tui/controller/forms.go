@@ -22,7 +22,7 @@ func (c *Controller) addTaskForm(back func()) {
 
 	addTaskForm := taskform.New().PromptName().PromptDescription().PromptPriority()
 	addTaskForm.OnSubmit(func() {
-		ok := c.addTask(addTaskForm.GetTaskName(), addTaskForm.GetTaskDescription())
+		ok := c.addTask(addTaskForm.GetTaskName(), addTaskForm.GetTaskDescription(), addTaskForm.GetTaskPriority())
 		addTaskForm.ClearInputs()
 		addTaskForm.SetFocus(0)     // manually set focus to first field
 		c.app.SetFocus(addTaskForm) // return automatic focus management to form
