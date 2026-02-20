@@ -7,9 +7,8 @@ import (
 
 func (c *Controller) openTaskForm(back func()) {
 	c.infoPanel.Clear()
-	fieldSelection := taskform.FieldSelection{TaskID: true}
-	openTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
+	openTaskForm := taskform.New().PromptId().AddBackButton(back).AddQuitButton(c.app.Stop)
 	openTaskForm.OnEnter(func() {
 		c.openTask(openTaskForm.GetTaskID(), back)
 		openTaskForm.ClearInputs()
@@ -20,10 +19,9 @@ func (c *Controller) openTaskForm(back func()) {
 
 func (c *Controller) addTaskForm(back func()) {
 	c.infoPanel.Clear()
-	fieldSelection := taskform.FieldSelection{TaskName: true, TaskDescription: true}
-	addTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
-	addTaskForm.OnEnter(func() {
+	addTaskForm := taskform.New().PromptName().PromptDescription().PromptPriority()
+	addTaskForm.OnSubmit(func() {
 		ok := c.addTask(addTaskForm.GetTaskName(), addTaskForm.GetTaskDescription())
 		addTaskForm.ClearInputs()
 		addTaskForm.SetFocus(0)     // manually set focus to first field
@@ -31,16 +29,15 @@ func (c *Controller) addTaskForm(back func()) {
 		if ok {
 			back()
 		}
-	})
+	}).AddBackButton(back).AddQuitButton(c.app.Stop)
 
 	c.inputPanel.Set("Add New Task", addTaskForm)
 }
 
 func (c *Controller) removeTaskForm(back func()) {
 	c.infoPanel.Clear()
-	fieldSelection := taskform.FieldSelection{TaskID: true}
-	removeTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
+	removeTaskForm := taskform.New().PromptId().AddBackButton(back).AddQuitButton(c.app.Stop)
 	removeTaskForm.OnEnter(func() {
 		c.removeTask(removeTaskForm.GetTaskID())
 		removeTaskForm.ClearInputs()
@@ -51,9 +48,8 @@ func (c *Controller) removeTaskForm(back func()) {
 
 func (c *Controller) editTaskForm(task *database.Task, back func()) {
 	c.infoPanel.Clear()
-	fieldSelection := taskform.FieldSelection{TaskName: true, TaskDescription: true}
-	editTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
+	editTaskForm := taskform.New().PromptName().PromptDescription().AddBackButton(back).AddQuitButton(c.app.Stop)
 	editTaskForm.OnEnter(func() {
 		ok := c.editTask(task, editTaskForm.GetTaskName(), editTaskForm.GetTaskDescription())
 		if ok {
@@ -66,9 +62,8 @@ func (c *Controller) editTaskForm(task *database.Task, back func()) {
 
 func (c *Controller) bumpTaskForm(back func()) {
 	c.infoPanel.Clear()
-	fieldSelection := taskform.FieldSelection{TaskID: true}
-	bumpTaskForm := taskform.New(fieldSelection, back, c.app.Stop)
 
+	bumpTaskForm := taskform.New().PromptId().AddBackButton(back).AddQuitButton(c.app.Stop)
 	bumpTaskForm.OnEnter(func() {
 		c.bumpTask(bumpTaskForm.GetTaskID())
 		bumpTaskForm.ClearInputs()
