@@ -34,13 +34,7 @@ func (dp *DisplayPanel) ResetPagination() {
 }
 
 func (dp *DisplayPanel) GetCurrentPage() error {
-	if dp.currentPageIndex == 0 {
-		return dp.listTasks(0, 0)
-	}
-	return dp.listTasks(
-		dp.pages[dp.currentPageIndex-1].lastID,
-		dp.currentPageIndex,
-	)
+	return dp.listTasks(dp.currentPageIndex)
 }
 
 func (dp *DisplayPanel) getPreviousPage() error {
@@ -49,14 +43,7 @@ func (dp *DisplayPanel) getPreviousPage() error {
 	}
 
 	pageIndex := dp.currentPageIndex - 1
-
-	// get last ID of previous page
-	var fromID int64 = 0
-	if pageIndex > 0 {
-		fromID = dp.pages[pageIndex-1].lastID
-	}
-
-	err := dp.listTasks(fromID, pageIndex)
+	err := dp.listTasks(pageIndex)
 	if err == nil {
 		dp.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToEnd()
@@ -71,7 +58,7 @@ func (dp *DisplayPanel) GetNextPage() error {
 	}
 
 	pageIndex := dp.currentPageIndex + 1
-	err := dp.listTasks(currentPage.lastID, pageIndex)
+	err := dp.listTasks(pageIndex)
 	if err == nil {
 		dp.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToBeginning()
@@ -79,9 +66,16 @@ func (dp *DisplayPanel) GetNextPage() error {
 	return err
 }
 
-func (dp *DisplayPanel) listTasks(fromID int64, pageIndex uint) error {
+func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	dp.panel.Clear()
 	dp.panel.SetTitle(fmt.Sprintf(" Tasks (page %d) ", pageIndex+1))
+
+	var fromID int64
+	if pageIndex == 0 {
+		fromID = 0
+	} else {
+		fromID = dp.pages[pageIndex-1].lastID
+	}
 
 	tasks, hasNext, err := database.GetTasksPaginated(fromID)
 	if err != nil {
