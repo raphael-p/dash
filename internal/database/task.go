@@ -117,20 +117,31 @@ func GetTopTask() (Task, error) {
 	return tasks[0], err
 }
 
-func GetTasksPaginated(fromID int64) ([]Task, bool, error) {
-	query := `
-    SELECT * FROM tasks
-	WHERE id > ? AND completed_at IS NULL
+func GetTasksPaginated(fromID int64, toDate sql.NullTime) ([]Task, bool, error) {
+	whereClause := "WHERE completed_at IS NULL"
+	args := []any{taskPageLimit}
+	if fromID > 0 {
+		if toDate.Valid {
+			whereClause += " AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)"
+			args = []any{toDate, taskPageLimit}
+		} else {
+			whereClause += " AND priority_bumped_at IS NULL AND id > ?"
+			args = []any{fromID, taskPageLimit}
+		}
+	}
+
+	query := fmt.Sprintf(`
+    SELECT * FROM tasks %s
     ORDER BY priority_bumped_at DESC, id ASC
 	LIMIT ?;
-    `
+    `, whereClause)
 
 	logger.Trace(fmt.Sprintf(
 		"retrieving tasks up to %d after id %d (paginated)",
 		taskPageLimit,
 		fromID,
 	))
-	tasks, err := getTasksInternal(query, fromID, taskPageLimit)
+	tasks, err := getTasksInternal(query, args...)
 	if err != nil {
 		return tasks, false, err
 	}

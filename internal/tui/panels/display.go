@@ -1,6 +1,7 @@
 package panels
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/raphael-p/datashard/internal/database"
@@ -9,8 +10,8 @@ import (
 )
 
 type taskPage struct {
-	lastID  int64
-	hasNext bool
+	lastTask database.Task
+	hasNext  bool
 }
 
 type DisplayPanel struct {
@@ -71,13 +72,13 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	dp.panel.SetTitle(fmt.Sprintf(" Tasks (page %d) ", pageIndex+1))
 
 	var fromID int64
-	if pageIndex == 0 {
-		fromID = 0
-	} else {
-		fromID = dp.pages[pageIndex-1].lastID
+	var toDate sql.NullTime
+	if pageIndex != 0 {
+		fromID = dp.pages[pageIndex-1].lastTask.Id
+		toDate = dp.pages[pageIndex-1].lastTask.PriotityBumpedAt
 	}
 
-	tasks, hasNext, err := database.GetTasksPaginated(fromID)
+	tasks, hasNext, err := database.GetTasksPaginated(fromID, toDate)
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %s", err)
 	}
@@ -88,7 +89,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	}
 
 	// store pagination metadata
-	dp.pages[pageIndex] = taskPage{tasks[len(tasks)-1].Id, hasNext}
+	dp.pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
 	if pageIndex > 0 {
 		fmt.Fprintf(dp.panel, "\n↑ show previous page\n\n")
