@@ -3,8 +3,6 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- new task: add to queue, replace current, make next in line
-- bug: when creating new task, don't erase task name if description is missing
 - enforce char limit for title and note
 - copy task to clipboard
 - version check for initialisation
