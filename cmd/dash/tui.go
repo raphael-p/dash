@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/datashard/internal/tui/controller"
 	"github.com/raphael-p/datashard/internal/tui/panels"
@@ -24,8 +22,10 @@ func startTUI() {
 		AddItem(displayPanel.GetPanel(), 0, 2, false).
 		AddItem(rightFlex, 0, 1, true)
 
-	dashDuration := time.Duration(config.DashDurationSeconds) * time.Second
-	c := controller.NewController(app, inputPanel, infoPanel, displayPanel, dashDuration)
+	c := controller.NewController(
+		app, inputPanel, infoPanel, displayPanel,
+		config.DashDurationSeconds, config.DescriptionCharLimit, config.NameCharLimit,
+	)
 	c.Home()
 
 	inputPanel.GetPanel().SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

@@ -32,8 +32,21 @@ func New() *TaskForm {
 	return &form
 }
 
-func (tf *TaskForm) addInputField(name string) *tview.InputField {
+func stopAtCharLimit(textGetter func() string, charLimit int) func(event *tcell.EventKey) *tcell.EventKey {
+	return func(event *tcell.EventKey) *tcell.EventKey {
+		isCharEvent := event.Key() == tcell.KeyRune
+		if isCharEvent && len(textGetter()) >= charLimit {
+			return nil
+		}
+		return event
+	}
+}
+
+func (tf *TaskForm) addInputField(name string, charLimit int) *tview.InputField {
 	inputField := tview.NewInputField().SetLabel(name + ": ")
+	if charLimit > 0 {
+		inputField.SetInputCapture(stopAtCharLimit(inputField.GetText, charLimit))
+	}
 	clearPrevious := tf.ClearInputs
 	tf.ClearInputs = func() {
 		clearPrevious()
@@ -44,17 +57,17 @@ func (tf *TaskForm) addInputField(name string) *tview.InputField {
 }
 
 func (tf *TaskForm) PromptId() *TaskForm {
-	tf.GetTaskID = tf.addInputField("Task ID").GetText
+	tf.GetTaskID = tf.addInputField("Task ID", 0).GetText
 	return tf
 }
 
-func (tf *TaskForm) PromptDescription() *TaskForm {
-	tf.GetTaskDescription = tf.addInputField("Task Description").GetText
+func (tf *TaskForm) PromptDescription(charLimit int) *TaskForm {
+	tf.GetTaskDescription = tf.addInputField("Task Description", charLimit).GetText
 	return tf
 }
 
-func (tf *TaskForm) PromptName() *TaskForm {
-	tf.GetTaskName = tf.addInputField("Task Name").GetText
+func (tf *TaskForm) PromptName(charLimit int) *TaskForm {
+	tf.GetTaskName = tf.addInputField("Task Name", charLimit).GetText
 	return tf
 }
 

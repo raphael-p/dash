@@ -56,7 +56,7 @@ func (c *Controller) startDash() {
 	timer.SetConfig(countdowntimer.Config{
 		StartMessage:       "lock in.",
 		EndMessage:         "dash complete. restart when ready.",
-		CountdownDuration:  c.dashDuration,
+		CountdownDuration:  c.config.dashDuration,
 		PeriodicSideEffect: trackTime(c),
 	})
 

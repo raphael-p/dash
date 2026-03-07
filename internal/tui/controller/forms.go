@@ -20,7 +20,10 @@ func (c *Controller) openTaskForm(back func()) {
 func (c *Controller) addTaskForm(back func()) {
 	c.infoPanel.Clear()
 
-	addTaskForm := taskform.New().PromptName().PromptDescription().PromptPriority()
+	addTaskForm := taskform.New().
+		PromptName(c.config.nameCharLimit).
+		PromptDescription(c.config.descriptionCharLimit).
+		PromptPriority()
 	addTaskForm.OnSubmit(func() {
 		ok := c.addTask(addTaskForm.GetTaskName(), addTaskForm.GetTaskDescription(), addTaskForm.GetTaskPriority())
 		addTaskForm.SetFocus(0)     // manually set focus to first field
@@ -49,7 +52,11 @@ func (c *Controller) removeTaskForm(back func()) {
 func (c *Controller) editTaskForm(task *database.Task, back func()) {
 	c.infoPanel.Clear()
 
-	editTaskForm := taskform.New().PromptName().PromptDescription().AddBackButton(back).AddQuitButton(c.app.Stop)
+	editTaskForm := taskform.New().
+		PromptName(c.config.nameCharLimit).
+		PromptDescription(c.config.descriptionCharLimit).
+		AddBackButton(back).
+		AddQuitButton(c.app.Stop)
 	editTaskForm.OnEnter(func() {
 		ok := c.editTask(task, editTaskForm.GetTaskName(), editTaskForm.GetTaskDescription())
 		if ok {

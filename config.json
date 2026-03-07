@@ -1,3 +1,5 @@
 {
-    "dash_duration_seconds": 0
+    "dash_duration_seconds": 0,
+    "description_char_limit": 0,
+    "name_char_limit": 25
 }

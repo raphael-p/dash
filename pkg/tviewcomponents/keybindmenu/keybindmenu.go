@@ -76,32 +76,29 @@ func (hm *KeybindMenu) Apply(parentComponent applyable) {
 }
 
 func (hm *KeybindMenu) generateText() string {
-	var builder strings.Builder
+	builder := new(strings.Builder)
 
 	for _, keybind := range hm.keybinds {
 		hasKey := keybind.key != 0
 		hasDescription := keybind.description != ""
 		if builder.Len() != 0 && (hasKey || hasDescription) {
-			builder.WriteString("\n")
+			fmt.Fprintf(builder, "\n")
 		}
 
 		if hasKey {
-			builder.WriteString(fmt.Sprintf(
-				"([%s::b]%c[-:-:-])",
-				hm.highlightColour, keybind.key,
-			))
+			fmt.Fprintf(builder, "([%s::b]%c[-:-:-])", hm.highlightColour, keybind.key)
 		}
 
 		if hasDescription {
-			builder.WriteString("\t" + keybind.description)
+			fmt.Fprintf(builder, "\t%s", keybind.description)
 		}
 	}
 
 	if hm.footnote != "" {
 		if builder.Len() != 0 {
-			builder.WriteString("\n")
+			fmt.Fprintf(builder, "\n")
 		}
-		builder.WriteString(fmt.Sprintf("[::d]%s[::-]", hm.footnote))
+		fmt.Fprintf(builder, "[::d]%s[::-]", hm.footnote)
 	}
 
 	return builder.String()
