@@ -44,9 +44,10 @@ func (c *Controller) addTask(name, description string, priority taskform.TaskPri
 		return false
 	}
 
-	if priority == taskform.PRIORITY_FIRST {
+	switch priority {
+	case taskform.PRIORITY_FIRST:
 		database.BumpTask(task.Id)
-	} else if priority == taskform.PRIORITY_NEXT {
+	case taskform.PRIORITY_NEXT:
 		topTask, err := database.GetTopTask()
 		if err != nil {
 			c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
@@ -54,6 +55,7 @@ func (c *Controller) addTask(name, description string, priority taskform.TaskPri
 		}
 		database.BumpTask(task.Id)
 		database.BumpTask(topTask.Id)
+	case taskform.PRIORITY_LAST: // no action required
 	}
 
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
