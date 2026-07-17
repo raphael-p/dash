@@ -49,8 +49,7 @@ var Logger *MyLogger = &MyLogger{nil, nil, logLevel(0), 0, "."}
 
 func openLogFile() *os.File {
 	directory := filepath.Join(Logger.workingDir, "logs")
-	name := "server.log"
-	path := filepath.Join(directory, generateFilename(name, directory))
+	path := filepath.Join(directory, generateFilename("server", directory))
 	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		err = os.MkdirAll(directory, 0755)
@@ -105,8 +104,8 @@ func Create(workingDir string, hasConsoleLog bool) {
 	if hasConsoleLog {
 		Logger.stdOutLogger = newLogger(os.Stdout)
 	}
-	Logger.fileLogger = newLogger(openLogFile())
 	Logger.workingDir = workingDir
+	Logger.fileLogger = newLogger(openLogFile())
 	Info("file logger initialised")
 }
 

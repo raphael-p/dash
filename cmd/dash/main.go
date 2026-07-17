@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"os"
+	"path/filepath"
 
 	"github.com/raphael-p/datashard/internal/database"
 	"github.com/raphael-p/datashard/pkg/configreader"
@@ -18,11 +19,15 @@ type Config struct {
 var config *Config = &Config{}
 
 func main() {
-	logger.Create(".", false)
+	dataDir := os.Getenv("DASH_DATA_DIR")
+	if dataDir == "" {
+		dataDir = "."
+	}
+	logger.Create(dataDir, false)
 	defer logger.Close()
-	configreader.ReadConfigFile("dash", ".", config)
+	configreader.ReadConfigFile("dash", dataDir, config)
 
-	db, err := sql.Open("sqlite3", "./datashard.db")
+	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "datashard.db"))
 	if err != nil {
 		logger.Fatalf("failed to open database: %v", err)
 	}
