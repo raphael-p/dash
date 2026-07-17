@@ -54,7 +54,7 @@ func (ka *keybindHandler) markTaskDone(_ rune) {
 	_, err := currentDashTask.Update()
 	if err != nil {
 		currentDashTask.CompletedAt = sql.NullTime{Valid: false}
-		ka.c.infoPanel.Error(fmt.Errorf("failed to mark task %d as done: %s", currentDashTask.Id, err))
+		ka.c.infoPanel.Error(fmt.Errorf("failed to mark task [%d] as done: %s", currentDashTask.Id, err))
 	} else {
 		lastDashTask = currentDashTask
 		ka.c.startDash()

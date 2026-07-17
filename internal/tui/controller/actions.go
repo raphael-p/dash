@@ -100,7 +100,7 @@ func (c *Controller) editTask(task *database.Task, name, description string) boo
 
 	updated, err := task.Update()
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to edit task: %s", err))
+		c.infoPanel.Error(fmt.Errorf("failed to edit task [%d]: %s", task.Id, err))
 		return false
 	}
 
@@ -120,7 +120,7 @@ func (c *Controller) bumpTask(idString string) bool {
 
 	bumped, err := database.BumpTask(int64(id))
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to bump task priority: %s", err))
+		c.infoPanel.Error(fmt.Errorf("failed to bump task [%d] priority: %s", id, err))
 		return false
 	}
 

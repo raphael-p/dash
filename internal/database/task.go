@@ -53,7 +53,7 @@ func GetTask(id int64) (Task, error) {
 	}
 
 	query := `SELECT * FROM tasks WHERE id = ?;`
-	logger.Debugf("retrieving task (id: %d)", id)
+	logger.Debugf("retrieving task [%d]", id)
 	row := DB.QueryRow(query, id)
 	task, err := scanRow(row)
 	if lazyInit(err) {
@@ -181,7 +181,7 @@ func (t *Task) Update() (bool, error) {
     WHERE id = :id;
     `
 
-	logger.Debugf("updating task (id: %d)", t.Id)
+	logger.Debugf("updating task [%d]", t.Id)
 	res, err := DB.Exec(updateTask,
 		sql.Named("id", t.Id),
 		sql.Named("name", t.Name),
@@ -205,7 +205,7 @@ func (t *Task) Delete() (bool, error) {
 	WHERE id = ?
 	`
 
-	logger.Debugf("deleting task (id: %d)", t.Id)
+	logger.Debugf("deleting task [%d]", t.Id)
 	res, err := DB.Exec(deleteTask, t.Id)
 	if err != nil {
 		return false, err
@@ -222,7 +222,7 @@ func BumpTask(taskID int64) (bool, error) {
 	WHERE id = ?;
 	`
 
-	logger.Debugf("bumping task priority (id: %d)", taskID)
+	logger.Debugf("bumping task [%d] priority", taskID)
 	res, err := DB.Exec(bumpTask, time.Now(), taskID)
 	if err != nil {
 		return false, err

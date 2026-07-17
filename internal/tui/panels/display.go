@@ -138,7 +138,7 @@ func (dp *DisplayPanel) ShowTopTask() (database.Task, error) {
 func (dp *DisplayPanel) ShowTaskById(taskID int64) (database.Task, error) {
 	task, err := database.GetTask(int64(taskID))
 	if err != nil {
-		return database.Task{}, fmt.Errorf("could not retrieve task %d: %s", taskID, err)
+		return database.Task{}, fmt.Errorf("could not retrieve task [%d]: %s", taskID, err)
 	}
 
 	return dp.showTask(task)

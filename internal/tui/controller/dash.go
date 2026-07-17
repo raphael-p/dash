@@ -28,12 +28,12 @@ func trackTime(c *Controller) func(time.Time, bool) {
 			if err == nil {
 				err = errors.New("noop")
 			}
-			c.infoPanel.Error(fmt.Errorf("failed to update time spent on task %d: %s", currentDashTask.Id, err))
+			c.infoPanel.Error(fmt.Errorf("failed to update time spent on task [%d]: %s", currentDashTask.Id, err))
 		}
 
 		if isEnd && newTimeSpent > time.Minute {
 			c.infoPanel.Info(fmt.Sprintf(
-				"time tracking: %d minutes spent on task %d",
+				"time tracking: %d minutes spent on task [%d]",
 				int(newTimeSpent.Minutes()),
 				currentDashTask.Id,
 			))
