@@ -3,6 +3,7 @@ module github.com/raphael-p/datashard
 go 1.26.5
 
 require (
+	github.com/atotto/clipboard v0.1.4
 	github.com/gdamore/tcell/v2 v2.13.10
 	github.com/mattn/go-sqlite3 v1.14.48
 	github.com/rivo/tview v0.42.0

@@ -29,6 +29,7 @@ func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput fun
 
 	if hasInput() {
 		menu.AddKeybind('o', "open task", keybindmenu.BindEnter, handler.openTask).
+			AddKeybind('c', "copy task to clipboard", keybindmenu.DefaultBind, handler.copyTask).
 			AddKeybind('b', "bump task priority", keybindmenu.DefaultBind, handler.bumpTask).
 			AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTask).
 			AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput).

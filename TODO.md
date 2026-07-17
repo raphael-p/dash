@@ -3,7 +3,7 @@
 goal: make productivity tool which is not near a distraction (mobile, web)
 objective: build pomello timer + task manager in terminal
 
-- copy task to clipboard
+- de-paginate task page: make into a continuous scroll
 - version check for initialisation
 - safeguard for task wiping
 - put on homebrew

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/atotto/clipboard"
 	"github.com/raphael-p/datashard/internal/database"
 	"github.com/raphael-p/datashard/pkg/tviewcomponents/taskform"
 )
@@ -16,9 +17,8 @@ func (c *Controller) refreshTasks() {
 }
 
 func (c *Controller) openTask(idString string, back func()) bool {
-	id, err := extractIDFromString(idString)
-	if err != nil {
-		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
+	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	if !ok {
 		return false
 	}
 
@@ -63,9 +63,8 @@ func (c *Controller) addTask(name, description string, priority taskform.TaskPri
 }
 
 func (c *Controller) removeTask(idString string) bool {
-	id, err := extractIDFromString(idString)
-	if err != nil {
-		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
+	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	if !ok {
 		return false
 	}
 
@@ -114,9 +113,8 @@ func (c *Controller) editTask(task *database.Task, name, description string) boo
 }
 
 func (c *Controller) bumpTask(idString string) bool {
-	id, err := extractIDFromString(idString)
-	if err != nil {
-		c.infoPanel.Warn(fmt.Sprint("your input is invalid: ", err))
+	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	if !ok {
 		return false
 	}
 
@@ -133,6 +131,36 @@ func (c *Controller) bumpTask(idString string) bool {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
 	return true
+}
+
+func (c *Controller) copyTask(idString string) {
+	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	if !ok {
+		return
+	}
+
+	task, err := database.GetTask(int64(id))
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("could not retrieve task [%d]: %s", id, err))
+		return
+	}
+
+	err = clipboard.WriteAll(fmt.Sprintf("%s\n%s", task.Name, task.Description))
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("failed to copy task [%d] to clipboard: %s", id, err))
+		return
+	}
+
+	c.infoPanel.Info(fmt.Sprintf("copied task [%d] to clipboard", id))
+}
+
+func getIdOrWarn(idString string, warn func(err string)) (int, bool) {
+	id, err := extractIDFromString(idString)
+	if err != nil {
+		warn(fmt.Sprint("your input is invalid: ", err))
+		return 0, false
+	}
+	return id, true
 }
 
 func extractIDFromString(idString string) (int, error) {

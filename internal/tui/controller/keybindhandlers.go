@@ -37,6 +37,10 @@ func (ka *keybindHandler) bumpTask(_ rune) {
 	}
 }
 
+func (ka *keybindHandler) copyTask(_ rune) {
+	ka.c.copyTask(ka.c.infoPanel.GetInput())
+}
+
 func (ka *keybindHandler) editTask(_ rune) {
 	ka.c.editTaskForm(currentDashTask, ka.c.startDash)
 }
