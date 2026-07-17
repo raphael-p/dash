@@ -15,7 +15,7 @@ var (
 	DefaultBind   Bind = func(_ tcell.Key, _ rune) bool { return false } // just binds on Keybind.key
 	BindEnter     Bind = func(e tcell.Key, _ rune) bool { return e == tcell.KeyEnter }
 	BindBackspace Bind = func(e tcell.Key, _ rune) bool { return e == tcell.KeyBackspace || e == tcell.KeyBackspace2 }
-	BindNumber    Bind = func(_ tcell.Key, r rune) bool { return r >= '0' && r <= '9' }
+	BindNumber    Bind = func(e tcell.Key, r rune) bool { return e == tcell.KeyRune && r >= '0' && r <= '9' }
 )
 
 type Fallback = func(commandName string)
@@ -115,7 +115,7 @@ func (hm *KeybindMenu) generateInputCapture() func(event *tcell.EventKey) *tcell
 
 		hasTriggered := false
 		for _, keybind := range hm.keybinds {
-			if key == keybind.key || keybind.bind(eventKey, key) {
+			if (key != 0 && key == keybind.key) || keybind.bind(eventKey, key) {
 				keybind.handler(key)
 				hasTriggered = true
 				break
