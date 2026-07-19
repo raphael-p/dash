@@ -8,11 +8,11 @@ import (
 type TaskPriority int
 
 const (
-	PRIORITY_LAST TaskPriority = iota
-	PRIORITY_NEXT
-	PRIORITY_FIRST
+	PriorityLast TaskPriority = iota
+	PriorityNext
+	PriorityFirst
 )
-const DEFAULT_PRIORITY = PRIORITY_LAST
+const DefaultPriority = PriorityLast
 
 type FieldSelection struct {
 	TaskID, TaskName, TaskDescription, TaskPriority bool
@@ -56,7 +56,7 @@ func (tf *TaskForm) addInputField(name string, charLimit int) *tview.InputField 
 	return inputField
 }
 
-func (tf *TaskForm) PromptId() *TaskForm {
+func (tf *TaskForm) PromptID() *TaskForm {
 	tf.GetTaskID = tf.addInputField("Task ID", 0).GetText
 	return tf
 }
@@ -72,7 +72,7 @@ func (tf *TaskForm) PromptName(charLimit int) *TaskForm {
 }
 
 func (tf *TaskForm) PromptPriority() *TaskForm {
-	taskPriority := DEFAULT_PRIORITY
+	taskPriority := DefaultPriority
 	tf.AddDropDown("Priority", []string{"last", "next", "first"}, int(taskPriority), func(_ string, index int) {
 		taskPriority = TaskPriority(index)
 	})

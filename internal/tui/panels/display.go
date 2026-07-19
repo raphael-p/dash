@@ -74,7 +74,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	var fromID int64
 	var toDate sql.NullTime
 	if pageIndex != 0 {
-		fromID = dp.pages[pageIndex-1].lastTask.Id
+		fromID = dp.pages[pageIndex-1].lastTask.ID
 		toDate = dp.pages[pageIndex-1].lastTask.PriotityBumpedAt
 	}
 
@@ -97,7 +97,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	for idx, task := range tasks {
 		fmt.Fprint(
 			dp.panel,
-			stringpad.RightPad(fmt.Sprintf("[%d]", task.Id), 8),
+			stringpad.RightPad(fmt.Sprintf("[%d]", task.ID), 8),
 			task.Name,
 		)
 		if idx+1 < len(tasks) {
@@ -112,7 +112,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 
 func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
 	dp.panel.Clear()
-	dp.panel.SetTitle(fmt.Sprintf("Task %d: %s", task.Id, task.Name))
+	dp.panel.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
 	if task.Description != "" {
 		fmt.Fprintf(dp.panel, "%s\n\n", task.Description)
 	}
@@ -135,7 +135,7 @@ func (dp *DisplayPanel) ShowTopTask() (database.Task, error) {
 	return dp.showTask(task)
 }
 
-func (dp *DisplayPanel) ShowTaskById(taskID int64) (database.Task, error) {
+func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
 	task, err := database.GetTask(int64(taskID))
 	if err != nil {
 		return database.Task{}, fmt.Errorf("could not retrieve task [%d]: %s", taskID, err)

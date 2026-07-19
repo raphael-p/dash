@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	DEFAULT_COUNTDOWN_DURATION   = time.Minute * 20
-	DEFAULT_SIDE_EFFECT_PERIOD   = time.Second * 30
-	REFRESH_INTERVAL_FOR_MINUTES = time.Second * 2
-	REFRESH_INTERVAL_FOR_SECONDS = time.Millisecond * 100
-	START_MESSAGE_DURATION       = time.Second * 2
+	DefaultCountdownDuration = time.Minute * 20
+	DefaultSideEffectPeriod  = time.Second * 30
+	LongRefreshInterval      = time.Second * 2
+	ShortRefreshInterval     = time.Millisecond * 100
+	StartMessageDuration     = time.Second * 2
 )
 
 type timescale int
@@ -71,8 +71,8 @@ var Instance = func() *CountdownTimer {
 }
 
 func (t *CountdownTimer) SetConfig(config Config) {
-	config.SideEffectPeriod = cmp.Or(config.SideEffectPeriod, DEFAULT_SIDE_EFFECT_PERIOD)
-	config.CountdownDuration = cmp.Or(config.CountdownDuration, DEFAULT_COUNTDOWN_DURATION)
+	config.SideEffectPeriod = cmp.Or(config.SideEffectPeriod, DefaultSideEffectPeriod)
+	config.CountdownDuration = cmp.Or(config.CountdownDuration, DefaultCountdownDuration)
 	instance.config = config
 }
 
@@ -121,15 +121,15 @@ func initialiseRedraw(app *tview.Application, t *CountdownTimer) time.Time {
 	app.QueueUpdateDraw(func() {
 		t.countdown.SetText(t.config.StartMessage)
 	})
-	time.Sleep(START_MESSAGE_DURATION)
+	time.Sleep(StartMessageDuration)
 	return startTime
 }
 
 func setTickerDuration(ticker *time.Ticker, timescale timescale) {
 	if timescale == timescaleSeconds {
-		ticker.Reset(REFRESH_INTERVAL_FOR_SECONDS)
+		ticker.Reset(ShortRefreshInterval)
 	} else {
-		ticker.Reset(REFRESH_INTERVAL_FOR_MINUTES)
+		ticker.Reset(LongRefreshInterval)
 	}
 }
 

@@ -17,12 +17,12 @@ func (c *Controller) refreshTasks() {
 }
 
 func (c *Controller) openTask(idString string, back func()) bool {
-	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
 	if !ok {
 		return false
 	}
 
-	task, err := c.displayPanel.ShowTaskById(int64(id))
+	task, err := c.displayPanel.ShowTaskByID(int64(id))
 	if err != nil {
 		c.infoPanel.Error(err)
 		return false
@@ -45,30 +45,30 @@ func (c *Controller) addTask(name, description string, priority taskform.TaskPri
 	}
 
 	switch priority {
-	case taskform.PRIORITY_FIRST:
-		database.BumpTask(task.Id)
-	case taskform.PRIORITY_NEXT:
+	case taskform.PriorityFirst:
+		database.BumpTask(task.ID)
+	case taskform.PriorityNext:
 		topTask, err := database.GetTopTask()
 		if err != nil {
 			c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
 			return false
 		}
-		database.BumpTask(task.Id)
-		database.BumpTask(topTask.Id)
-	case taskform.PRIORITY_LAST: // no action required
+		database.BumpTask(task.ID)
+		database.BumpTask(topTask.ID)
+	case taskform.PriorityLast: // no action required
 	}
 
-	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.Id))
+	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.ID))
 	return true
 }
 
 func (c *Controller) removeTask(idString string) bool {
-	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
 	if !ok {
 		return false
 	}
 
-	t := database.Task{Id: int64(id)}
+	t := database.Task{ID: int64(id)}
 	deleted, err := t.Delete()
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
@@ -100,20 +100,20 @@ func (c *Controller) editTask(task *database.Task, name, description string) boo
 
 	updated, err := task.Update()
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to edit task [%d]: %s", task.Id, err))
+		c.infoPanel.Error(fmt.Errorf("failed to edit task [%d]: %s", task.ID, err))
 		return false
 	}
 
 	if updated {
-		c.infoPanel.Info(fmt.Sprintf("task [%d] updated.", task.Id))
+		c.infoPanel.Info(fmt.Sprintf("task [%d] updated.", task.ID))
 	} else {
-		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", task.Id))
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", task.ID))
 	}
 	return true
 }
 
 func (c *Controller) bumpTask(idString string) bool {
-	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
 	if !ok {
 		return false
 	}
@@ -134,7 +134,7 @@ func (c *Controller) bumpTask(idString string) bool {
 }
 
 func (c *Controller) copyTask(idString string) {
-	id, ok := getIdOrWarn(idString, c.infoPanel.Warn)
+	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
 	if !ok {
 		return
 	}
@@ -154,7 +154,7 @@ func (c *Controller) copyTask(idString string) {
 	c.infoPanel.Info(fmt.Sprintf("copied task [%d] to clipboard", id))
 }
 
-func getIdOrWarn(idString string, warn func(err string)) (int, bool) {
+func getIDOrWarn(idString string, warn func(err string)) (int, bool) {
 	id, err := extractIDFromString(idString)
 	if err != nil {
 		warn(fmt.Sprint("your input is invalid: ", err))

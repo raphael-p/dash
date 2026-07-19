@@ -8,7 +8,7 @@ import (
 func (c *Controller) openTaskForm(back func()) {
 	c.infoPanel.Clear()
 
-	openTaskForm := taskform.New().PromptId().AddBackButton(back).AddQuitButton(c.app.Stop)
+	openTaskForm := taskform.New().PromptID().AddBackButton(back).AddQuitButton(c.app.Stop)
 	openTaskForm.OnEnter(func() {
 		c.openTask(openTaskForm.GetTaskID(), back)
 		openTaskForm.ClearInputs()
@@ -40,7 +40,7 @@ func (c *Controller) addTaskForm(back func()) {
 func (c *Controller) removeTaskForm(back func()) {
 	c.infoPanel.Clear()
 
-	removeTaskForm := taskform.New().PromptId().AddBackButton(back).AddQuitButton(c.app.Stop)
+	removeTaskForm := taskform.New().PromptID().AddBackButton(back).AddQuitButton(c.app.Stop)
 	removeTaskForm.OnEnter(func() {
 		c.removeTask(removeTaskForm.GetTaskID())
 		removeTaskForm.ClearInputs()
@@ -70,7 +70,7 @@ func (c *Controller) editTaskForm(task *database.Task, back func()) {
 func (c *Controller) bumpTaskForm(back func()) {
 	c.infoPanel.Clear()
 
-	bumpTaskForm := taskform.New().PromptId().AddBackButton(back).AddQuitButton(c.app.Stop)
+	bumpTaskForm := taskform.New().PromptID().AddBackButton(back).AddQuitButton(c.app.Stop)
 	bumpTaskForm.OnEnter(func() {
 		c.bumpTask(bumpTaskForm.GetTaskID())
 		bumpTaskForm.ClearInputs()

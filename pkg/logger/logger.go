@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	MAX_FILE_COUNT    = 1000
-	MAX_FILE_BYTES    = 10 * 1024 * 1024
-	MAX_MESSAGE_BYTES = 10 * 1024
+	MaxFileCount    = 1000
+	MaxFileBytes    = 10 * 1024 * 1024
+	MaxMessageBytes = 10 * 1024
 )
 
 type MyLogger struct {
@@ -80,7 +80,7 @@ func generateFilename(name, directory string) string {
 		filename := fmt.Sprint(basename, "-", count, extension)
 		path := filepath.Join(directory, filename)
 		stats, err := os.Stat(path)
-		if err == nil && stats.Size() < MAX_FILE_BYTES {
+		if err == nil && stats.Size() < MaxFileBytes {
 			lastUsedFile = filename
 		} else if err != nil && lastUsedFile != "" {
 			return lastUsedFile
@@ -89,16 +89,16 @@ func generateFilename(name, directory string) string {
 		}
 
 		count++
-		if count > MAX_FILE_COUNT {
+		if count > MaxFileCount {
 			panic(fmt.Sprint(
 				"reached maximum allowed number of log files: ",
-				MAX_FILE_COUNT,
+				MaxFileCount,
 			))
 		}
 	}
 }
 
-// Creates a logger which manages its logs files and logs to the console.
+// Create a logger which manages its logs files and logs to the console.
 func Create(workingDir string, hasConsoleLog bool) {
 	Logger.logLevel = logLevel(0)
 	if hasConsoleLog {
@@ -109,7 +109,7 @@ func Create(workingDir string, hasConsoleLog bool) {
 	Info("file logger initialised")
 }
 
-// Handles the closing of the log file
+// Close the log file
 func Close() {
 	if Logger.fileLogger == nil {
 		return
@@ -126,14 +126,14 @@ func Close() {
 func logMessage(level string, ansiColour string, message string) {
 	reset := "\033[0m"
 	time := now()
-	if len(message) > MAX_MESSAGE_BYTES {
-		message = message[:MAX_MESSAGE_BYTES]
+	if len(message) > MaxMessageBytes {
+		message = message[:MaxMessageBytes]
 	}
 	if Logger.stdOutLogger != nil {
 		Logger.stdOutLogger.Printf("%s %s[%s]%s %s", time, ansiColour, level, reset, message)
 	}
 	if Logger.fileLogger != nil {
-		if Logger.cumBytes += int64(len(message)); Logger.cumBytes > MAX_FILE_BYTES {
+		if Logger.cumBytes += int64(len(message)); Logger.cumBytes > MaxFileBytes {
 			rollover()
 		}
 		Logger.fileLogger.Printf("%s [%s] %s", time, level, message)
@@ -142,11 +142,11 @@ func logMessage(level string, ansiColour string, message string) {
 
 func rollover() {
 	if file, ok := Logger.fileLogger.Writer().(*os.File); ok {
-		if stats, err := file.Stat(); err == nil && stats.Size() > MAX_FILE_BYTES {
+		if stats, err := file.Stat(); err == nil && stats.Size() > MaxFileBytes {
 			Logger.cumBytes = 0
 			Info(fmt.Sprintf(
 				"reached maximum log file size (%d bytes), rolling over",
-				MAX_FILE_BYTES,
+				MaxFileBytes,
 			)) // can cause infinite loop if MAX_FILE_BYTES is too low
 			Close()
 			Logger.fileLogger = newLogger(openLogFile())

@@ -11,7 +11,7 @@ import (
 const taskPageLimit int = 30
 
 type Task struct {
-	Id               int64         `json:"id"`
+	ID               int64         `json:"id"`
 	Name             string        `json:"name"`
 	Description      string        `json:"description"`
 	CreatedAt        time.Time     `json:"created_at"`
@@ -157,7 +157,7 @@ func GetTasksPaginated(fromID int64, toDate sql.NullTime) ([]Task, bool, error) 
 		LIMIT 1;
 		`
 
-		lastID := tasks[len(tasks)-1].Id
+		lastID := tasks[len(tasks)-1].ID
 		err := DB.QueryRow(hasNextQuery, lastID).Scan(&hasNext)
 		if err == sql.ErrNoRows {
 			hasNext = false
@@ -181,9 +181,9 @@ func (t *Task) Update() (bool, error) {
     WHERE id = :id;
     `
 
-	logger.Debugf("updating task [%d]", t.Id)
+	logger.Debugf("updating task [%d]", t.ID)
 	res, err := DB.Exec(updateTask,
-		sql.Named("id", t.Id),
+		sql.Named("id", t.ID),
 		sql.Named("name", t.Name),
 		sql.Named("description", t.Description),
 		sql.Named("updated_at", time.Now()),
@@ -205,8 +205,8 @@ func (t *Task) Delete() (bool, error) {
 	WHERE id = ?
 	`
 
-	logger.Debugf("deleting task [%d]", t.Id)
-	res, err := DB.Exec(deleteTask, t.Id)
+	logger.Debugf("deleting task [%d]", t.ID)
+	res, err := DB.Exec(deleteTask, t.ID)
 	if err != nil {
 		return false, err
 	}
