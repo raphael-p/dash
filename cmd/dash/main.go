@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -9,6 +10,8 @@ import (
 	"github.com/raphael-p/datashard/pkg/configreader"
 	"github.com/raphael-p/datashard/pkg/logger"
 )
+
+var AppVersion = "dev"
 
 type Config struct {
 	DashDurationSeconds  uint16 `json:"dash_duration_seconds"`
@@ -19,12 +22,11 @@ type Config struct {
 var config *Config = &Config{}
 
 func main() {
-	dataDir := os.Getenv("DASH_DATA_DIR")
-	if dataDir == "" {
-		dataDir = "."
-	}
+	dataDir := cmp.Or(os.Getenv("DASH_DATA_DIR"), ".")
+
 	logger.Create(dataDir, false)
 	defer logger.Close()
+
 	configreader.ReadConfigFile("dash", dataDir, config)
 
 	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "datashard.db"))
@@ -34,9 +36,14 @@ func main() {
 	defer db.Close()
 	database.DB = db
 
+	database.CheckVersion()
+
 	if len(os.Args) < 2 {
+		logger.Debugf("starting dash TUI (app version %s)", AppVersion)
 		startTUI()
 	} else {
-		handleCommand(os.Args[1])
+		command := os.Args[1]
+		logger.Debugf("executing command %s (app version %s)", command, AppVersion)
+		handleCommand(command)
 	}
 }

@@ -2,10 +2,13 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/raphael-p/datashard/pkg/logger"
 )
+
+const schemaVersion int = 1
 
 var DB *sql.DB
 
@@ -28,11 +31,18 @@ var createTasks = DBInitOperation{
 			priority_bumped_at DATETIME,
 			time_spent_seconds INTEGER
 		);`,
-	down: `DROP TABLE IF EXISTS tasks`,
+	down: `DROP TABLE IF EXISTS tasks;`,
+}
+
+var setSchemaVersion = DBInitOperation{
+	name: "set schema version",
+	up:   fmt.Sprintf("PRAGMA user_version = %d;", schemaVersion),
+	down: "PRAGMA user_version = 0;",
 }
 
 var initOperations = []DBInitOperation{
 	createTasks,
+	setSchemaVersion,
 }
 
 func Initialise() {
@@ -42,7 +52,7 @@ func Initialise() {
 			logger.Fatalf("database initialisation error on '%s': %v", op.name, err)
 		}
 	}
-	logger.Info("database initialised successfully")
+	logger.Infof("database initialised successfully with schema version %d", schemaVersion)
 }
 
 func Wipe() {
@@ -54,4 +64,19 @@ func Wipe() {
 	}
 	logger.Info("database wiped")
 	Initialise()
+}
+
+func CheckVersion() {
+	var dbVersion int
+	err := DB.QueryRow("PRAGMA user_version;").Scan(&dbVersion)
+	if err != nil {
+		logger.Fatalf("failed to read database version: %v", err)
+	}
+
+	if dbVersion > 0 {
+		if dbVersion != schemaVersion {
+			logger.Fatalf("database version is out-of-sync: need %d, got %d", schemaVersion, dbVersion)
+		}
+		logger.Debugf("database has schema version %d", dbVersion)
+	}
 }

@@ -1,6 +1,7 @@
 package countdowntimer
 
 import (
+	"cmp"
 	"fmt"
 	"math"
 	"sync"
@@ -70,12 +71,8 @@ var Instance = func() *CountdownTimer {
 }
 
 func (t *CountdownTimer) SetConfig(config Config) {
-	if config.SideEffectPeriod == 0 {
-		config.SideEffectPeriod = DEFAULT_SIDE_EFFECT_PERIOD
-	}
-	if config.CountdownDuration == 0 {
-		config.CountdownDuration = DEFAULT_COUNTDOWN_DURATION
-	}
+	config.SideEffectPeriod = cmp.Or(config.SideEffectPeriod, DEFAULT_SIDE_EFFECT_PERIOD)
+	config.CountdownDuration = cmp.Or(config.CountdownDuration, DEFAULT_COUNTDOWN_DURATION)
 	instance.config = config
 }
 
