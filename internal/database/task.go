@@ -10,6 +10,18 @@ import (
 
 const taskPageLimit int = 30
 
+type TaskMode uint8
+
+const (
+	ActiveTasks TaskMode = iota
+	CompletedTasks
+)
+
+type TaskCursor struct {
+	ID        int64
+	Timestamp sql.NullTime
+}
+
 type Task struct {
 	ID               int64         `json:"id"`
 	Name             string        `json:"name"`
@@ -17,7 +29,7 @@ type Task struct {
 	CreatedAt        time.Time     `json:"created_at"`
 	UpdatedAt        time.Time     `json:"updated_at"`
 	CompletedAt      sql.NullTime  `json:"completed_at"`
-	PriotityBumpedAt sql.NullTime  `json:"priority_bumped_at"`
+	PriorityBumpedAt sql.NullTime  `json:"priority_bumped_at"`
 	TimeSpentSeconds sql.NullInt16 `json:"time_spent_seconds"`
 }
 
@@ -117,56 +129,47 @@ func GetTopTask() (Task, error) {
 	return tasks[0], err
 }
 
-func GetTasksPaginated(fromID int64, toDate sql.NullTime) ([]Task, bool, error) {
-	whereClause := "WHERE completed_at IS NULL"
-	args := []any{taskPageLimit}
-	if fromID > 0 {
-		if toDate.Valid {
-			whereClause += " AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)"
-			args = []any{toDate, taskPageLimit}
-		} else {
-			whereClause += " AND priority_bumped_at IS NULL AND id > ?"
-			args = []any{fromID, taskPageLimit}
-		}
+func getTasksFilters(mode TaskMode, cursor TaskCursor) (string, any) {
+	if mode == CompletedTasks && !cursor.Timestamp.Valid {
+		return "completed_at IS NOT NULL AND id > ?", cursor.ID
+	} else if mode == CompletedTasks {
+		return "completed_at IS NOT NULL AND completed_at < ?", cursor.Timestamp
+	} else if cursor.Timestamp.Valid {
+		return "completed_at IS NULL AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)", cursor.Timestamp
+	}
+	return "completed_at IS NULL AND priority_bumped_at IS NULL AND id > ?", cursor.ID
+}
+
+func GetTasksPaginated(mode TaskMode, cursor TaskCursor) ([]Task, bool, error) {
+	whereClause, whereArg := getTasksFilters(mode, cursor)
+
+	var sortColumn string
+	if mode == CompletedTasks {
+		sortColumn = "completed_at"
+	} else {
+		sortColumn = "priority_bumped_at"
 	}
 
 	query := fmt.Sprintf(`
-    SELECT * FROM tasks %s
-    ORDER BY priority_bumped_at DESC, id ASC
+    SELECT * FROM tasks
+	WHERE %s
+    ORDER BY %s DESC, id ASC
 	LIMIT ?;
-    `, whereClause)
+    `, whereClause, sortColumn)
 
 	logger.Trace(fmt.Sprintf(
-		"retrieving tasks up to %d after id %d (paginated)",
-		taskPageLimit,
-		fromID,
+		"retrieving up to %d tasks after cursor (id: %d, timestamp: %s)",
+		taskPageLimit, cursor.ID, cursor.Timestamp.Time,
 	))
-	tasks, err := getTasksInternal(query, args...)
+	tasks, err := getTasksInternal(query, whereArg, taskPageLimit+1)
 	if err != nil {
 		return tasks, false, err
 	}
 
-	var hasNext bool
-	if len(tasks) >= taskPageLimit {
-		logger.Trace("checking if there are more tasks")
-
-		hasNextQuery := `
-		SELECT 1
-		FROM tasks
-		WHERE id > ?
-		LIMIT 1;
-		`
-
-		lastID := tasks[len(tasks)-1].ID
-		err := DB.QueryRow(hasNextQuery, lastID).Scan(&hasNext)
-		if err == sql.ErrNoRows {
-			hasNext = false
-		} else if err != nil {
-			logger.Warning(fmt.Sprint("error occured while checking if there are more tasks: ", err))
-		}
+	if len(tasks) > taskPageLimit {
+		return tasks[:len(tasks)-1], true, nil
 	}
-
-	return tasks, hasNext, nil
+	return tasks, false, nil
 }
 
 func (t *Task) Update() (bool, error) {
@@ -188,7 +191,7 @@ func (t *Task) Update() (bool, error) {
 		sql.Named("description", t.Description),
 		sql.Named("updated_at", time.Now()),
 		sql.Named("completed_at", t.CompletedAt),
-		sql.Named("priority_bumped_at", t.PriotityBumpedAt),
+		sql.Named("priority_bumped_at", t.PriorityBumpedAt),
 		sql.Named("time_spent_seconds", t.TimeSpentSeconds),
 	)
 	if err != nil {

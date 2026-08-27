@@ -1,7 +1,6 @@
 package panels
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/raphael-p/datashard/internal/database"
@@ -14,54 +13,85 @@ type taskPage struct {
 	hasNext  bool
 }
 
-type DisplayPanel struct {
-	panel            *tview.TextView
+type displayPanelTab struct {
 	pages            map[uint]taskPage
 	currentPageIndex uint
+}
+
+func newDisplayPanelTab() *displayPanelTab {
+	return &displayPanelTab{map[uint]taskPage{}, 0}
+}
+
+type DisplayPanel struct {
+	panel        *tview.TextView
+	activeTab    *displayPanelTab
+	completedTab *displayPanelTab
+	mode         database.TaskMode
 }
 
 func NewDisplayPanel() *DisplayPanel {
 	panel := tview.NewTextView().SetWordWrap(true)
 	panel.SetBorder(true).SetBorderPadding(1, 1, 2, 2)
-	return &DisplayPanel{panel, map[uint]taskPage{}, 0}
+	return &DisplayPanel{panel, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
 }
 
 func (dp *DisplayPanel) GetPanel() *tview.TextView {
 	return dp.panel
 }
 
+func (dp *DisplayPanel) ShowCompleted() bool {
+	return dp.mode == database.CompletedTasks
+}
+
+func (dp *DisplayPanel) getTab() *displayPanelTab {
+	if dp.mode == database.CompletedTasks {
+		return dp.completedTab
+	}
+	return dp.activeTab
+}
+
+func (dp *DisplayPanel) ToggleTaskMode() {
+	if dp.mode == database.CompletedTasks {
+		dp.mode = database.ActiveTasks
+	} else {
+		dp.mode = database.CompletedTasks
+	}
+}
+
 func (dp *DisplayPanel) ResetPagination() {
-	dp.currentPageIndex = 0
+	dp.getTab().currentPageIndex = 0
 }
 
 func (dp *DisplayPanel) GetCurrentPage() error {
-	return dp.listTasks(dp.currentPageIndex)
+	return dp.listTasks(dp.getTab().currentPageIndex)
 }
 
 func (dp *DisplayPanel) getPreviousPage() error {
-	if dp.currentPageIndex == 0 {
+	tab := dp.getTab()
+	if tab.currentPageIndex == 0 {
 		return nil // intentional noop
 	}
 
-	pageIndex := dp.currentPageIndex - 1
+	pageIndex := tab.currentPageIndex - 1
 	err := dp.listTasks(pageIndex)
 	if err == nil {
-		dp.currentPageIndex = pageIndex
+		tab.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToEnd()
 	}
 	return err
 }
 
 func (dp *DisplayPanel) GetNextPage() error {
-	currentPage := dp.pages[dp.currentPageIndex]
+	tab := dp.getTab()
+	currentPage := tab.pages[tab.currentPageIndex]
 	if !currentPage.hasNext {
 		return nil // intentional noop
 	}
 
-	pageIndex := dp.currentPageIndex + 1
+	pageIndex := tab.currentPageIndex + 1
 	err := dp.listTasks(pageIndex)
 	if err == nil {
-		dp.currentPageIndex = pageIndex
+		tab.currentPageIndex = pageIndex
 		dp.GetPanel().ScrollToBeginning()
 	}
 	return err
@@ -69,16 +99,25 @@ func (dp *DisplayPanel) GetNextPage() error {
 
 func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	dp.panel.Clear()
-	dp.panel.SetTitle(fmt.Sprintf(" Tasks (page %d) ", pageIndex+1))
-
-	var fromID int64
-	var toDate sql.NullTime
-	if pageIndex != 0 {
-		fromID = dp.pages[pageIndex-1].lastTask.ID
-		toDate = dp.pages[pageIndex-1].lastTask.PriotityBumpedAt
+	if dp.mode == database.CompletedTasks {
+		dp.panel.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
+	} else {
+		dp.panel.SetTitle(fmt.Sprintf(" Active Tasks (page %d) ", pageIndex+1))
 	}
 
-	tasks, hasNext, err := database.GetTasksPaginated(fromID, toDate)
+	pages := dp.getTab().pages
+	var cursor database.TaskCursor
+	if pageIndex != 0 {
+		cursor.ID = pages[pageIndex-1].lastTask.ID
+		if dp.mode == database.CompletedTasks {
+			cursor.Timestamp = pages[pageIndex-1].lastTask.CompletedAt
+		} else {
+			cursor.Timestamp = pages[pageIndex-1].lastTask.PriorityBumpedAt
+		}
+
+	}
+
+	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor)
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %s", err)
 	}
@@ -89,7 +128,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	}
 
 	// store pagination metadata
-	dp.pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
+	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
 	if pageIndex > 0 {
 		fmt.Fprintf(dp.panel, "\n↑ show previous page\n\n")

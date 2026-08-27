@@ -96,6 +96,11 @@ func (ka *keybindHandler) resetTimer(resetTimer func()) func(rune) {
 	}
 }
 
+func (ka *keybindHandler) toggleTaskMode(_ rune) {
+	ka.c.displayPanel.ToggleTaskMode()
+	ka.c.Home()
+}
+
 func (ka *keybindHandler) scrollDown(_ rune) {
 	err := ka.c.displayPanel.ScrollDown()
 	if err != nil {
