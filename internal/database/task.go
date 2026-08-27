@@ -110,6 +110,16 @@ func SearchTasks(searchQuery string) ([]Task, error) {
 	return tasks, err
 }
 
+func GetCompletedTasksSince(since time.Time) ([]Task, error) {
+	query := `
+	SELECT * FROM tasks
+	WHERE completed_at IS NOT NULL AND completed_at >= ? AND completed_at <= ?
+	ORDER BY completed_at DESC, id ASC;
+	`
+
+	return getTasksInternal(query, since, time.Now())
+}
+
 func GetTopTask() (Task, error) {
 	query := `
     SELECT * FROM tasks
