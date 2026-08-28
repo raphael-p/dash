@@ -10,16 +10,16 @@ trap 'rm -rf "$tmp_dir"' EXIT
 
 case "$(uname -s)-$(uname -m)" in
 Darwin-arm64)
-    archive="dash_Darwin_arm64.tar.gz"
+    archive="datashard_Darwin_arm64.tar.gz"
     ;;
 Darwin-x86_64)
-    archive="dash_Darwin_x86_64.tar.gz"
+    archive="datashard_Darwin_x86_64.tar.gz"
     ;;
 Linux-aarch64|Linux-arm64)
-    archive="dash_Linux_arm64.tar.gz"
+    archive="datashard_Linux_arm64.tar.gz"
     ;;
 Linux-x86_64)
-    archive="dash_Linux_x86_64.tar.gz"
+    archive="datashard_Linux_x86_64.tar.gz"
     ;;
 *)
     echo "Unsupported platform: $(uname -s)-$(uname -m)" >&2
@@ -35,10 +35,10 @@ curl -fsSL \
 
 tar -xzf "$tmp_dir/$archive" -C "$tmp_dir"
 
-install -m 755 "$tmp_dir/dash" "$install_dir/dash"
+install -m 755 "$tmp_dir/datashard" "$install_dir/datashard"
 if [ ! -f "$data_dir/config.json" ]; then
     install -m 644 "$tmp_dir/config.json" "$data_dir/config.json"
 fi
 
-echo "dash binary installed at: $install_dir/dash"
+echo "datashard binary installed at: $install_dir/datashard"
 echo "dash data directory: $data_dir"

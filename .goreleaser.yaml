@@ -1,6 +1,6 @@
 version: 2
 
-project_name: dash
+project_name: datashard
 
 before:
   hooks:
@@ -9,7 +9,7 @@ before:
 builds:
   - id: dash
     main: ./cmd/dash
-    binary: dash
+    binary: datashard
     ldflags:
         - -s -w
         - -X main.AppVersion={{ .Version }}

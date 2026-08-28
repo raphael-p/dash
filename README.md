@@ -10,7 +10,7 @@ Dash is a small terminal task dashboard backed by SQLite.
 curl -fsSL https://github.com/raphael-p/datashard/releases/latest/download/install.sh | sh
 ```
 
-This installs `dash` in `~/.local/bin` and stores its data in `~/.dash`. Make sure
+This installs `datashard` in `~/.local/bin` and stores its data in `~/.dash`. Make sure
 `~/.local/bin` is on your `PATH`.
 
 ## Usage
@@ -18,7 +18,7 @@ This installs `dash` in `~/.local/bin` and stores its data in `~/.dash`. Make su
 Start the dashboard:
 
 ```sh
-dash
+datashard
 ```
 
 Inside Dash:
@@ -32,16 +32,16 @@ Inside Dash:
 Command-line commands:
 
 ```sh
-dash init                         # initialise the database
-dash generate                     # add sample data
-dash generate -randomEntryCount 5 # add sample data and five random tasks
-dash wipe                         # delete all data, after confirmation
-dash extract --days 7             # export tasks completed in the last 7 days
-dash extract --since 2026-01-01   # export tasks completed since a date
+datashard init                         # initialise the database
+datashard generate                     # add sample data
+datashard generate -randomEntryCount 5 # add sample data and five random tasks
+datashard wipe                         # delete all data, after confirmation
+datashard extract --days 7             # export tasks completed in the last 7 days
+datashard extract --since 2026-01-01   # export tasks completed since a date
 ```
 
 Set `DASH_DATA_DIR` to use another data directory:
 
 ```sh
-DASH_DATA_DIR=/path/to/data dash
+DASH_DATA_DIR=/path/to/data datashard
 ```

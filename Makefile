@@ -1,5 +1,5 @@
 main_package_path = ./cmd/dash
-binary_name = dash
+binary_name = datashard
 version=$(shell git describe --tags --always --dirty)
 
 
