@@ -34,6 +34,32 @@ var createTasks = DBInitOperation{
 	down: `DROP TABLE IF EXISTS tasks;`,
 }
 
+var createTaskValidationTriggers = DBInitOperation{
+	name: "create task validation triggers",
+	up: `
+		DROP TRIGGER IF EXISTS tasks_completed_at_not_future_insert;
+		DROP TRIGGER IF EXISTS tasks_completed_at_not_future_update;
+
+		CREATE TRIGGER IF NOT EXISTS tasks_completed_at_not_future_insert
+		BEFORE INSERT ON tasks
+		WHEN NEW.completed_at IS NOT NULL
+		 AND julianday(NEW.completed_at) > julianday('now', '+5 second')
+		BEGIN
+			SELECT RAISE(ABORT, 'completed_at cannot be in the future');
+		END;
+
+		CREATE TRIGGER IF NOT EXISTS tasks_completed_at_not_future_update
+		BEFORE UPDATE OF completed_at ON tasks
+		WHEN NEW.completed_at IS NOT NULL
+		 AND julianday(NEW.completed_at) > julianday('now', '+5 second')
+		BEGIN
+			SELECT RAISE(ABORT, 'completed_at cannot be in the future');
+		END;`,
+	down: `
+		DROP TRIGGER IF EXISTS tasks_completed_at_not_future_insert;
+		DROP TRIGGER IF EXISTS tasks_completed_at_not_future_update;`,
+}
+
 var setSchemaVersion = DBInitOperation{
 	name: "set schema version",
 	up:   fmt.Sprintf("PRAGMA user_version = %d;", schemaVersion),
@@ -42,6 +68,7 @@ var setSchemaVersion = DBInitOperation{
 
 var initOperations = []DBInitOperation{
 	createTasks,
+	createTaskValidationTriggers,
 	setSchemaVersion,
 }
 
