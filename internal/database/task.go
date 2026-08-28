@@ -75,12 +75,23 @@ func GetTask(id int64) (Task, error) {
 	return task, err
 }
 
-func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, error) {
+func executeTasksQuery(sqlConditions string, sqlConditionsArgs []any, sortColumn string, limit int) ([]Task, error) {
+	var limitClause string
+	if limit != 0 {
+		limitClause = fmt.Sprint("LIMIT ", limit)
+	}
+
+	query := fmt.Sprintf(`
+    SELECT * FROM tasks
+	WHERE %s
+    ORDER BY %s DESC, id ASC %s;
+    `, sqlConditions, sortColumn, limitClause)
+
 	var tasks []Task
-	rows, err := DB.Query(sqlQuery, queryArgs...)
+	rows, err := DB.Query(query, sqlConditionsArgs...)
 	if lazyInit(err) {
 		logger.Trace("retrying task retrieval")
-		rows, err = DB.Query(sqlQuery, queryArgs...)
+		rows, err = DB.Query(query, sqlConditionsArgs...)
 	}
 	if err != nil {
 		return tasks, err
@@ -98,37 +109,25 @@ func getTasksInternal(sqlQuery string, queryArgs ...any) ([]Task, error) {
 	return tasks, rows.Err()
 }
 
-func SearchTasks(searchQuery string) ([]Task, error) {
-	query := `
-    SELECT * FROM tasks
-	WHERE name LIKE ?
-    ORDER BY id ASC;
-    `
-
-	logger.Trace("retrieving all tasks")
-	tasks, err := getTasksInternal(query, "%"+searchQuery+"%")
-	return tasks, err
+func GetCompletedTasksSince(since time.Time) ([]Task, error) {
+	return executeTasksQuery("completed_at IS NOT NULL AND completed_at >= ?", []any{since}, "completed_at", 0)
 }
 
-func GetCompletedTasksSince(since time.Time) ([]Task, error) {
-	query := `
-	SELECT * FROM tasks
-	WHERE completed_at IS NOT NULL AND completed_at >= ? AND completed_at <= ?
-	ORDER BY completed_at DESC, id ASC;
-	`
-
-	return getTasksInternal(query, since, time.Now())
+func getTaskQueryParts(mode TaskMode, cursor TaskCursor) (string, []any, string) {
+	if mode == CompletedTasks && !cursor.Timestamp.Valid {
+		return "completed_at IS NOT NULL AND id > ?", []any{cursor.ID}, "completed_at"
+	} else if mode == CompletedTasks {
+		return "completed_at IS NOT NULL AND completed_at < ?", []any{cursor.Timestamp}, "completed_at"
+	} else if cursor.Timestamp.Valid {
+		return "completed_at IS NULL AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)", []any{cursor.Timestamp}, "priority_bumped_at"
+	} else {
+		return "completed_at IS NULL AND id > ?", []any{cursor.ID}, "priority_bumped_at"
+	}
 }
 
 func GetTopTask() (Task, error) {
-	query := `
-    SELECT * FROM tasks
-	WHERE completed_at IS NULL
-    ORDER BY priority_bumped_at DESC, id ASC
-	LIMIT 1;
-    `
-
-	tasks, err := getTasksInternal(query)
+	sqlConditions, sqlConditionsArgs, sortColumn := getTaskQueryParts(ActiveTasks, TaskCursor{})
+	tasks, err := executeTasksQuery(sqlConditions, sqlConditionsArgs, sortColumn, 1)
 	if err != nil {
 		return Task{}, err
 	}
@@ -139,39 +138,14 @@ func GetTopTask() (Task, error) {
 	return tasks[0], err
 }
 
-func getTasksFilters(mode TaskMode, cursor TaskCursor) (string, any) {
-	if mode == CompletedTasks && !cursor.Timestamp.Valid {
-		return "completed_at IS NOT NULL AND id > ?", cursor.ID
-	} else if mode == CompletedTasks {
-		return "completed_at IS NOT NULL AND completed_at < ?", cursor.Timestamp
-	} else if cursor.Timestamp.Valid {
-		return "completed_at IS NULL AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)", cursor.Timestamp
-	}
-	return "completed_at IS NULL AND priority_bumped_at IS NULL AND id > ?", cursor.ID
-}
-
 func GetTasksPaginated(mode TaskMode, cursor TaskCursor) ([]Task, bool, error) {
-	whereClause, whereArg := getTasksFilters(mode, cursor)
-
-	var sortColumn string
-	if mode == CompletedTasks {
-		sortColumn = "completed_at"
-	} else {
-		sortColumn = "priority_bumped_at"
-	}
-
-	query := fmt.Sprintf(`
-    SELECT * FROM tasks
-	WHERE %s
-    ORDER BY %s DESC, id ASC
-	LIMIT ?;
-    `, whereClause, sortColumn)
-
 	logger.Trace(fmt.Sprintf(
 		"retrieving up to %d tasks after cursor (id: %d, timestamp: %s)",
 		taskPageLimit, cursor.ID, cursor.Timestamp.Time,
 	))
-	tasks, err := getTasksInternal(query, whereArg, taskPageLimit+1)
+
+	sqlConditions, sqlConditionsArgs, sortColumn := getTaskQueryParts(mode, cursor)
+	tasks, err := executeTasksQuery(sqlConditions, sqlConditionsArgs, sortColumn, taskPageLimit+1)
 	if err != nil {
 		return tasks, false, err
 	}
