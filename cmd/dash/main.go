@@ -21,8 +21,16 @@ type Config struct {
 
 var config *Config = &Config{}
 
+func defaultDataDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "."
+	}
+	return filepath.Join(home, ".dash")
+}
+
 func main() {
-	dataDir := cmp.Or(os.Getenv("DASH_DATA_DIR"), ".")
+	dataDir := cmp.Or(os.Getenv("DASH_DATA_DIR"), defaultDataDir())
 
 	logger.Create(dataDir, false)
 	defer logger.Close()

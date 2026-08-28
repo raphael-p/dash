@@ -1,0 +1,50 @@
+version: 2
+
+project_name: dash
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: dash
+    main: ./cmd/dash
+    binary: dash
+    ldflags:
+        - -s -w
+        - -X main.AppVersion={{ .Version }}
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - arm64
+      - amd64
+    env:
+      - CGO_ENABLED=1
+      # Use the host compiler for native builds and Zig for cross-compilation.
+      - 'CC={{ if and (eq .Os .Runtime.Goos) (eq .Arch .Runtime.Goarch) }}{{ if eq .Os "darwin" }}clang{{ else }}gcc{{ end }}{{ else }}zig cc -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }} -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -F/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks -L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib{{ end }}{{ end }}'
+
+archives:
+  - formats: [tar.gz]
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files: [config.json]
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: raphael-p
+    name: datashard
+  extra_files:
+    - glob: install.sh
