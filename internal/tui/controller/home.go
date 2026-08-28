@@ -2,7 +2,7 @@ package controller
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/datashard/pkg/tviewcomponents/keybindmenu"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 	"github.com/rivo/tview"
 )
 

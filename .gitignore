@@ -1,5 +1,5 @@
 logs/
-datashard.db
+dash.db
 .vscode/
 # Added by goreleaser init:
 dist/

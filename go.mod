@@ -1,4 +1,4 @@
-module github.com/raphael-p/datashard
+module github.com/raphael-p/dash
 
 go 1.26.5
 

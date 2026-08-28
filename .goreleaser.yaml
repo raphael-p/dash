@@ -1,6 +1,6 @@
 version: 2
 
-project_name: datashard
+project_name: dash
 
 before:
   hooks:
@@ -9,7 +9,7 @@ before:
 builds:
   - id: dash
     main: ./cmd/dash
-    binary: datashard
+    binary: dsh
     ldflags:
         - -s -w
         - -X main.AppVersion={{ .Version }}
@@ -45,6 +45,6 @@ changelog:
 release:
   github:
     owner: raphael-p
-    name: datashard
+    name: dash
   extra_files:
     - glob: install.sh

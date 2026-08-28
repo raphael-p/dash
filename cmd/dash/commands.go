@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raphael-p/datashard/internal/database"
+	"github.com/raphael-p/dash/internal/database"
 )
 
 func getConfirmation(prompt string) bool {
@@ -46,7 +46,7 @@ func handleCommand(command string) {
 			os.Exit(2)
 		}
 	default:
-		fmt.Println("unknown command, usage: datashard [init|generate|wipe|extract]")
+		fmt.Println("unknown command, usage: dsh [init|generate|wipe|extract]")
 		os.Exit(1)
 	}
 }

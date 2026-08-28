@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/datashard/internal/database"
-	"github.com/raphael-p/datashard/pkg/tviewcomponents/countdowntimer"
-	"github.com/raphael-p/datashard/pkg/tviewcomponents/keybindmenu"
+	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/countdowntimer"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
 var currentDashTask *database.Task

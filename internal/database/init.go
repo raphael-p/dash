@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/raphael-p/datashard/pkg/logger"
+	"github.com/raphael-p/dash/pkg/logger"
 )
 
 const schemaVersion int = 1

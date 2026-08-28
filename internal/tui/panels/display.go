@@ -3,8 +3,8 @@ package panels
 import (
 	"fmt"
 
-	"github.com/raphael-p/datashard/internal/database"
-	"github.com/raphael-p/datashard/pkg/stringpad"
+	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/pkg/stringpad"
 	"github.com/rivo/tview"
 )
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/raphael-p/datashard/pkg/logger"
+	"github.com/raphael-p/dash/pkg/logger"
 )
 
 const letterSet = "abcd3fgh1jklmn0pqrstuvwxyz"

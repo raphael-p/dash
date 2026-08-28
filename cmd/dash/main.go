@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/raphael-p/datashard/internal/database"
-	"github.com/raphael-p/datashard/pkg/configreader"
-	"github.com/raphael-p/datashard/pkg/logger"
+	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/pkg/configreader"
+	"github.com/raphael-p/dash/pkg/logger"
 )
 
 var AppVersion = "dev"
@@ -37,7 +37,7 @@ func main() {
 
 	configreader.ReadConfigFile(dataDir, config)
 
-	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "datashard.db"))
+	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "dash.db"))
 	if err != nil {
 		logger.Fatalf("failed to open database: %v", err)
 	}

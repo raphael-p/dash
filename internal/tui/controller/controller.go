@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	"github.com/raphael-p/datashard/internal/tui/panels"
+	"github.com/raphael-p/dash/internal/tui/panels"
 	"github.com/rivo/tview"
 )
 

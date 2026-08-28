@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/datashard/internal/tui/controller"
-	"github.com/raphael-p/datashard/internal/tui/panels"
-	"github.com/raphael-p/datashard/pkg/logger"
+	"github.com/raphael-p/dash/internal/tui/controller"
+	"github.com/raphael-p/dash/internal/tui/panels"
+	"github.com/raphael-p/dash/pkg/logger"
 	"github.com/rivo/tview"
 )
 
