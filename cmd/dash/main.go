@@ -35,7 +35,7 @@ func main() {
 	logger.Create(dataDir, false)
 	defer logger.Close()
 
-	configreader.ReadConfigFile("datashard", dataDir, config)
+	configreader.ReadConfigFile(dataDir, config)
 
 	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "datashard.db"))
 	if err != nil {
