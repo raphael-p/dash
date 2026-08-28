@@ -1,6 +1,7 @@
 main_package_path = ./cmd/dash
 binary_name = datashard
 version=$(shell git describe --tags --always --dirty)
+release_version ?=
 
 
 # ==================================================================================== #
@@ -80,6 +81,22 @@ run: build
 .PHONY: push
 push: confirm audit no-dirty
 	git push
+
+## release: create and push a version tag, then publish with GoReleaser
+.PHONY: release
+release: release-version-check audit no-dirty
+	@test -z "$$(git rev-parse --verify --quiet "refs/tags/v$(release_version)")" || (echo "tag v$(release_version) already exists locally" >&2; exit 1)
+	@test -z "$$(git ls-remote --tags origin "refs/tags/v$(release_version)")" || (echo "tag v$(release_version) already exists on origin" >&2; exit 1)
+	@gh auth status >/dev/null
+	git tag -a "v$(release_version)" -m "Release v$(release_version)"
+	git push origin "v$(release_version)"
+	GITHUB_TOKEN="$$(gh auth token)" goreleaser release --clean
+
+.PHONY: release-version-check
+release-version-check:
+	@test -n "$(release_version)" || (echo 'usage: make release release_version=0.1.0' >&2; exit 1)
+	@case "$(release_version)" in v*) echo 'release_version must not start with v' >&2; exit 1;; esac
+	@git check-ref-format "refs/tags/v$(release_version)"
 
 ## production/deploy: deploy the application to production
 .PHONY: production/deploy
