@@ -75,7 +75,7 @@ func GetTask(id int64) (Task, error) {
 	return task, err
 }
 
-func executeTasksQuery(sqlConditions string, sqlConditionsArgs []any, sortColumn string, limit int) ([]Task, error) {
+func executeTasksQuery(sqlConditions string, sqlConditionsArgs []any, sqlSort string, limit int) ([]Task, error) {
 	var limitClause string
 	if limit != 0 {
 		limitClause = fmt.Sprint("LIMIT ", limit)
@@ -84,8 +84,8 @@ func executeTasksQuery(sqlConditions string, sqlConditionsArgs []any, sortColumn
 	query := fmt.Sprintf(`
     SELECT * FROM tasks
 	WHERE %s
-    ORDER BY %s DESC, id ASC %s;
-    `, sqlConditions, sortColumn, limitClause)
+    ORDER BY %s, id ASC %s;
+    `, sqlConditions, sqlSort, limitClause)
 
 	var tasks []Task
 	rows, err := DB.Query(query, sqlConditionsArgs...)
@@ -110,18 +110,18 @@ func executeTasksQuery(sqlConditions string, sqlConditionsArgs []any, sortColumn
 }
 
 func GetCompletedTasksSince(since time.Time) ([]Task, error) {
-	return executeTasksQuery("completed_at IS NOT NULL AND completed_at >= ?", []any{since}, "completed_at", 0)
+	return executeTasksQuery("completed_at IS NOT NULL AND completed_at >= ?", []any{since}, "completed_at ASC", 0)
 }
 
 func getTaskQueryParts(mode TaskMode, cursor TaskCursor) (string, []any, string) {
 	if mode == CompletedTasks && !cursor.Timestamp.Valid {
-		return "completed_at IS NOT NULL AND id > ?", []any{cursor.ID}, "completed_at"
+		return "completed_at IS NOT NULL AND id > ?", []any{cursor.ID}, "completed_at DESC"
 	} else if mode == CompletedTasks {
-		return "completed_at IS NOT NULL AND completed_at < ?", []any{cursor.Timestamp}, "completed_at"
+		return "completed_at IS NOT NULL AND completed_at < ?", []any{cursor.Timestamp}, "completed_at DESC"
 	} else if cursor.Timestamp.Valid {
-		return "completed_at IS NULL AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)", []any{cursor.Timestamp}, "priority_bumped_at"
+		return "completed_at IS NULL AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)", []any{cursor.Timestamp}, "priority_bumped_at DESC"
 	} else {
-		return "completed_at IS NULL AND id > ?", []any{cursor.ID}, "priority_bumped_at"
+		return "completed_at IS NULL AND id > ?", []any{cursor.ID}, "priority_bumped_at DESC"
 	}
 }
 
