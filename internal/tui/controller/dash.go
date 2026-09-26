@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/gen2brain/beeep"
 	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/pkg/logger"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/countdowntimer"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
@@ -37,6 +39,13 @@ func trackTime(c *Controller) func(time.Time, bool) {
 				int(newTimeSpent.Minutes()),
 				currentDashTask.ID,
 			))
+		}
+
+		if isEnd {
+			err = beeep.Alert("dash complete.", "good job.", "")
+			if err != nil {
+				logger.Warningf("failed to emit dash end alert: %v", err)
+			}
 		}
 	}
 }
