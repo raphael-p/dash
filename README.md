@@ -38,20 +38,21 @@ Set `DASH_DATA_DIR` to use another data directory:
 DASH_DATA_DIR=/path/to/data dsh
 ```
 
-## Config
+## Configuration
 
 Configuration values are defined in `config.json` within the Dash data directory. By default, this file is located at `$HOME/.dash/config.json` and contains:
 
 ```json
 {
-    // duration of a dash in seconds (25 minutes unless a non-zero value is specified)
     "dash_duration_seconds": 0,
-     // character limit for a task description (unlimited unless a non-zero value is specified) 
     "description_char_limit": 0,   
-     // character limit for a task name
     "name_char_limit": 25          
 }
 ```
+
+- `dash_duration_seconds`: duration of a dash in seconds, 25 minutes unless a non-zero value is specified
+- `description_char_limit`: character limit for a task description, unlimited unless a non-zero value is specified
+- `name_char_limit`: character limit for a task name
 
 ## Uninstall
 
