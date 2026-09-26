@@ -39,6 +39,7 @@ install -m 755 "$tmp_dir/dsh" "$install_dir/dsh"
 if [ ! -f "$data_dir/config.json" ]; then
     install -m 644 "$tmp_dir/config.json" "$data_dir/config.json"
 fi
+"$install_dir/dsh" init
 
 echo "dash binary installed at: $install_dir/dsh"
 echo "dash data directory: $data_dir"

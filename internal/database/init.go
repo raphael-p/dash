@@ -37,9 +37,6 @@ var createTasks = DBInitOperation{
 var createTaskValidationTriggers = DBInitOperation{
 	name: "create task validation triggers",
 	up: `
-		DROP TRIGGER IF EXISTS tasks_completed_at_not_future_insert;
-		DROP TRIGGER IF EXISTS tasks_completed_at_not_future_update;
-
 		CREATE TRIGGER IF NOT EXISTS tasks_completed_at_not_future_insert
 		BEFORE INSERT ON tasks
 		WHEN NEW.completed_at IS NOT NULL
