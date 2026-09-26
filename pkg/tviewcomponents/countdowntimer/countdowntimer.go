@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DefaultCountdownDuration = time.Minute * 20
+	DefaultCountdownDuration = time.Minute * 25
 	DefaultSideEffectPeriod  = time.Second * 30
 	LongRefreshInterval      = time.Second * 2
 	ShortRefreshInterval     = time.Millisecond * 100
