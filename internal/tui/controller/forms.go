@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"database/sql"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
@@ -43,49 +45,35 @@ func (c *Controller) removeTaskForm(back func()) {
 func (c *Controller) editTaskForm(task *database.Task, back func()) {
 	c.infoPanel.Clear()
 
-	editTaskForm := taskform.New().
-		PromptName(c.config.nameCharLimit).
-		PromptDescription(c.config.descriptionCharLimit).
-		AddBackButton(back).
-		AddQuitButton(c.app.Stop)
-	editTaskForm.OnEnter(func() {
-		ok := c.editTask(task, editTaskForm.GetTaskName(), editTaskForm.GetTaskDescription())
-		if ok {
-			back()
-		}
-	})
+	var editTaskForm tview.Primitive
+	if (task.CompletedAt == sql.NullTime{}) {
+		editActiveTaskForm := taskform.New().
+			PromptName(c.config.nameCharLimit).
+			PromptDescription(c.config.descriptionCharLimit).
+			AddBackButton(back).
+			AddQuitButton(c.app.Stop)
+		editActiveTaskForm.OnEnter(func() {
+			ok := c.editTask(task, editActiveTaskForm.GetTaskName(), editActiveTaskForm.GetTaskDescription())
+			if ok {
+				back()
+			}
+		})
+		editTaskForm = editActiveTaskForm
+	} else {
+		editCompletedTaskForm := tview.NewTextView().SetDynamicColors(true)
+		editCompletedTaskForm.SetBorderPadding(1, 1, 2, 2)
+
+		handler := &keybindHandler{c}
+		menu := keybindmenu.New().
+			SetHighlighColour(tcell.ColorLimeGreen).
+			SetFallback(handler.fallback)
+
+		menu.AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome).
+			AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit).
+			Apply(editCompletedTaskForm)
+
+		editTaskForm = editCompletedTaskForm
+	}
 
 	c.inputPanel.Set("Edit Task", editTaskForm)
-}
-
-func (c *Controller) bumpTaskForm(back func()) {
-	c.infoPanel.Clear()
-
-	bumpTaskForm := taskform.New().PromptID().AddBackButton(back).AddQuitButton(c.app.Stop)
-	bumpTaskForm.OnEnter(func() {
-		c.bumpTask(bumpTaskForm.GetTaskID())
-		bumpTaskForm.ClearInputs()
-	})
-
-	c.inputPanel.Set("Bump Task Priority", bumpTaskForm)
-}
-
-func (c *Controller) emptyForm() {
-	c.infoPanel.Clear()
-
-	c.inputPanel.GetPanel()
-
-	empty := tview.NewTextView().SetDynamicColors(true)
-	empty.SetBorderPadding(1, 1, 2, 2)
-
-	handler := &keybindHandler{c}
-	menu := keybindmenu.New().
-		SetHighlighColour(tcell.ColorLimeGreen).
-		SetFallback(handler.fallback)
-
-	menu.AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome).
-		AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit).
-		Apply(empty)
-
-	c.inputPanel.Set("Welcome to Dash!", empty)
 }

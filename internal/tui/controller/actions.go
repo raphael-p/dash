@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -28,13 +27,7 @@ func (c *Controller) openTask(idString string, back func()) bool {
 		c.infoPanel.Error(err)
 		return false
 	}
-
-	if (task.CompletedAt == sql.NullTime{}) {
-		c.editTaskForm(&task, back)
-	} else {
-		c.emptyForm()
-	}
-
+	c.editTaskForm(&task, back)
 	return true
 }
 
@@ -158,6 +151,27 @@ func (c *Controller) copyTask(idString string) {
 	}
 
 	c.infoPanel.Info(fmt.Sprintf("copied task [%d] to clipboard", id))
+}
+
+func (c *Controller) reactivateTask(idString string) bool {
+	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
+	if !ok {
+		return false
+	}
+
+	reactivated, err := database.ReactivateTask(int64(id))
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("failed to reactivate task [%d]: %s", id, err))
+		return false
+	}
+
+	if reactivated {
+		c.infoPanel.Info(fmt.Sprintf("reactivated task [%d]", id))
+		c.refreshTasks()
+	} else {
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
+	}
+	return true
 }
 
 func getIDOrWarn(idString string, warn func(err string)) (int, bool) {

@@ -30,11 +30,11 @@ func (ka *keybindHandler) backspace(r rune) {
 }
 
 func (ka *keybindHandler) bumpTask(_ rune) {
-	if ka.c.infoPanel.GetInput() != "" {
-		ka.c.bumpTask(ka.c.infoPanel.GetInput())
-	} else {
-		ka.c.bumpTaskForm(ka.c.Home)
-	}
+	ka.c.bumpTask(ka.c.infoPanel.GetInput())
+}
+
+func (ka *keybindHandler) reactivateTask(_ rune) {
+	ka.c.reactivateTask(ka.c.infoPanel.GetInput())
 }
 
 func (ka *keybindHandler) copyTask(_ rune) {

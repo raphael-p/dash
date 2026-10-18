@@ -219,6 +219,23 @@ func BumpTask(taskID int64) (bool, error) {
 	return count > 0, err
 }
 
+func ReactivateTask(taskID int64) (bool, error) {
+	reactivateTask := `
+	UPDATE tasks
+	SET completed_at = NULL
+	WHERE id = ?;
+	`
+
+	logger.Debugf("reactivating task [%d]", taskID)
+	res, err := DB.Exec(reactivateTask, taskID)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
+}
+
 func (t *Task) GetFormattedTimes() (createdAt string, updatedAt string, completedAt string) {
 	createdAt = t.CreatedAt.Format(time.DateTime)
 	updatedAt = t.UpdatedAt.Format(time.DateTime)
