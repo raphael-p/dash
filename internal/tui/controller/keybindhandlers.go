@@ -70,11 +70,7 @@ func (ka *keybindHandler) numberInput(r rune) {
 }
 
 func (ka *keybindHandler) openTask(_ rune) {
-	if ka.c.infoPanel.GetInput() != "" {
-		ka.c.openTask(ka.c.infoPanel.GetInput(), ka.c.Home)
-	} else {
-		ka.c.openTaskForm(ka.c.Home)
-	}
+	ka.c.openTask(ka.c.infoPanel.GetInput(), ka.c.Home)
 }
 
 func (ka *keybindHandler) quit(_ rune) {

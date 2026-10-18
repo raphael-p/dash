@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -27,7 +28,12 @@ func (c *Controller) openTask(idString string, back func()) bool {
 		c.infoPanel.Error(err)
 		return false
 	}
-	c.editTaskForm(&task, back)
+
+	if (task.CompletedAt == sql.NullTime{}) {
+		c.editTaskForm(&task, back)
+	} else {
+		c.emptyForm()
+	}
 
 	return true
 }
