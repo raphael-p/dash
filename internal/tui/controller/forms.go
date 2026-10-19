@@ -65,7 +65,7 @@ func (c *Controller) editTaskForm(task *database.Task, back func()) {
 
 		handler := &keybindHandler{c}
 		menu := keybindmenu.New().
-			SetHighlighColour(tcell.ColorLimeGreen).
+			SetHighlightColour(tcell.ColorLimeGreen).
 			SetFallback(handler.fallback)
 
 		menu.AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome).

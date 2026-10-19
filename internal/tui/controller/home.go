@@ -31,7 +31,7 @@ func (c *Controller) Home() {
 
 func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput func() bool, showCompleted func() bool) {
 	menu := keybindmenu.New().
-		SetHighlighColour(tcell.ColorLimeGreen).
+		SetHighlightColour(tcell.ColorLimeGreen).
 		SetFallback(handler.fallback)
 
 	if hasInput() {

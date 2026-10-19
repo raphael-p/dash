@@ -50,7 +50,7 @@ func (hm *KeybindMenu) SetFootnote(footnote string) *KeybindMenu {
 	return hm
 }
 
-func (hm *KeybindMenu) SetHighlighColour(colour tcell.Color) *KeybindMenu {
+func (hm *KeybindMenu) SetHighlightColour(colour tcell.Color) *KeybindMenu {
 	hm.highlightColour = colour
 	return hm
 }
