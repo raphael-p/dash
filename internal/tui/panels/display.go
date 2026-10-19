@@ -23,7 +23,7 @@ func newDisplayPanelTab() *displayPanelTab {
 }
 
 type DisplayPanel struct {
-	panel        *tview.TextView
+	textView     *tview.TextView
 	activeTab    *displayPanelTab
 	completedTab *displayPanelTab
 	mode         database.TaskMode
@@ -35,8 +35,8 @@ func NewDisplayPanel() *DisplayPanel {
 	return &DisplayPanel{panel, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
 }
 
-func (dp *DisplayPanel) GetPanel() *tview.TextView {
-	return dp.panel
+func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
+	return dp.textView
 }
 
 func (dp *DisplayPanel) ShowCompleted() bool {
@@ -76,7 +76,7 @@ func (dp *DisplayPanel) getPreviousPage() error {
 	err := dp.listTasks(pageIndex)
 	if err == nil {
 		tab.currentPageIndex = pageIndex
-		dp.GetPanel().ScrollToEnd()
+		dp.textView.ScrollToEnd()
 	}
 	return err
 }
@@ -92,17 +92,17 @@ func (dp *DisplayPanel) GetNextPage() error {
 	err := dp.listTasks(pageIndex)
 	if err == nil {
 		tab.currentPageIndex = pageIndex
-		dp.GetPanel().ScrollToBeginning()
+		dp.textView.ScrollToBeginning()
 	}
 	return err
 }
 
 func (dp *DisplayPanel) listTasks(pageIndex uint) error {
-	dp.panel.Clear()
+	dp.textView.Clear()
 	if dp.mode == database.CompletedTasks {
-		dp.panel.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
+		dp.textView.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
 	} else {
-		dp.panel.SetTitle(fmt.Sprintf(" Active Tasks (page %d) ", pageIndex+1))
+		dp.textView.SetTitle(fmt.Sprintf(" Active Tasks (page %d) ", pageIndex+1))
 	}
 
 	pages := dp.getTab().pages
@@ -123,7 +123,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	}
 
 	if len(tasks) == 0 {
-		fmt.Fprintln(dp.panel, "No tasks. Good job :)")
+		fmt.Fprintln(dp.textView, "No tasks. Good job :)")
 		return nil
 	}
 
@@ -131,37 +131,37 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
 	if pageIndex > 0 {
-		fmt.Fprintf(dp.panel, "\n↑ show previous page\n\n")
+		fmt.Fprintf(dp.textView, "\n↑ show previous page\n\n")
 	}
 	for idx, task := range tasks {
 		fmt.Fprint(
-			dp.panel,
+			dp.textView,
 			stringpad.RightPad(fmt.Sprintf("[%d]", task.ID), 8),
 			task.Name,
 		)
 		if idx+1 < len(tasks) {
-			fmt.Fprint(dp.panel, "\n")
+			fmt.Fprint(dp.textView, "\n")
 		}
 	}
 	if hasNext {
-		fmt.Fprintf(dp.panel, "\n\n↓ show next page\n")
+		fmt.Fprintf(dp.textView, "\n\n↓ show next page\n")
 	}
 	return nil
 }
 
 func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
-	dp.panel.Clear()
-	dp.panel.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
+	dp.textView.Clear()
+	dp.textView.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
 	if task.Description != "" {
-		fmt.Fprintf(dp.panel, "%s\n\n", task.Description)
+		fmt.Fprintf(dp.textView, "%s\n\n", task.Description)
 	}
 
 	createdAt, updatedAt, completedAt := task.GetFormattedTimes()
 	if completedAt != "" {
-		fmt.Fprintf(dp.panel, "Completed at: %s\n", completedAt)
+		fmt.Fprintf(dp.textView, "Completed at: %s\n", completedAt)
 	}
-	fmt.Fprintf(dp.panel, "Created at: %s\n", createdAt)
-	fmt.Fprintf(dp.panel, "Last updated: %s\n", updatedAt)
+	fmt.Fprintf(dp.textView, "Created at: %s\n", createdAt)
+	fmt.Fprintf(dp.textView, "Last updated: %s\n", updatedAt)
 	return task, nil
 }
 
@@ -184,27 +184,27 @@ func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
 }
 
 func (dp *DisplayPanel) ScrollDown() error {
-	offset, _ := dp.GetPanel().GetScrollOffset()
+	offset, _ := dp.textView.GetScrollOffset()
 
 	// determine whether to fetch the next page
-	lineCount := dp.GetPanel().GetWrappedLineCount()
-	_, _, _, height := dp.GetPanel().GetInnerRect()
+	lineCount := dp.textView.GetWrappedLineCount()
+	_, _, _, height := dp.textView.GetInnerRect()
 	if offset+height >= lineCount {
 		return dp.GetNextPage()
 	}
 
-	dp.GetPanel().ScrollTo(offset+1, 0)
+	dp.textView.ScrollTo(offset+1, 0)
 	return nil
 }
 
 func (dp *DisplayPanel) ScrollUp() error {
-	offset, _ := dp.GetPanel().GetScrollOffset()
+	offset, _ := dp.textView.GetScrollOffset()
 
 	// determine whether to fetch the previous page
 	if offset == 0 {
 		return dp.getPreviousPage()
 	}
 
-	dp.GetPanel().ScrollTo(offset-1, 0)
+	dp.textView.ScrollTo(offset-1, 0)
 	return nil
 }

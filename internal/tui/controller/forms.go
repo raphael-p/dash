@@ -27,7 +27,7 @@ func (c *Controller) addTaskForm(back func()) {
 		}
 	}).AddBackButton(back).AddQuitButton(c.app.Stop)
 
-	c.inputPanel.Set("Add New Task", addTaskForm)
+	c.inputPanel.Set("Add New Task", addTaskForm, func() string { return "" }, func(string) {})
 }
 
 func (c *Controller) removeTaskForm(back func()) {
@@ -39,7 +39,7 @@ func (c *Controller) removeTaskForm(back func()) {
 		removeTaskForm.ClearInputs()
 	})
 
-	c.inputPanel.Set("Remove Task", removeTaskForm)
+	c.inputPanel.Set("Remove Task", removeTaskForm, func() string { return "" }, func(string) {})
 }
 
 func (c *Controller) editTaskForm(task *database.Task, back func()) {
@@ -75,5 +75,5 @@ func (c *Controller) editTaskForm(task *database.Task, back func()) {
 		editTaskForm = editCompletedTaskForm
 	}
 
-	c.inputPanel.Set("Edit Task", editTaskForm)
+	c.inputPanel.Set("Edit Task", editTaskForm, func() string { return "" }, func(string) {})
 }

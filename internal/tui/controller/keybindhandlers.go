@@ -23,22 +23,22 @@ func (ka *keybindHandler) backToHome(_ rune) {
 }
 
 func (ka *keybindHandler) backspace(r rune) {
-	currentInput := ka.c.infoPanel.GetInput()
+	currentInput := ka.c.inputPanel.GetInput()
 	if currentInput != "" {
-		ka.c.infoPanel.SetInput(currentInput[:len(currentInput)-1])
+		ka.c.inputPanel.SetInput(currentInput[:len(currentInput)-1])
 	}
 }
 
 func (ka *keybindHandler) bumpTask(_ rune) {
-	ka.c.bumpTask(ka.c.infoPanel.GetInput())
+	ka.c.bumpTask(ka.c.inputPanel.GetInput())
 }
 
 func (ka *keybindHandler) reactivateTask(_ rune) {
-	ka.c.reactivateTask(ka.c.infoPanel.GetInput())
+	ka.c.reactivateTask(ka.c.inputPanel.GetInput())
 }
 
 func (ka *keybindHandler) copyTask(_ rune) {
-	ka.c.copyTask(ka.c.infoPanel.GetInput())
+	ka.c.copyTask(ka.c.inputPanel.GetInput())
 }
 
 func (ka *keybindHandler) editTask(_ rune) {
@@ -66,11 +66,11 @@ func (ka *keybindHandler) fallback(commandName string) {
 }
 
 func (ka *keybindHandler) numberInput(r rune) {
-	ka.c.infoPanel.SetInput(ka.c.infoPanel.GetInput() + string(r))
+	ka.c.inputPanel.SetInput(ka.c.inputPanel.GetInput() + string(r))
 }
 
 func (ka *keybindHandler) openTask(_ rune) {
-	ka.c.openTask(ka.c.infoPanel.GetInput(), ka.c.Home)
+	ka.c.openTask(ka.c.inputPanel.GetInput(), ka.c.Home)
 }
 
 func (ka *keybindHandler) quit(_ rune) {
@@ -78,8 +78,8 @@ func (ka *keybindHandler) quit(_ rune) {
 }
 
 func (ka *keybindHandler) removeTask(_ rune) {
-	if ka.c.infoPanel.GetInput() != "" {
-		ka.c.removeTask(ka.c.infoPanel.GetInput())
+	if ka.c.inputPanel.GetInput() != "" {
+		ka.c.removeTask(ka.c.inputPanel.GetInput())
 	} else {
 		ka.c.removeTaskForm(ka.c.Home)
 	}
