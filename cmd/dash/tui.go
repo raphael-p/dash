@@ -16,10 +16,10 @@ func startTUI() {
 
 	rightFlex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(inputPanel.GetPanel(), 0, 3, true).
-		AddItem(infoPanel.GetPanel(), 0, 1, false)
+		AddItem(inputPanel.GetPrimitive(), 0, 3, true).
+		AddItem(infoPanel.GetPrimitive(), 0, 1, false)
 	flex := tview.NewFlex().
-		AddItem(displayPanel.GetPanel(), 0, 2, false).
+		AddItem(displayPanel.GetPrimitive(), 0, 2, false).
 		AddItem(rightFlex, 0, 1, true)
 
 	c := controller.NewController(
@@ -28,7 +28,7 @@ func startTUI() {
 	)
 	c.Home()
 
-	inputPanel.GetPanel().SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	inputPanel.GetPrimitive().SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			displayPanel.ResetPagination()
 			c.Home()

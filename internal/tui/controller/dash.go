@@ -70,7 +70,6 @@ func (c *Controller) startDash() {
 	})
 
 	handler := &keybindHandler{c}
-	c.infoPanel.SetOnInputChange(func(_ string) {})
 	keybindmenu.New().
 		SetHighlighColour(tcell.ColorLimeGreen).
 		SetFallback(handler.fallback).
@@ -82,6 +81,6 @@ func (c *Controller) startDash() {
 		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome).
 		Apply(timer)
 
-	c.inputPanel.Set("Dash", timer.Layout)
+	c.inputPanel.Set("Dash", timer.Layout, func() string { return "" }, func(string) {})
 	timer.Start(c.app)
 }

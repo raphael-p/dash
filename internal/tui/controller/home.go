@@ -2,6 +2,7 @@ package controller
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/commandline"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 	"github.com/rivo/tview"
 )
@@ -9,17 +10,23 @@ import (
 func (c *Controller) Home() {
 	c.refreshTasks()
 
-	home := tview.NewTextView().SetDynamicColors(true)
+	commandLine := commandline.New().SetChevronColour(tcell.ColorLimeGreen).SetPlaceholder("type a number...")
+	commandLine.SetInput("")
+	keybindMenuContainer := tview.NewTextView().SetDynamicColors(true)
+
+	home := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(commandLine.GetTextView(), 0, 1, false).
+		AddItem(keybindMenuContainer, 0, 5, true)
 	home.SetBorderPadding(1, 1, 2, 2)
 
 	handler := &keybindHandler{c}
-	hasInput := func() bool { return c.infoPanel.GetInput() != "" }
+	hasInput := func() bool { return commandLine.GetInput() != "" }
 
-	setWrapper := func() { setHomeKeybinds(home, handler, hasInput, c.displayPanel.ShowCompleted) }
-	c.infoPanel.SetOnInputChange(func(_ string) { setWrapper() })
+	setWrapper := func() { setHomeKeybinds(keybindMenuContainer, handler, hasInput, c.displayPanel.ShowCompleted) }
+	commandLine.SetOnInputChange(func(_ string) { setWrapper() })
 	setWrapper()
 
-	c.inputPanel.Set("Welcome to Dash!", home)
+	c.inputPanel.Set("Welcome to Dash!", home, commandLine.GetInput, commandLine.SetInput)
 }
 
 func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput func() bool, showCompleted func() bool) {
@@ -37,7 +44,7 @@ func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput fun
 		}
 		menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTask).
 			AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput).
-			AddKeybind(0, "press backspace to clear", keybindmenu.BindBackspace, handler.backspace)
+			AddKeybind(0, "", keybindmenu.BindBackspace, handler.backspace)
 	} else {
 		if showCompleted() {
 			menu.AddKeybind('t', "show active tasks", keybindmenu.DefaultBind, handler.toggleTaskMode)
@@ -46,7 +53,7 @@ func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput fun
 				AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addFromHome).
 				AddKeybind('t', "show completed tasks", keybindmenu.DefaultBind, handler.toggleTaskMode)
 		}
-		menu.AddKeybind(0, "enter a task ID", keybindmenu.BindNumber, handler.numberInput).
+		menu.AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput).
 			AddKeybind(0, "", keybindmenu.BindBackspace, handler.backspace)
 	}
 
