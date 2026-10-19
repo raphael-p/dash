@@ -71,7 +71,7 @@ func (c *Controller) startDash() {
 
 	handler := &keybindHandler{c}
 	keybindmenu.New().
-		SetHighlighColour(tcell.ColorLimeGreen).
+		SetHighlightColour(tcell.ColorLimeGreen).
 		SetFallback(handler.fallback).
 		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
