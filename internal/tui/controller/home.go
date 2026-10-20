@@ -10,12 +10,11 @@ import (
 func (c *Controller) Home() {
 	c.refreshTasks()
 
-	commandLine := commandline.New().SetChevronColour(tcell.ColorLimeGreen).SetPlaceholder("type a number...")
-	commandLine.SetInput("")
+	commandLine := commandline.New(tcell.ColorLimeGreen, "enter a task ID...")
 	keybindMenuContainer := tview.NewTextView().SetDynamicColors(true)
 
 	home := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(commandLine.GetTextView(), 0, 1, false).
+		AddItem(commandLine.GetPrimitive(), 0, 1, false).
 		AddItem(keybindMenuContainer, 0, 5, true)
 	home.SetBorderPadding(1, 1, 2, 2)
 

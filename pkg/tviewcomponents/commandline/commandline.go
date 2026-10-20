@@ -8,26 +8,21 @@ import (
 )
 
 type CommandLine struct {
+	flex          *tview.Flex
+	textArea      *tview.TextArea
 	chevronColour tcell.Color
 	input         string
 	onInputChange func(string)
 	placeholder   string
-	textView      *tview.TextView
 }
 
-func New() *CommandLine {
-	textView := tview.NewTextView().SetDynamicColors(true)
-	return &CommandLine{0, "", func(string) {}, "\n", textView}
-}
+func New(chevronColour tcell.Color, placeholder string) *CommandLine {
+	chevron := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf("[%s::b]>[-:-:-] a", chevronColour))
+	textArea := tview.NewTextArea().SetPlaceholder(" " + placeholder)
+	textArea.SetPlaceholderStyle(textArea.GetPlaceholderStyle().Foreground(tcell.ColorGray))
+	flex := tview.NewFlex().AddItem(chevron, 1, 0, false).AddItem(textArea, 0, 1, false)
 
-func (cl *CommandLine) SetChevronColour(colour tcell.Color) *CommandLine {
-	cl.chevronColour = colour
-	return cl
-}
-
-func (cl *CommandLine) SetPlaceholder(placeholder string) *CommandLine {
-	cl.placeholder = placeholder
-	return cl
+	return &CommandLine{flex, textArea, 0, "", func(string) {}, ""}
 }
 
 func (cl *CommandLine) GetInput() string {
@@ -36,10 +31,10 @@ func (cl *CommandLine) GetInput() string {
 
 func (cl *CommandLine) SetInput(input string) {
 	cl.input = input
-	if input != "" {
-		cl.textView.SetText(fmt.Sprintf("[%s::b]>[-:-:-] %s", cl.chevronColour, cl.input))
+	if input == "" {
+		cl.textArea.SetText("", true)
 	} else {
-		cl.textView.SetText(fmt.Sprintf("[%s::b]>[-:-:-] [%s::b]%s[-:-:-]", cl.chevronColour, tcell.ColorGray, cl.placeholder))
+		cl.textArea.SetText(" "+cl.input, true)
 	}
 	cl.onInputChange(cl.input)
 }
@@ -48,6 +43,6 @@ func (cl *CommandLine) SetOnInputChange(onInputChange func(newInput string)) {
 	cl.onInputChange = onInputChange
 }
 
-func (cl *CommandLine) GetTextView() *tview.TextView {
-	return cl.textView
+func (cl *CommandLine) GetPrimitive() tview.Primitive {
+	return cl.flex
 }
