@@ -4,18 +4,12 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/raphael-p/dash/internal/database"
 )
 
 type keybindHandler struct {
 	c *Controller
-}
-
-func (ka *keybindHandler) addFromDash(_ rune) {
-	ka.c.addTaskName(ka.c.startDash)
-}
-
-func (ka *keybindHandler) addFromHome(_ rune) {
-	ka.c.addTaskName(ka.c.Home)
 }
 
 func (ka *keybindHandler) backToHome(_ rune) {
@@ -26,11 +20,48 @@ func (ka *keybindHandler) startDash(_ rune) {
 	ka.c.startDash()
 }
 
-func (ka *keybindHandler) bumpTask(_ rune) {
+func (ka *keybindHandler) addTaskFlow(back func()) func(rune) {
+	return func(_ rune) {
+		ka.c.addTaskName(back)
+	}
+}
+
+func (ka *keybindHandler) addTaskFlowSubmitName(back func()) func(rune) {
+	return func(_ rune) {
+		if name := getInputOrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); name != "" {
+			ka.c.addTaskDescription(name, back)
+		}
+	}
+}
+
+func (ka *keybindHandler) addTaskFlowSubmitDescription(name string, back func()) func(rune) {
+	return func(_ rune) {
+		if description := getInputOrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); description != "" {
+			ka.c.addTaskInsertionOrder(name, description, back)
+		}
+	}
+}
+
+func (ka *keybindHandler) addTaskFlowSubmit(name, description string, insertionOrder taskInsertionOrder, back func()) func(rune) {
+	return func(_ rune) {
+		if ka.c.addTask(name, description, insertionOrder) {
+			back()
+		}
+	}
+}
+
+func (ka *keybindHandler) bumpTaskFromHome(_ rune) {
 	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
 		if ka.c.bumpTask(id) {
 			ka.c.refreshTasks()
+			ka.c.commandLine.Clear()
 		}
+	}
+}
+
+func (ka *keybindHandler) bumpTaskFromEdit(id int64) func(rune) {
+	return func(_ rune) {
+		ka.c.bumpTask(id)
 	}
 }
 
@@ -40,8 +71,40 @@ func (ka *keybindHandler) copyTask(_ rune) {
 	}
 }
 
-func (ka *keybindHandler) editTask(_ rune) {
-	ka.c.editTaskForm(currentDashTask, ka.c.startDash)
+func (ka *keybindHandler) editDashTask(_ rune) {
+	ka.c.editTaskFlow(currentDashTask, ka.c.startDash)
+}
+
+func (ka *keybindHandler) editTaskFlowName(task *database.Task, back func()) func(rune) {
+	return func(_ rune) {
+		ka.c.editTaskName(task, back)
+	}
+}
+
+func (ka *keybindHandler) editTaskFlowDescription(task *database.Task, back func()) func(rune) {
+	return func(_ rune) {
+		ka.c.editTaskDescription(task, back)
+	}
+}
+
+func (ka *keybindHandler) editTaskFlowSubmitName(task *database.Task, back func()) func(rune) {
+	return func(_ rune) {
+		if name := getInputOrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); name != "" {
+			if ka.c.editTask(task, name, "") {
+				ka.c.openTask(task.ID, back)
+			}
+		}
+	}
+}
+
+func (ka *keybindHandler) editTaskFlowSubmitDescription(task *database.Task, back func()) func(rune) {
+	return func(_ rune) {
+		if description := getInputOrWarn(ka.c.commandLine.GetInput(), "description", ka.c.infoPanel.Warn); description != "" {
+			if ka.c.editTask(task, "", description) {
+				ka.c.openTask(task.ID, back)
+			}
+		}
+	}
 }
 
 func (ka *keybindHandler) openTask(_ rune) {
@@ -50,19 +113,33 @@ func (ka *keybindHandler) openTask(_ rune) {
 	}
 }
 
-func (ka *keybindHandler) reactivateTask(_ rune) {
+func (ka *keybindHandler) reactivateTaskFromHome(_ rune) {
 	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
 		if ka.c.reactivateTask(id) {
 			ka.c.refreshTasks()
+			ka.c.commandLine.Clear()
 		}
 	}
-
 }
 
-func (ka *keybindHandler) removeTask(_ rune) {
+func (ka *keybindHandler) reactivateTaskFromEdit(id int64) func(rune) {
+	return func(_ rune) {
+		ka.c.reactivateTask(id)
+	}
+}
+
+func (ka *keybindHandler) removeTaskFromHome(_ rune) {
 	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
 		if ka.c.removeTask(id) {
 			ka.c.refreshTasks()
+		}
+	}
+}
+
+func (ka *keybindHandler) removeTaskFromEdit(id int64, back func()) func(rune) {
+	return func(_ rune) {
+		if ka.c.removeTask(id) {
+			back()
 		}
 	}
 }

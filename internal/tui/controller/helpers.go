@@ -83,10 +83,10 @@ func extractIDFromString(idString string) (int64, error) {
 	return id, nil
 }
 
-func getInputOrWarn(input, label string, warn func(err string)) (string, bool) {
+func getInputOrWarn(input, label string, warn func(err string)) string {
 	if value := strings.TrimSpace(input); value != "" {
-		return value, true
+		return value
 	}
 	warn(fmt.Sprintf("please provide a %s", label))
-	return "", false
+	return ""
 }

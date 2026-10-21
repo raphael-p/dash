@@ -20,14 +20,14 @@ func (c *Controller) openTask(id int64, back func()) bool {
 		c.infoPanel.Error(err)
 		return false
 	}
-	c.editTaskForm(&task, back)
+	c.editTaskFlow(&task, back)
 	return true
 }
 
 type taskInsertionOrder int
 
 const (
-	InsertFirst taskInsertionOrder = iota
+	InsertFirst taskInsertionOrder = iota + 1
 	InsertNext
 	InsertLast
 )
@@ -56,6 +56,9 @@ func (c *Controller) addTask(name, description string, insertionOrder taskInsert
 		database.BumpTask(task.ID)
 		database.BumpTask(topTask.ID)
 	case InsertLast: // no action required
+	default:
+		c.infoPanel.Error(fmt.Errorf("invalid task insertion order"))
+		return false
 	}
 
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.ID))
