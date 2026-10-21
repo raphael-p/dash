@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/raphael-p/dash/internal/tui/panels"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/commandline"
 	"github.com/rivo/tview"
 )
 
@@ -15,7 +16,8 @@ type config struct {
 
 type Controller struct {
 	app          *tview.Application
-	inputPanel   *panels.InputPanel
+	commandLine  *commandline.CommandLine
+	navPanel     *panels.NavigationPanel
 	infoPanel    *panels.InfoPanel
 	displayPanel *panels.DisplayPanel
 	config       config
@@ -23,7 +25,8 @@ type Controller struct {
 
 func NewController(
 	app *tview.Application,
-	inputPanel *panels.InputPanel,
+	commandLine *commandline.CommandLine,
+	navPanel *panels.NavigationPanel,
 	infoPanel *panels.InfoPanel,
 	displayPanel *panels.DisplayPanel,
 	dashDurationSeconds uint16,
@@ -32,5 +35,5 @@ func NewController(
 ) *Controller {
 	dashDuration := time.Duration(dashDurationSeconds) * time.Second
 	config := config{dashDuration, descriptionCharLimit, nameCharLimit}
-	return &Controller{app, inputPanel, infoPanel, displayPanel, config}
+	return &Controller{app, commandLine, navPanel, infoPanel, displayPanel, config}
 }

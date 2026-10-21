@@ -2,11 +2,9 @@ package controller
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/atotto/clipboard"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/pkg/tviewcomponents/taskform"
 )
 
 func (c *Controller) refreshTasks() {
@@ -16,12 +14,7 @@ func (c *Controller) refreshTasks() {
 	}
 }
 
-func (c *Controller) openTask(idString string, back func()) bool {
-	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
-	if !ok {
-		return false
-	}
-
+func (c *Controller) openTask(id int64, back func()) bool {
 	task, err := c.displayPanel.ShowTaskByID(int64(id))
 	if err != nil {
 		c.infoPanel.Error(err)
@@ -31,7 +24,15 @@ func (c *Controller) openTask(idString string, back func()) bool {
 	return true
 }
 
-func (c *Controller) addTask(name, description string, priority taskform.TaskPriority) bool {
+type taskInsertionOrder int
+
+const (
+	InsertFirst taskInsertionOrder = iota
+	InsertNext
+	InsertLast
+)
+
+func (c *Controller) addTask(name, description string, insertionOrder taskInsertionOrder) bool {
 	if name == "" || description == "" {
 		c.infoPanel.Warn("please provide a name and description of the task.")
 		return false
@@ -43,10 +44,10 @@ func (c *Controller) addTask(name, description string, priority taskform.TaskPri
 		return false
 	}
 
-	switch priority {
-	case taskform.PriorityFirst:
+	switch insertionOrder {
+	case InsertFirst:
 		database.BumpTask(task.ID)
-	case taskform.PriorityNext:
+	case InsertNext:
 		topTask, err := database.GetTopTask()
 		if err != nil {
 			c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
@@ -54,20 +55,15 @@ func (c *Controller) addTask(name, description string, priority taskform.TaskPri
 		}
 		database.BumpTask(task.ID)
 		database.BumpTask(topTask.ID)
-	case taskform.PriorityLast: // no action required
+	case InsertLast: // no action required
 	}
 
 	c.infoPanel.Info(fmt.Sprintf("new task [%d] created.", task.ID))
 	return true
 }
 
-func (c *Controller) removeTask(idString string) bool {
-	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
-	if !ok {
-		return false
-	}
-
-	t := database.Task{ID: int64(id)}
+func (c *Controller) removeTask(id int64) bool {
+	t := database.Task{ID: id}
 	deleted, err := t.Delete()
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
@@ -76,12 +72,10 @@ func (c *Controller) removeTask(idString string) bool {
 
 	if deleted {
 		c.infoPanel.Info(fmt.Sprintf("task [%d] deleted.", id))
-		c.refreshTasks()
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
-
-	return true
+	return deleted
 }
 
 func (c *Controller) editTask(task *database.Task, name, description string) bool {
@@ -108,15 +102,10 @@ func (c *Controller) editTask(task *database.Task, name, description string) boo
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", task.ID))
 	}
-	return true
+	return updated
 }
 
-func (c *Controller) bumpTask(idString string) bool {
-	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
-	if !ok {
-		return false
-	}
-
+func (c *Controller) bumpTask(id int64) bool {
 	bumped, err := database.BumpTask(int64(id))
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to bump task [%d] priority: %s", id, err))
@@ -125,20 +114,14 @@ func (c *Controller) bumpTask(idString string) bool {
 
 	if bumped {
 		c.infoPanel.Info(fmt.Sprintf("bumped priority of task [%d]", id))
-		c.refreshTasks()
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
-	return true
+	return bumped
 }
 
-func (c *Controller) copyTask(idString string) {
-	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
-	if !ok {
-		return
-	}
-
-	task, err := database.GetTask(int64(id))
+func (c *Controller) copyTask(id int64) {
+	task, err := database.GetTask(id)
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("could not retrieve task [%d]: %s", id, err))
 		return
@@ -153,13 +136,8 @@ func (c *Controller) copyTask(idString string) {
 	c.infoPanel.Info(fmt.Sprintf("copied task [%d] to clipboard", id))
 }
 
-func (c *Controller) reactivateTask(idString string) bool {
-	id, ok := getIDOrWarn(idString, c.infoPanel.Warn)
-	if !ok {
-		return false
-	}
-
-	reactivated, err := database.ReactivateTask(int64(id))
+func (c *Controller) reactivateTask(id int64) bool {
+	reactivated, err := database.ReactivateTask(id)
 	if err != nil {
 		c.infoPanel.Error(fmt.Errorf("failed to reactivate task [%d]: %s", id, err))
 		return false
@@ -167,34 +145,8 @@ func (c *Controller) reactivateTask(idString string) bool {
 
 	if reactivated {
 		c.infoPanel.Info(fmt.Sprintf("reactivated task [%d]", id))
-		c.refreshTasks()
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
-	return true
-}
-
-func getIDOrWarn(idString string, warn func(err string)) (int, bool) {
-	id, err := extractIDFromString(idString)
-	if err != nil {
-		warn(fmt.Sprint("your input is invalid: ", err))
-		return 0, false
-	}
-	return id, true
-}
-
-func extractIDFromString(idString string) (int, error) {
-	if idString == "" {
-		return 0, fmt.Errorf("task ID is empty")
-	}
-
-	id, err := strconv.Atoi(idString)
-	if err != nil || id < 1 {
-		return 0, fmt.Errorf("task ID is not an integer")
-	}
-
-	if id < 1 {
-		return 0, fmt.Errorf("task ID must be greater than one (1)")
-	}
-	return id, nil
+	return reactivated
 }

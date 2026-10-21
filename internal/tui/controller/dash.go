@@ -7,7 +7,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/gen2brain/beeep"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/logger"
@@ -70,17 +69,16 @@ func (c *Controller) startDash() {
 	})
 
 	handler := &keybindHandler{c}
-	keybindmenu.New().
-		SetHighlightColour(tcell.ColorLimeGreen).
-		SetFallback(handler.fallback).
+	menu := configureKeybindMenu(handler, nil, keybindInput).
 		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
 		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editTask).
 		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, handler.resetTimer(func() { timer.Reset(c.app) })).
 		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addFromDash).
-		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome).
-		Apply(timer)
+		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome)
+	configureCommandLine(c, menu, keybindInput)
 
-	c.inputPanel.Set("Dash", timer.Layout, func() string { return "" }, func(string) {})
+	timer.SetText(menu.GenerateText())
+	c.navPanel.SetTitle("Dash").SetPrimitive(timer.Layout)
 	timer.Start(c.app)
 }

@@ -1,0 +1,92 @@
+package controller
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
+)
+
+type commandLineMode int
+
+const (
+	descriptionInput commandLineMode = iota
+	keybindInput
+	nameInput
+	taskIDInput
+)
+
+func configureCommandLine(c *Controller, menu *keybindmenu.KeybindMenu, mode commandLineMode) {
+	var charLimit int
+	var placeholder string
+	switch mode {
+	case descriptionInput:
+		charLimit = c.config.descriptionCharLimit
+		placeholder = "enter a task description, press ENTER to submit, press SHIFT+ENTER or CTRL+J to create a new line"
+	case keybindInput:
+		charLimit = 1
+	case nameInput:
+		charLimit = c.config.nameCharLimit
+		placeholder = "enter a task name, press ENTER to submit"
+	case taskIDInput:
+		charLimit = 9
+		placeholder = "enter a task id, press ENTER to submit"
+	}
+	c.commandLine.Reset().SetCharLimit(charLimit).SetPlaceholder(placeholder)
+	if menu != nil {
+		c.commandLine.SetInputCapture(menu.GenerateInputCapture())
+	}
+}
+
+func configureKeybindMenu(handler *keybindHandler, onEnter func(rune), mode commandLineMode) *keybindmenu.KeybindMenu {
+	menu := keybindmenu.New().SetHighlightColour(tcell.ColorLimeGreen).SetFallback(handler.fallback)
+	if mode == keybindInput {
+		return menu
+	}
+	if mode == descriptionInput {
+		menu.AddKeybind(0, "", keybindmenu.BindNewLine, nil)
+	}
+	if mode == taskIDInput {
+		menu.AddKeybind(0, "", keybindmenu.BindNumber, nil)
+	} else {
+		menu.AddKeybind(0, "", keybindmenu.BindPrintableAscii, nil)
+	}
+	return menu.
+		AddKeybind(0, "", keybindmenu.BindEnter, onEnter).
+		AddKeybind(0, "", keybindmenu.BindBackspace, nil)
+}
+
+func getIDOrWarn(idString string, warn func(err string)) (int64, bool) {
+	id, err := extractIDFromString(idString)
+	if err != nil {
+		warn(fmt.Sprint("your input is invalid: ", err))
+		return 0, false
+	}
+	return id, true
+}
+
+func extractIDFromString(idString string) (int64, error) {
+	if idString == "" {
+		return 0, fmt.Errorf("task ID is empty")
+	}
+
+	id, err := strconv.ParseInt(idString, 10, 0)
+	if err != nil || id < 1 {
+		return 0, fmt.Errorf("task ID is not an integer")
+	}
+
+	if id < 1 {
+		return 0, fmt.Errorf("task ID must be greater than one (1)")
+	}
+	return id, nil
+}
+
+func getInputOrWarn(input, label string, warn func(err string)) (string, bool) {
+	if value := strings.TrimSpace(input); value != "" {
+		return value, true
+	}
+	warn(fmt.Sprintf("please provide a %s", label))
+	return "", false
+}
