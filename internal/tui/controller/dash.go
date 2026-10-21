@@ -72,9 +72,9 @@ func (c *Controller) startDash() {
 	menu := configureKeybindMenu(handler, nil, keybindInput).
 		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
-		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editTask).
+		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editDashTask).
 		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, handler.resetTimer(func() { timer.Reset(c.app) })).
-		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addFromDash).
+		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.startDash)).
 		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome)
 	configureCommandLine(c, menu, keybindInput)
 

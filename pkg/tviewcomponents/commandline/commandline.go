@@ -51,6 +51,11 @@ func (cl *CommandLine) GetPrimitive() tview.Primitive {
 	return cl.flex
 }
 
+func (cl *CommandLine) Clear() *CommandLine {
+	cl.textArea.SetText("", true)
+	return cl
+}
+
 func (cl *CommandLine) Reset() *CommandLine {
 	cl.SetChangedFunc(nil).SetPlaceholder("").SetCharLimit(0)
 	cl.textArea.SetText("", true)
