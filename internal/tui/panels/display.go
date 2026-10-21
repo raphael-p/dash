@@ -43,6 +43,15 @@ func (dp *DisplayPanel) ShowCompleted() bool {
 	return dp.mode == database.CompletedTasks
 }
 
+func (dp *DisplayPanel) IsEmpty() bool {
+	for _, page := range dp.getTab().pages {
+		if page.lastTask.ID != 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func (dp *DisplayPanel) getTab() *displayPanelTab {
 	if dp.mode == database.CompletedTasks {
 		return dp.completedTab
@@ -123,6 +132,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	}
 
 	if len(tasks) == 0 {
+		pages[pageIndex] = taskPage{}
 		fmt.Fprintln(dp.textView, "No tasks. Good job :)")
 		return nil
 	}
