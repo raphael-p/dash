@@ -3,19 +3,29 @@ package keybindmenu
 import (
 	"fmt"
 	"strings"
-	"unicode"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/rivo/tview"
 )
 
-type Bind = func(eventKey tcell.Key, key rune) bool
+type Bind = func(eventKey tcell.Key, key rune, mod tcell.ModMask) bool
 
 var (
-	DefaultBind   Bind = func(_ tcell.Key, _ rune) bool { return false } // just binds on Keybind.key
-	BindEnter     Bind = func(e tcell.Key, _ rune) bool { return e == tcell.KeyEnter }
-	BindBackspace Bind = func(e tcell.Key, _ rune) bool { return e == tcell.KeyBackspace || e == tcell.KeyBackspace2 }
-	BindNumber    Bind = func(e tcell.Key, r rune) bool { return e == tcell.KeyRune && r >= '0' && r <= '9' }
+	DefaultBind Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
+	BindEnter   Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
+		return e == tcell.KeyEnter && m == tcell.ModNone
+	}
+	BindBackspace Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
+		return e == tcell.KeyBackspace || e == tcell.KeyBackspace2
+	}
+	BindNewLine Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
+		return (e == tcell.KeyEnter && m == tcell.ModShift)
+	}
+	BindNumber Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
+		return e == tcell.KeyRune && r >= '0' && r <= '9'
+	}
+	BindPrintableAscii Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
+		return e == tcell.KeyRune && r >= ' ' && r <= '~'
+	}
 )
 
 type Fallback = func(commandName string)
@@ -65,17 +75,7 @@ func (hm *KeybindMenu) DisableScrolling() *KeybindMenu {
 	return hm
 }
 
-type applyable interface {
-	SetText(string) *tview.TextView
-	SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey) *tview.Box
-}
-
-func (hm *KeybindMenu) Apply(parentComponent applyable) {
-	parentComponent.SetText(hm.generateText())
-	parentComponent.SetInputCapture(hm.generateInputCapture())
-}
-
-func (hm *KeybindMenu) generateText() string {
+func (hm *KeybindMenu) GenerateText() string {
 	builder := new(strings.Builder)
 
 	for _, keybind := range hm.keybinds {
@@ -104,10 +104,16 @@ func (hm *KeybindMenu) generateText() string {
 	return builder.String()
 }
 
-func (hm *KeybindMenu) generateInputCapture() func(event *tcell.EventKey) *tcell.EventKey {
+func (hm *KeybindMenu) GenerateInputCapture() func(event *tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
+		// map CTRL+J to SHIFT+ENTER to support newlines
+		if (event.Rune() == 'j' || event.Rune() == 'J') && event.Modifiers() == tcell.ModCtrl {
+			event = tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModShift)
+		}
+
 		eventKey := event.Key()
 		key := event.Rune()
+		mods := event.Modifiers()
 
 		if hm.isScrollable && (eventKey == tcell.KeyDown || eventKey == tcell.KeyUp) {
 			return event
@@ -115,7 +121,11 @@ func (hm *KeybindMenu) generateInputCapture() func(event *tcell.EventKey) *tcell
 
 		hasTriggered := false
 		for _, keybind := range hm.keybinds {
-			if (key != 0 && key == keybind.key) || keybind.bind(eventKey, key) {
+			if (key != 0 && key == keybind.key && mods == tcell.ModNone) || keybind.bind(eventKey, key, mods) {
+				// intentionally allow default behaviour
+				if keybind.handler == nil {
+					return event
+				}
 				keybind.handler(key)
 				hasTriggered = true
 				break
@@ -123,10 +133,11 @@ func (hm *KeybindMenu) generateInputCapture() func(event *tcell.EventKey) *tcell
 		}
 
 		if !hasTriggered {
-			if key == 0 || (string(key) != " " && unicode.IsSpace(key)) {
-				hm.fallback(event.Name())
-			} else {
+			eventName := event.Name()
+			if strings.HasPrefix(eventName, "Rune") {
 				hm.fallback("'" + string(key) + "'")
+			} else {
+				hm.fallback(event.Name())
 			}
 		}
 

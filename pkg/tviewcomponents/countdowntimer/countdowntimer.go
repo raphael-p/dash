@@ -37,7 +37,7 @@ type Config struct {
 type CountdownTimer struct {
 	Layout             *tview.Flex
 	countdown          *tview.TextView
-	description        *tview.TextView
+	text               *tview.TextView
 	config             Config
 	isRunning          atomic.Bool
 	reinitialiseSignal chan struct{}
@@ -50,19 +50,17 @@ var Instance = func() *CountdownTimer {
 	once.Do(func() {
 		countdown := tview.NewTextView()
 		countdown.SetTextColor(tcell.ColorLimeGreen)
-		countdown.SetBorderPadding(1, 0, 2, 2)
 
-		description := tview.NewTextView().SetDynamicColors(true)
-		description.SetBorderPadding(0, 1, 2, 2)
+		text := tview.NewTextView().SetDynamicColors(true)
 
 		layout := tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(countdown, 3, 0, false).
-			AddItem(description, 0, 1, false)
+			AddItem(text, 0, 1, false)
 
 		instance = CountdownTimer{
 			Layout:             layout,
 			countdown:          countdown,
-			description:        description,
+			text:               text,
 			isRunning:          atomic.Bool{},
 			reinitialiseSignal: make(chan struct{}, 1),
 		}
@@ -81,7 +79,7 @@ func (t *CountdownTimer) SetInputCapture(ip func(event *tcell.EventKey) *tcell.E
 }
 
 func (t *CountdownTimer) SetText(text string) *tview.TextView {
-	return t.description.SetText(text)
+	return t.text.SetText(text)
 }
 
 func (t *CountdownTimer) getTimeRemaining(startTime time.Time) (string, timescale, string) {

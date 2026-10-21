@@ -1,49 +1,37 @@
 package controller
 
 import (
-	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/dash/pkg/tviewcomponents/commandline"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
-	"github.com/rivo/tview"
 )
 
 func (c *Controller) Home() {
 	c.refreshTasks()
-
-	commandLine := commandline.New(tcell.ColorLimeGreen, "enter a task ID...")
-	keybindMenuContainer := tview.NewTextView().SetDynamicColors(true)
-
-	home := tview.NewFlex().SetDirection(tview.FlexRow).
-		AddItem(commandLine.GetPrimitive(), 0, 1, false).
-		AddItem(keybindMenuContainer, 0, 5, true)
-	home.SetBorderPadding(1, 1, 2, 2)
-
+	configureCommandLine(c, nil, taskIDInput)
 	handler := &keybindHandler{c}
-	hasInput := func() bool { return commandLine.GetInput() != "" }
 
-	setWrapper := func() { setHomeKeybinds(keybindMenuContainer, handler, hasInput, c.displayPanel.ShowCompleted) }
-	commandLine.SetOnInputChange(func(_ string) { setWrapper() })
+	setWrapper := func() {
+		menu := configureHomeKeybinds(handler, c.commandLine.HasInput, c.displayPanel.ShowCompleted)
+		c.navPanel.SetText(menu.GenerateText())
+		c.commandLine.SetInputCapture(menu.GenerateInputCapture())
+	}
+	c.commandLine.SetChangedFunc(setWrapper)
 	setWrapper()
 
-	c.inputPanel.Set("Welcome to Dash!", home, commandLine.GetInput, commandLine.SetInput)
+	c.navPanel.SetTitle("Welcome to Dash!")
 }
 
-func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput func() bool, showCompleted func() bool) {
-	menu := keybindmenu.New().
-		SetHighlightColour(tcell.ColorLimeGreen).
-		SetFallback(handler.fallback)
+func configureHomeKeybinds(handler *keybindHandler, hasInput func() bool, showCompleted func() bool) *keybindmenu.KeybindMenu {
+	menu := configureKeybindMenu(handler, handler.openTask, taskIDInput)
 
 	if hasInput() {
-		menu.AddKeybind('o', "open task", keybindmenu.BindEnter, handler.openTask).
+		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask).
 			AddKeybind('c', "copy task to clipboard", keybindmenu.DefaultBind, handler.copyTask)
 		if showCompleted() {
 			menu.AddKeybind('u', "reactivate task", keybindmenu.DefaultBind, handler.reactivateTask)
 		} else {
-			menu.AddKeybind('b', "bump task priority", keybindmenu.DefaultBind, handler.bumpTask)
+			menu.AddKeybind('p', "bump task priority", keybindmenu.DefaultBind, handler.bumpTask)
 		}
-		menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTask).
-			AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput).
-			AddKeybind(0, "", keybindmenu.BindBackspace, handler.backspace)
+		menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTask)
 	} else {
 		if showCompleted() {
 			menu.AddKeybind('t', "show active tasks", keybindmenu.DefaultBind, handler.toggleTaskMode)
@@ -52,12 +40,9 @@ func setHomeKeybinds(home *tview.TextView, handler *keybindHandler, hasInput fun
 				AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addFromHome).
 				AddKeybind('t', "show completed tasks", keybindmenu.DefaultBind, handler.toggleTaskMode)
 		}
-		menu.AddKeybind(0, "", keybindmenu.BindNumber, handler.numberInput).
-			AddKeybind(0, "", keybindmenu.BindBackspace, handler.backspace)
 	}
 
-	menu.AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDown).
+	return menu.AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDown).
 		AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUp).
-		AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit).
-		Apply(home)
+		AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit)
 }

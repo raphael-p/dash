@@ -11,42 +11,60 @@ type keybindHandler struct {
 }
 
 func (ka *keybindHandler) addFromDash(_ rune) {
-	ka.c.addTaskForm(ka.c.startDash)
+	ka.c.addTaskName(ka.c.startDash)
 }
 
 func (ka *keybindHandler) addFromHome(_ rune) {
-	ka.c.addTaskForm(ka.c.Home)
+	ka.c.addTaskName(ka.c.Home)
 }
 
 func (ka *keybindHandler) backToHome(_ rune) {
 	ka.c.Home()
 }
 
-func (ka *keybindHandler) backspace(r rune) {
-	currentInput := ka.c.inputPanel.GetInput()
-	if currentInput != "" {
-		ka.c.inputPanel.SetInput(currentInput[:len(currentInput)-1])
-	}
+func (ka *keybindHandler) startDash(_ rune) {
+	ka.c.startDash()
 }
 
 func (ka *keybindHandler) bumpTask(_ rune) {
-	ka.c.bumpTask(ka.c.inputPanel.GetInput())
-}
-
-func (ka *keybindHandler) reactivateTask(_ rune) {
-	ka.c.reactivateTask(ka.c.inputPanel.GetInput())
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		if ka.c.bumpTask(id) {
+			ka.c.refreshTasks()
+		}
+	}
 }
 
 func (ka *keybindHandler) copyTask(_ rune) {
-	ka.c.copyTask(ka.c.inputPanel.GetInput())
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		ka.c.copyTask(id)
+	}
 }
 
 func (ka *keybindHandler) editTask(_ rune) {
 	ka.c.editTaskForm(currentDashTask, ka.c.startDash)
 }
 
-func (ka *keybindHandler) startDash(_ rune) {
-	ka.c.startDash()
+func (ka *keybindHandler) openTask(_ rune) {
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		ka.c.openTask(id, ka.c.Home)
+	}
+}
+
+func (ka *keybindHandler) reactivateTask(_ rune) {
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		if ka.c.reactivateTask(id) {
+			ka.c.refreshTasks()
+		}
+	}
+
+}
+
+func (ka *keybindHandler) removeTask(_ rune) {
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		if ka.c.removeTask(id) {
+			ka.c.refreshTasks()
+		}
+	}
 }
 
 func (ka *keybindHandler) markTaskDone(_ rune) {
@@ -61,33 +79,16 @@ func (ka *keybindHandler) markTaskDone(_ rune) {
 	}
 }
 
-func (ka *keybindHandler) fallback(commandName string) {
-	ka.c.infoPanel.Warn("invalid command: " + commandName)
-}
-
-func (ka *keybindHandler) numberInput(r rune) {
-	ka.c.inputPanel.SetInput(ka.c.inputPanel.GetInput() + string(r))
-}
-
-func (ka *keybindHandler) openTask(_ rune) {
-	ka.c.openTask(ka.c.inputPanel.GetInput(), ka.c.Home)
-}
-
-func (ka *keybindHandler) quit(_ rune) {
-	ka.c.app.Stop()
-}
-
-func (ka *keybindHandler) removeTask(_ rune) {
-	if ka.c.inputPanel.GetInput() != "" {
-		ka.c.removeTask(ka.c.inputPanel.GetInput())
-	} else {
-		ka.c.removeTaskForm(ka.c.Home)
+func (ka *keybindHandler) unmarkTaskDone(_ rune) {
+	if lastDashTask.ID == currentDashTask.ID {
+		return // noop
 	}
-}
-
-func (ka *keybindHandler) resetTimer(resetTimer func()) func(rune) {
-	return func(_ rune) {
-		resetTimer()
+	lastDashTask.CompletedAt = sql.NullTime{Valid: false}
+	_, err := lastDashTask.Update()
+	if err != nil {
+		currentDashTask.CompletedAt = sql.NullTime{Valid: true}
+		ka.c.infoPanel.Error(fmt.Errorf("failed to undo mark task as done: %s", err))
+	} else {
 		ka.c.startDash()
 	}
 }
@@ -95,6 +96,21 @@ func (ka *keybindHandler) resetTimer(resetTimer func()) func(rune) {
 func (ka *keybindHandler) toggleTaskMode(_ rune) {
 	ka.c.displayPanel.ToggleTaskMode()
 	ka.c.Home()
+}
+
+func (ka *keybindHandler) fallback(commandName string) {
+	ka.c.infoPanel.Warn("invalid command: " + commandName)
+}
+
+func (ka *keybindHandler) quit(_ rune) {
+	ka.c.app.Stop()
+}
+
+func (ka *keybindHandler) resetTimer(resetTimer func()) func(rune) {
+	return func(_ rune) {
+		resetTimer()
+		ka.c.startDash()
+	}
 }
 
 func (ka *keybindHandler) scrollDown(_ rune) {
@@ -108,19 +124,5 @@ func (ka *keybindHandler) scrollUp(_ rune) {
 	err := ka.c.displayPanel.ScrollUp()
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("failed to scroll up: %s", err))
-	}
-}
-
-func (ka *keybindHandler) unmarkTaskDone(_ rune) {
-	if lastDashTask.ID == currentDashTask.ID {
-		return // noop
-	}
-	lastDashTask.CompletedAt = sql.NullTime{Valid: false}
-	_, err := lastDashTask.Update()
-	if err != nil {
-		currentDashTask.CompletedAt = sql.NullTime{Valid: true}
-		ka.c.infoPanel.Error(fmt.Errorf("failed to undo mark task as done: %s", err))
-	} else {
-		ka.c.startDash()
 	}
 }
