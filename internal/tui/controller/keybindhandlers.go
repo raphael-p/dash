@@ -132,6 +132,7 @@ func (ka *keybindHandler) removeTaskFromHome(_ rune) {
 	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
 		if ka.c.removeTask(id) {
 			ka.c.refreshTasks()
+			ka.c.commandLine.Clear()
 		}
 	}
 }
