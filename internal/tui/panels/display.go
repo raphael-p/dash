@@ -128,7 +128,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 
 	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor)
 	if err != nil {
-		return fmt.Errorf("could not retrieve tasks: %s", err)
+		return fmt.Errorf("could not retrieve tasks: %w", err)
 	}
 
 	if len(tasks) == 0 {
@@ -178,7 +178,7 @@ func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
 func (dp *DisplayPanel) ShowTopTask() (database.Task, error) {
 	task, err := database.GetTopTask()
 	if err != nil {
-		return database.Task{}, fmt.Errorf("could not retrieve top task: %s", err)
+		return database.Task{}, fmt.Errorf("could not retrieve top task: %w", err)
 	}
 
 	return dp.showTask(task)
@@ -187,7 +187,7 @@ func (dp *DisplayPanel) ShowTopTask() (database.Task, error) {
 func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
 	task, err := database.GetTask(int64(taskID))
 	if err != nil {
-		return database.Task{}, fmt.Errorf("could not retrieve task [%d]: %s", taskID, err)
+		return database.Task{}, fmt.Errorf("could not retrieve task [%d]: %w", taskID, err)
 	}
 
 	return dp.showTask(task)

@@ -150,7 +150,7 @@ func (ka *keybindHandler) markTaskDone(_ rune) {
 	_, err := currentDashTask.Update()
 	if err != nil {
 		currentDashTask.CompletedAt = sql.NullTime{Valid: false}
-		ka.c.infoPanel.Error(fmt.Errorf("failed to mark task [%d] as done: %s", currentDashTask.ID, err))
+		ka.c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedMark, currentDashTask.ID, err))
 	} else {
 		lastDashTask = currentDashTask
 		ka.c.startDash()
@@ -165,7 +165,7 @@ func (ka *keybindHandler) unmarkTaskDone(_ rune) {
 	_, err := lastDashTask.Update()
 	if err != nil {
 		currentDashTask.CompletedAt = sql.NullTime{Valid: true}
-		ka.c.infoPanel.Error(fmt.Errorf("failed to undo mark task as done: %s", err))
+		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedUnmark, err))
 	} else {
 		ka.c.startDash()
 	}
@@ -194,13 +194,13 @@ func (ka *keybindHandler) resetTimer(resetTimer func()) func(rune) {
 func (ka *keybindHandler) scrollDown(_ rune) {
 	err := ka.c.displayPanel.ScrollDown()
 	if err != nil {
-		ka.c.infoPanel.Error(fmt.Errorf("failed to scroll down: %s", err))
+		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
 	}
 }
 
 func (ka *keybindHandler) scrollUp(_ rune) {
 	err := ka.c.displayPanel.ScrollUp()
 	if err != nil {
-		ka.c.infoPanel.Error(fmt.Errorf("failed to scroll up: %s", err))
+		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))
 	}
 }
