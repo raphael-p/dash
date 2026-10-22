@@ -3,8 +3,8 @@ package controller
 import "errors"
 
 var (
-	errEmptyId          = errors.New("task ID is empty")
-	errIdNotInt         = errors.New("task ID is not an integer")
+	errEmptyID          = errors.New("task ID is empty")
+	errIDNotInt         = errors.New("task ID is not an integer")
 	errInvalidInsertion = errors.New("invalid task insertion order")
 	errFailedBump       = errors.New("failed to bump task priority")
 	errFailedCopy       = errors.New("failed to copy task to clipboard")
