@@ -16,8 +16,8 @@ func (ka *keybindHandler) backToHome(_ rune) {
 	ka.c.Home()
 }
 
-func (ka *keybindHandler) startDash(_ rune) {
-	ka.c.startDash()
+func (ka *keybindHandler) openDash(_ rune) {
+	ka.c.openDash()
 }
 
 func (ka *keybindHandler) addTaskFlow(back func()) func(rune) {
@@ -72,7 +72,7 @@ func (ka *keybindHandler) copyTask(_ rune) {
 }
 
 func (ka *keybindHandler) editDashTask(_ rune) {
-	ka.c.editTaskFlow(currentDashTask, ka.c.startDash)
+	ka.c.editTaskFlow(currentDashTask, ka.c.openDash)
 }
 
 func (ka *keybindHandler) editTaskFlowName(task *database.Task, back func()) func(rune) {
@@ -153,7 +153,7 @@ func (ka *keybindHandler) markTaskDone(_ rune) {
 		ka.c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedMark, currentDashTask.ID, err))
 	} else {
 		lastDashTask = currentDashTask
-		ka.c.startDash()
+		ka.c.openDash()
 	}
 }
 
@@ -167,7 +167,7 @@ func (ka *keybindHandler) unmarkTaskDone(_ rune) {
 		currentDashTask.CompletedAt = sql.NullTime{Valid: true}
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedUnmark, err))
 	} else {
-		ka.c.startDash()
+		ka.c.openDash()
 	}
 }
 
@@ -182,13 +182,6 @@ func (ka *keybindHandler) fallback(commandName string) {
 
 func (ka *keybindHandler) quit(_ rune) {
 	ka.c.app.Stop()
-}
-
-func (ka *keybindHandler) resetTimer(resetTimer func()) func(rune) {
-	return func(_ rune) {
-		resetTimer()
-		ka.c.startDash()
-	}
 }
 
 func (ka *keybindHandler) scrollDown(_ rune) {

@@ -67,7 +67,7 @@ func configureHomeKeybinds(c *Controller, mode homeMode) *keybindmenu.KeybindMen
 
 	switch mode {
 	case active:
-		menu.AddKeybind('d', "dash", keybindmenu.DefaultBind, handler.startDash).
+		menu.AddKeybind('d', "dash", keybindmenu.DefaultBind, handler.openDash).
 			AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.Home)).
 			AddKeybind('t', "show completed tasks", keybindmenu.DefaultBind, handler.toggleTaskMode).
 			AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDown).
