@@ -23,8 +23,8 @@ var (
 	BindNumber Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyRune && r >= '0' && r <= '9'
 	}
-	BindPrintableAscii Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
-		return e == tcell.KeyRune && r >= ' ' && r <= '~'
+	BindPrintable Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
+		return e == tcell.KeyRune
 	}
 )
 

@@ -61,7 +61,7 @@ func CreateTask(name, description string) (Task, error) {
 
 func GetTask(id int64) (Task, error) {
 	if id <= 0 {
-		return Task{}, fmt.Errorf("%w, got %d", ErrIdNotPositive, id)
+		return Task{}, fmt.Errorf("%w, got %d", ErrIDNotPositive, id)
 	}
 
 	query := `SELECT * FROM tasks WHERE id = ?;`

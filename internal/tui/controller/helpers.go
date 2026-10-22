@@ -52,7 +52,7 @@ func configureKeybindMenu(handler *keybindHandler, onEnter func(rune), mode comm
 	if mode == taskIDInput {
 		menu.AddKeybind(0, "", keybindmenu.BindNumber, nil)
 	} else {
-		menu.AddKeybind(0, "", keybindmenu.BindPrintableAscii, nil)
+		menu.AddKeybind(0, "", keybindmenu.BindPrintable, nil)
 	}
 	return menu.
 		AddKeybind(0, "", keybindmenu.BindEnter, onEnter).
@@ -70,16 +70,16 @@ func getIDOrWarn(idString string, warn func(err string)) (int64, bool) {
 
 func extractIDFromString(idString string) (int64, error) {
 	if idString == "" {
-		return 0, errEmptyId
+		return 0, errEmptyID
 	}
 
 	id, err := strconv.ParseInt(idString, 10, 0)
 	if err != nil || id < 1 {
-		return 0, errIdNotInt
+		return 0, errIDNotInt
 	}
 
 	if id < 1 {
-		return 0, database.ErrIdNotPositive
+		return 0, database.ErrIDNotPositive
 	}
 	return id, nil
 }
