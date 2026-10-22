@@ -41,12 +41,14 @@ type CountdownTimer struct {
 	config             Config
 	isRunning          atomic.Bool
 	reinitialiseSignal chan struct{}
+	interruptSignal    chan struct{}
 }
 
 var instance CountdownTimer
 var once sync.Once
 
-var Instance = func() *CountdownTimer {
+var Instance = func() (*CountdownTimer, bool) {
+	isNew := false
 	once.Do(func() {
 		countdown := tview.NewTextView()
 		countdown.SetTextColor(tcell.ColorLimeGreen)
@@ -63,9 +65,11 @@ var Instance = func() *CountdownTimer {
 			text:               text,
 			isRunning:          atomic.Bool{},
 			reinitialiseSignal: make(chan struct{}, 1),
+			interruptSignal:    make(chan struct{}, 1),
 		}
+		isNew = true
 	})
-	return &instance
+	return &instance, isNew
 }
 
 func (t *CountdownTimer) SetConfig(config Config) {
@@ -107,9 +111,16 @@ func (t *CountdownTimer) getTimeRemaining(startTime time.Time) (string, timescal
 	return fmt.Sprint(timeRemainingRounded), timescale, unitName
 }
 
-func (t *CountdownTimer) Reset(app *tview.Application) {
+func (t *CountdownTimer) Reset() {
 	select {
 	case t.reinitialiseSignal <- struct{}{}:
+	default:
+	}
+}
+
+func (t *CountdownTimer) Stop() {
+	select {
+	case t.interruptSignal <- struct{}{}:
 	default:
 	}
 }
@@ -119,7 +130,11 @@ func initialiseRedraw(app *tview.Application, t *CountdownTimer) time.Time {
 	app.QueueUpdateDraw(func() {
 		t.countdown.SetText(t.config.StartMessage)
 	})
-	time.Sleep(StartMessageDuration)
+	select {
+	case <-time.After(StartMessageDuration):
+	case <-t.interruptSignal:
+		t.Stop() // re-emit signal
+	}
 	return startTime
 }
 
@@ -137,12 +152,25 @@ func (t *CountdownTimer) Start(app *tview.Application) {
 		return
 	}
 
+	// Drain any leftover interrupt signal before starting
+	select {
+	case <-t.interruptSignal:
+	default:
+	}
+
 	select {
 	case t.reinitialiseSignal <- struct{}{}:
 	default:
 	}
 
 	go (func(app *tview.Application, t *CountdownTimer) {
+		defer func() {
+			t.isRunning.Store(false)
+			app.QueueUpdateDraw(func() {
+				t.countdown.SetText(t.config.EndMessage)
+			})
+		}()
+
 		startTime := initialiseRedraw(app, t)
 		lastSideEffectRun := startTime
 
@@ -157,6 +185,8 @@ func (t *CountdownTimer) Start(app *tview.Application) {
 
 		for {
 			select {
+			case <-t.interruptSignal:
+				return
 			case <-t.reinitialiseSignal:
 				startTime = initialiseRedraw(app, t)
 				sideEffectTicker.Reset(t.config.SideEffectPeriod)
@@ -184,11 +214,6 @@ func (t *CountdownTimer) Start(app *tview.Application) {
 			})
 		}
 
-		app.QueueUpdateDraw(func() {
-			t.countdown.SetText(t.config.EndMessage)
-			t.config.PeriodicSideEffect(lastSideEffectRun, true)
-		})
-
-		t.isRunning.Store(false)
+		t.config.PeriodicSideEffect(lastSideEffectRun, true)
 	})(app, t)
 }

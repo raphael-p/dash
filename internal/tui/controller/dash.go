@@ -2,6 +2,7 @@ package controller
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -48,36 +49,43 @@ func trackTime(c *Controller) func(time.Time, bool) {
 	}
 }
 
-func (c *Controller) startDash() {
+func (c *Controller) openDash() {
+	timer, isNew := countdowntimer.Instance()
+
 	t, err := c.displayPanel.ShowTopTask()
 	currentDashTask = &t
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedDashStart, err))
+		if !errors.Is(err, database.ErrNotFound) {
+			c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedDashStart, err))
+		}
+		timer.Stop()
+		c.Home()
 		return
 	}
 	if lastDashTask == nil {
 		lastDashTask = currentDashTask
 	}
 
-	timer := countdowntimer.Instance()
-	timer.SetConfig(countdowntimer.Config{
-		StartMessage:       "lock in.",
-		EndMessage:         "dash complete. restart when ready.",
-		CountdownDuration:  c.config.dashDuration,
-		PeriodicSideEffect: trackTime(c),
-	})
-
 	handler := &keybindHandler{c}
 	menu := configureKeybindMenu(handler, nil, keybindInput).
+		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.app) }).
 		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
+		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.openDash)).
 		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editDashTask).
-		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, handler.resetTimer(func() { timer.Reset(c.app) })).
-		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.startDash)).
 		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome)
 	configureCommandLine(c, menu, keybindInput)
 
 	timer.SetText(menu.GenerateText())
 	c.navPanel.SetTitle("Dash").SetPrimitive(timer.Layout)
-	timer.Start(c.app)
+
+	if isNew {
+		timer.SetConfig(countdowntimer.Config{
+			StartMessage:       "lock in.",
+			EndMessage:         "dash complete. restart when ready.",
+			CountdownDuration:  c.config.dashDuration,
+			PeriodicSideEffect: trackTime(c),
+		})
+		timer.Start(c.app)
+	}
 }
