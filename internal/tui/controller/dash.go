@@ -2,7 +2,6 @@ package controller
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"math"
 	"time"
@@ -27,9 +26,9 @@ func trackTime(c *Controller) func(time.Time, bool) {
 		ok, err := currentDashTask.Update()
 		if !ok || err != nil {
 			if err == nil {
-				err = errors.New("noop")
+				err = errNoop
 			}
-			c.infoPanel.Error(fmt.Errorf("failed to update time spent on task [%d]: %s", currentDashTask.ID, err))
+			c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedDashUpdate, currentDashTask.ID, err))
 		}
 
 		if isEnd && newTimeSpent > time.Minute {
@@ -53,7 +52,7 @@ func (c *Controller) startDash() {
 	t, err := c.displayPanel.ShowTopTask()
 	currentDashTask = &t
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to start dash: %s", err))
+		c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedDashStart, err))
 		return
 	}
 	if lastDashTask == nil {

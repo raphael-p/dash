@@ -40,7 +40,7 @@ func (c *Controller) addTask(name, description string, insertionOrder taskInsert
 
 	task, err := database.CreateTask(name, description)
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
+		c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedCreate, err))
 		return false
 	}
 
@@ -50,14 +50,14 @@ func (c *Controller) addTask(name, description string, insertionOrder taskInsert
 	case InsertNext:
 		topTask, err := database.GetTopTask()
 		if err != nil {
-			c.infoPanel.Error(fmt.Errorf("failed to create task: %s", err))
+			c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedCreate, err))
 			return false
 		}
 		database.BumpTask(task.ID)
 		database.BumpTask(topTask.ID)
 	case InsertLast: // no action required
 	default:
-		c.infoPanel.Error(fmt.Errorf("invalid task insertion order"))
+		c.infoPanel.Error(errInvalidInsertion)
 		return false
 	}
 
@@ -69,7 +69,7 @@ func (c *Controller) removeTask(id int64) bool {
 	t := database.Task{ID: id}
 	deleted, err := t.Delete()
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to delete task: %s", err))
+		c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedDelete, err))
 		return false
 	}
 
@@ -96,7 +96,7 @@ func (c *Controller) editTask(task *database.Task, name, description string) boo
 
 	updated, err := task.Update()
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to edit task [%d]: %s", task.ID, err))
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedEdit, task.ID, err))
 		return false
 	}
 
@@ -111,7 +111,7 @@ func (c *Controller) editTask(task *database.Task, name, description string) boo
 func (c *Controller) bumpTask(id int64) bool {
 	bumped, err := database.BumpTask(int64(id))
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to bump task [%d] priority: %s", id, err))
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedBump, id, err))
 		return false
 	}
 
@@ -126,13 +126,13 @@ func (c *Controller) bumpTask(id int64) bool {
 func (c *Controller) copyTask(id int64) {
 	task, err := database.GetTask(id)
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("could not retrieve task [%d]: %s", id, err))
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedGet, id, err))
 		return
 	}
 
 	err = clipboard.WriteAll(fmt.Sprintf("%s\n%s", task.Name, task.Description))
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to copy task [%d] to clipboard: %s", id, err))
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedCopy, id, err))
 		return
 	}
 
@@ -142,7 +142,7 @@ func (c *Controller) copyTask(id int64) {
 func (c *Controller) reactivateTask(id int64) bool {
 	reactivated, err := database.ReactivateTask(id)
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("failed to reactivate task [%d]: %s", id, err))
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedReactivate, id, err))
 		return false
 	}
 

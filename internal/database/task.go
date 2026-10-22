@@ -53,7 +53,7 @@ func CreateTask(name, description string) (Task, error) {
 
 	taskID, err := res.LastInsertId()
 	if err != nil {
-		return Task{}, fmt.Errorf("failed to retrieve last insert ID: %v", err)
+		return Task{}, fmt.Errorf("%w: %w", errLastInsertFetchFailed, err)
 	}
 
 	return Task{taskID, name, description, createdAt, updatedAt, sql.NullTime{}, sql.NullTime{}, sql.NullInt16{}}, nil
@@ -61,7 +61,7 @@ func CreateTask(name, description string) (Task, error) {
 
 func GetTask(id int64) (Task, error) {
 	if id <= 0 {
-		return Task{}, fmt.Errorf("task id must be > 0, got %d", id)
+		return Task{}, fmt.Errorf("%w, got %d", ErrIdNotPositive, id)
 	}
 
 	query := `SELECT * FROM tasks WHERE id = ?;`
@@ -132,7 +132,7 @@ func GetTopTask() (Task, error) {
 		return Task{}, err
 	}
 	if len(tasks) == 0 {
-		return Task{}, fmt.Errorf("no task found")
+		return Task{}, ErrNotFound
 	}
 
 	return tasks[0], err

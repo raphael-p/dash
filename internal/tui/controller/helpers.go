@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
@@ -69,16 +70,16 @@ func getIDOrWarn(idString string, warn func(err string)) (int64, bool) {
 
 func extractIDFromString(idString string) (int64, error) {
 	if idString == "" {
-		return 0, fmt.Errorf("task ID is empty")
+		return 0, errEmptyId
 	}
 
 	id, err := strconv.ParseInt(idString, 10, 0)
 	if err != nil || id < 1 {
-		return 0, fmt.Errorf("task ID is not an integer")
+		return 0, errIdNotInt
 	}
 
 	if id < 1 {
-		return 0, fmt.Errorf("task ID must be greater than one (1)")
+		return 0, database.ErrIdNotPositive
 	}
 	return id, nil
 }
