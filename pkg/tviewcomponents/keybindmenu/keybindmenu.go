@@ -81,20 +81,32 @@ func (hm *KeybindMenu) DisableScrolling() *KeybindMenu {
 func (hm *KeybindMenu) GenerateText() string {
 	builder := new(strings.Builder)
 
+	descriptionOnly := []Keybind{}
 	for _, keybind := range hm.keybinds {
 		hasKey := keybind.key != 0
 		hasDescription := keybind.description != ""
-		if builder.Len() != 0 && (hasKey || hasDescription) {
-			fmt.Fprintf(builder, "\n")
-		}
-
 		if hasKey {
+			if builder.Len() != 0 {
+				fmt.Fprintf(builder, "\n")
+			}
 			fmt.Fprintf(builder, "([%s::b]%c[-:-:-])", hm.highlightColour, keybind.key)
+			if hasDescription {
+				fmt.Fprintf(builder, "\t%s", keybind.description)
+			}
+		} else if hasDescription {
+			descriptionOnly = append(descriptionOnly, keybind)
 		}
+	}
 
-		if hasDescription {
-			fmt.Fprintf(builder, "\t%s", keybind.description)
+	// display keybinds with a description but no keys in a separate block
+	for i, keybind := range descriptionOnly {
+		if builder.Len() != 0 {
+			fmt.Fprintf(builder, "\n")
+			if i == 0 {
+				fmt.Fprintf(builder, "\n")
+			}
 		}
+		fmt.Fprintf(builder, "%s", keybind.description)
 	}
 
 	if hm.footnote != "" {

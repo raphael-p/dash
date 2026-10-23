@@ -14,7 +14,7 @@ func (c *Controller) addTaskName(back func()) {
 	menu := configureKeybindMenu(handler, handler.addTaskFlowSubmitName(back), nameInput)
 	configureCommandLine(c, menu, nameInput)
 
-	c.navPanel.SetTitle("Add New Task (name)").SetText("name: ?\n\ndescription: ?")
+	c.navPanel.SetTitle("Add New Task (name)").SetText(fmt.Sprintf("name: ?\n\ndescription: ?\n\n%s", menu.GenerateText()))
 }
 
 func (c *Controller) addTaskDescription(name string, back func()) {
@@ -24,7 +24,7 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 	menu := configureKeybindMenu(&keybindHandler{c}, handler.addTaskFlowSubmitDescription(name, back), descriptionInput)
 	configureCommandLine(c, menu, descriptionInput)
 
-	c.navPanel.SetTitle("Add New Task (description)").SetText(fmt.Sprintf("name: %s\n\ndescription: ?", name))
+	c.navPanel.SetTitle("Add New Task (description)").SetText(fmt.Sprintf("name: %s\n\ndescription: ?\n\n%s", name, menu.GenerateText()))
 }
 
 func (c *Controller) addTaskInsertionOrder(name, description string, back func()) {
@@ -68,7 +68,7 @@ func (c *Controller) editTaskName(task *database.Task, back func()) {
 	configureCommandLine(c, menu, nameInput)
 	c.commandLine.SetInput(task.Name)
 
-	c.navPanel.SetTitle("Edit Task (name)").SetText("")
+	c.navPanel.SetTitle("Edit Task (name)").SetText(menu.GenerateText())
 }
 
 func (c *Controller) editTaskDescription(task *database.Task, back func()) {
@@ -79,5 +79,5 @@ func (c *Controller) editTaskDescription(task *database.Task, back func()) {
 	configureCommandLine(c, menu, descriptionInput)
 	c.commandLine.SetInput(task.Description)
 
-	c.navPanel.SetTitle("Edit Task (description)").SetText("")
+	c.navPanel.SetTitle("Edit Task (description)").SetText(menu.GenerateText())
 }
