@@ -17,11 +17,11 @@ var (
 	BindClearLine Bind = func(_ tcell.Key, r rune, m tcell.ModMask) bool {
 		return ((r == 'u' || r == 'U') && m == tcell.ModCtrl)
 	}
-	BindEnter Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
-		return (e == tcell.KeyEnter && m == tcell.ModNone) || ((r == 'j' || r == 'J') && m == tcell.ModCtrl)
+	BindEnter Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
+		return e == tcell.KeyEnter && m == tcell.ModNone
 	}
-	BindNewLine Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
-		return e == tcell.KeyEnter && m == tcell.ModShift
+	BindNewLine Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
+		return (e == tcell.KeyEnter && m == tcell.ModShift) || ((r == 'j' || r == 'J') && m == tcell.ModCtrl)
 	}
 	BindNumber Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyRune && r >= '0' && r <= '9'
@@ -109,11 +109,6 @@ func (hm *KeybindMenu) GenerateText() string {
 
 func (hm *KeybindMenu) GenerateInputCapture() func(event *tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
-		// map CTRL+J to SHIFT+ENTER to support newlines
-		if (event.Rune() == 'j' || event.Rune() == 'J') && event.Modifiers() == tcell.ModCtrl {
-			event = tcell.NewEventKey(tcell.KeyEnter, 0, tcell.ModShift)
-		}
-
 		eventKey := event.Key()
 		key := event.Rune()
 		mods := event.Modifiers()

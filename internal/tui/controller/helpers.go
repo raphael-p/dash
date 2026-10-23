@@ -46,7 +46,7 @@ func configureKeybindMenu(handler *keybindHandler, onEnter func(rune), mode comm
 
 	switch mode {
 	case descriptionInput:
-		menu.AddKeybind(0, "", keybindmenu.BindNewLine, nil)
+		menu.AddKeybind(0, "", keybindmenu.BindNewLine, handler.newLine)
 		fallthrough
 	case nameInput:
 		menu.AddKeybind(0, "", keybindmenu.BindPrintable, nil).

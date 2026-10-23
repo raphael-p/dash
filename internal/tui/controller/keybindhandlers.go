@@ -31,6 +31,10 @@ func (ka *keybindHandler) fallback(commandName string) {
 	ka.c.infoPanel.Warn("invalid command: " + commandName)
 }
 
+func (ka *keybindHandler) newLine(_ rune) {
+	ka.c.commandLine.SetInput(ka.c.commandLine.GetInput() + "\n")
+}
+
 func (ka *keybindHandler) openDash(_ rune) {
 	ka.c.openDash()
 }
