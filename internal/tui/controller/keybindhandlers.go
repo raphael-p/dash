@@ -3,6 +3,7 @@ package controller
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/raphael-p/dash/internal/database"
@@ -16,8 +17,26 @@ func (ka *keybindHandler) backToHome(_ rune) {
 	ka.c.Home()
 }
 
+func (ka *keybindHandler) clearLine(_ rune) {
+	s := ka.c.commandLine.GetInput()
+	i := strings.LastIndex(s, "\n")
+	if i == -1 {
+		ka.c.commandLine.SetInput("")
+	} else {
+		ka.c.commandLine.SetInput(s[:i])
+	}
+}
+
+func (ka *keybindHandler) fallback(commandName string) {
+	ka.c.infoPanel.Warn("invalid command: " + commandName)
+}
+
 func (ka *keybindHandler) openDash(_ rune) {
 	ka.c.openDash()
+}
+
+func (ka *keybindHandler) quit(_ rune) {
+	ka.c.app.Stop()
 }
 
 func (ka *keybindHandler) addTaskFlow(back func()) func(rune) {
@@ -174,14 +193,6 @@ func (ka *keybindHandler) unmarkTaskDone(_ rune) {
 func (ka *keybindHandler) toggleTaskMode(_ rune) {
 	ka.c.displayPanel.ToggleTaskMode()
 	ka.c.Home()
-}
-
-func (ka *keybindHandler) fallback(commandName string) {
-	ka.c.infoPanel.Warn("invalid command: " + commandName)
-}
-
-func (ka *keybindHandler) quit(_ rune) {
-	ka.c.app.Stop()
 }
 
 func (ka *keybindHandler) scrollDown(_ rune) {

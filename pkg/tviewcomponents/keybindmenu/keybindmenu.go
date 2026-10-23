@@ -10,20 +10,23 @@ import (
 type Bind = func(eventKey tcell.Key, key rune, mod tcell.ModMask) bool
 
 var (
-	DefaultBind Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
-	BindEnter   Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
-		return e == tcell.KeyEnter && m == tcell.ModNone
-	}
+	DefaultBind   Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
 	BindBackspace Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyBackspace || e == tcell.KeyBackspace2
 	}
+	BindClearLine Bind = func(_ tcell.Key, r rune, m tcell.ModMask) bool {
+		return ((r == 'u' || r == 'U') && m == tcell.ModCtrl)
+	}
+	BindEnter Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
+		return (e == tcell.KeyEnter && m == tcell.ModNone) || ((r == 'j' || r == 'J') && m == tcell.ModCtrl)
+	}
 	BindNewLine Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
-		return (e == tcell.KeyEnter && m == tcell.ModShift)
+		return e == tcell.KeyEnter && m == tcell.ModShift
 	}
 	BindNumber Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyRune && r >= '0' && r <= '9'
 	}
-	BindPrintable Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
+	BindPrintable Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
 		return e == tcell.KeyRune
 	}
 )

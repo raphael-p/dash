@@ -43,17 +43,20 @@ func configureCommandLine(c *Controller, menu *keybindmenu.KeybindMenu, mode com
 
 func configureKeybindMenu(handler *keybindHandler, onEnter func(rune), mode commandLineMode) *keybindmenu.KeybindMenu {
 	menu := keybindmenu.New().SetHighlightColour(tcell.ColorLimeGreen).SetFallback(handler.fallback)
-	if mode == keybindInput {
+
+	switch mode {
+	case descriptionInput:
+		menu.AddKeybind(0, "", keybindmenu.BindNewLine, nil)
+		fallthrough
+	case nameInput:
+		menu.AddKeybind(0, "", keybindmenu.BindPrintable, nil).
+			AddKeybind(0, "", keybindmenu.BindClearLine, handler.clearLine)
+	case taskIDInput:
+		menu.AddKeybind(0, "", keybindmenu.BindNumber, nil)
+	case keybindInput:
 		return menu
 	}
-	if mode == descriptionInput {
-		menu.AddKeybind(0, "", keybindmenu.BindNewLine, nil)
-	}
-	if mode == taskIDInput {
-		menu.AddKeybind(0, "", keybindmenu.BindNumber, nil)
-	} else {
-		menu.AddKeybind(0, "", keybindmenu.BindPrintable, nil)
-	}
+
 	return menu.
 		AddKeybind(0, "", keybindmenu.BindEnter, onEnter).
 		AddKeybind(0, "", keybindmenu.BindBackspace, nil)
