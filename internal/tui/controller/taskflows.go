@@ -66,6 +66,7 @@ func (c *Controller) editTaskName(task *database.Task, back func()) {
 	handler := &keybindHandler{c}
 	menu := configureKeybindMenu(handler, handler.editTaskFlowSubmitName(task, back), nameInput)
 	configureCommandLine(c, menu, nameInput)
+	c.commandLine.SetInput(task.Name)
 
 	c.navPanel.SetTitle("Edit Task (name)").SetText("")
 }
@@ -76,6 +77,7 @@ func (c *Controller) editTaskDescription(task *database.Task, back func()) {
 	handler := &keybindHandler{c}
 	menu := configureKeybindMenu(handler, handler.editTaskFlowSubmitDescription(task, back), descriptionInput)
 	configureCommandLine(c, menu, descriptionInput)
+	c.commandLine.SetInput(task.Description)
 
 	c.navPanel.SetTitle("Edit Task (description)").SetText("")
 }

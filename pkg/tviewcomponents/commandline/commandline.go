@@ -39,6 +39,11 @@ func (cl *CommandLine) GetInput() string {
 	return cl.textArea.GetText()
 }
 
+func (cl *CommandLine) SetInput(input string) *CommandLine {
+	cl.textArea.SetText(input, true)
+	return cl
+}
+
 func (cl *CommandLine) HasInput() bool {
 	return cl.textArea.GetText() != ""
 }
