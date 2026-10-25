@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/internal/tui/panels"
 )
 
 type keybindHandler struct {
@@ -200,28 +201,28 @@ func (ka *keybindHandler) toggleTaskMode(_ rune) {
 }
 
 func (ka *keybindHandler) scrollDownTable(_ rune) {
-	err := ka.c.displayPanel.ScrollDownTable()
+	err := ka.c.displayPanel.ScrollTable(panels.ScrollDown)
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
 	}
 }
 
 func (ka *keybindHandler) scrollUpTable(_ rune) {
-	err := ka.c.displayPanel.ScrollUpTable()
+	err := ka.c.displayPanel.ScrollTable(panels.ScrollUp)
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))
 	}
 }
 
 func (ka *keybindHandler) scrollDownTask(_ rune) {
-	err := ka.c.displayPanel.ScrollDownTask()
+	err := ka.c.displayPanel.ScrollTask(panels.ScrollDown)
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
 	}
 }
 
 func (ka *keybindHandler) scrollUpTask(_ rune) {
-	err := ka.c.displayPanel.ScrollUpTask()
+	err := ka.c.displayPanel.ScrollTask(panels.ScrollUp)
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))
 	}

@@ -45,20 +45,6 @@ func (dp *DisplayPanel) SetPrimitive(primitive tview.Primitive) *DisplayPanel {
 	return dp
 }
 
-func (dp *DisplayPanel) getTaskTable() (*tview.Table, error) {
-	if table, ok := dp.frame.GetPrimitive().(*tview.Table); ok {
-		return table, nil
-	}
-	return nil, errors.New("task list is not available")
-}
-
-func (dp *DisplayPanel) getTaskDisplay() (*tview.TextView, error) {
-	if textView, ok := dp.frame.GetPrimitive().(*tview.TextView); ok {
-		return textView, nil
-	}
-	return nil, errors.New("task is not available")
-}
-
 func (dp *DisplayPanel) ShowCompleted() bool {
 	return dp.mode == database.CompletedTasks
 }
@@ -92,34 +78,24 @@ func (dp *DisplayPanel) ResetPagination() {
 }
 
 func (dp *DisplayPanel) GetCurrentPage() error {
-	return dp.listTasks(dp.getTab().currentPageIndex)
+	return dp.listTasks(dp.getTab().currentPageIndex, false)
 }
 
-// TODO: fix scrolling to end when going back a page
 func (dp *DisplayPanel) getPreviousPage() error {
-	table, err := dp.getTaskTable()
-	if err != nil {
-		return err
-	}
 	tab := dp.getTab()
 	if tab.currentPageIndex == 0 {
 		return nil // intentional noop
 	}
 
 	pageIndex := tab.currentPageIndex - 1
-	err = dp.listTasks(pageIndex)
+	err := dp.listTasks(pageIndex, true)
 	if err == nil {
 		tab.currentPageIndex = pageIndex
-		table.ScrollToEnd()
 	}
 	return err
 }
 
 func (dp *DisplayPanel) GetNextPage() error {
-	table, err := dp.getTaskTable()
-	if err != nil {
-		return err
-	}
 	tab := dp.getTab()
 	currentPage := tab.pages[tab.currentPageIndex]
 	if !currentPage.hasNext {
@@ -127,10 +103,9 @@ func (dp *DisplayPanel) GetNextPage() error {
 	}
 
 	pageIndex := tab.currentPageIndex + 1
-	err = dp.listTasks(pageIndex)
+	err := dp.listTasks(pageIndex, false)
 	if err == nil {
 		tab.currentPageIndex = pageIndex
-		table.ScrollToBeginning()
 	}
 	return err
 }
@@ -140,7 +115,7 @@ func (dp *DisplayPanel) SetTitle(title string) *DisplayPanel {
 	return dp
 }
 
-func (dp *DisplayPanel) listTasks(pageIndex uint) error {
+func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	isCompleted := dp.mode == database.CompletedTasks
 	if isCompleted {
 		dp.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
@@ -192,6 +167,12 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	if hasNext {
 		table.SetCellSimple(rowCount+1, 0, "").SetCellSimple(rowCount+1, 1, "↓ show next page").SetCellSimple(rowCount+2, 0, "")
 	}
+
+	if scrollToEnd {
+		table.ScrollToEnd()
+	} else {
+		table.ScrollToBeginning()
+	}
 	return nil
 }
 
@@ -234,57 +215,49 @@ func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
 	return dp.showTask(task)
 }
 
-func (dp *DisplayPanel) ScrollDownTable() error {
-	table, err := dp.getTaskTable()
-	if err != nil {
-		return err
+type scrollDirection int
+
+const (
+	ScrollDown scrollDirection = iota
+	ScrollUp
+)
+
+func (dp *DisplayPanel) ScrollTable(direction scrollDirection) error {
+	table, ok := dp.frame.GetPrimitive().(*tview.Table)
+	if !ok {
+		return errors.New("task list is not available")
 	}
 	offset, _ := table.GetOffset()
 
-	// determine whether to fetch the next page
-	rowCount := table.GetRowCount()
-	_, _, _, height := table.GetInnerRect()
-	if offset+height >= rowCount {
-		return dp.GetNextPage()
+	if direction == ScrollDown {
+		// determine whether to fetch the next page
+		rowCount := table.GetRowCount()
+		_, _, _, height := table.GetInnerRect()
+		if offset+height >= rowCount {
+			return dp.GetNextPage()
+		}
+		table.SetOffset(offset+1, 0)
+	} else {
+		// determine whether to fetch the previous page
+		if offset == 0 {
+			return dp.getPreviousPage()
+		}
+		table.SetOffset(offset-1, 0)
 	}
-
-	table.SetOffset(offset+1, 0)
 	return nil
 }
 
-func (dp *DisplayPanel) ScrollUpTable() error {
-	table, err := dp.getTaskTable()
-	if err != nil {
-		return err
-	}
-	offset, _ := table.GetOffset()
-
-	// determine whether to fetch the previous page
-	if offset == 0 {
-		return dp.getPreviousPage()
-	}
-
-	table.SetOffset(offset-1, 0)
-	return nil
-}
-
-func (dp *DisplayPanel) ScrollDownTask() error {
-	textView, err := dp.getTaskDisplay()
-	if err != nil {
-		return err
+func (dp *DisplayPanel) ScrollTask(direction scrollDirection) error {
+	textView, ok := dp.frame.GetPrimitive().(*tview.TextView)
+	if !ok {
+		return errors.New("task is not available")
 	}
 	offset, _ := textView.GetScrollOffset()
-	textView.ScrollTo(offset+1, 0)
-	return nil
-}
 
-func (dp *DisplayPanel) ScrollUpTask() error {
-	textView, err := dp.getTaskDisplay()
-	if err != nil {
-		return err
-	}
-	offset, _ := textView.GetScrollOffset()
-	if offset != 0 {
+	if direction == ScrollDown {
+		offset, _ := textView.GetScrollOffset()
+		textView.ScrollTo(offset+1, 0)
+	} else if offset != 0 {
 		textView.ScrollTo(offset-1, 0)
 	}
 	return nil
