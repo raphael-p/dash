@@ -156,11 +156,14 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	rowCount := table.GetRowCount()
 	for taskIndex, task := range tasks {
 		i := taskIndex + rowCount
-		table.SetCellSimple(i, 0, fmt.Sprintf("[%d]", task.ID)).SetCellSimple(i, 1, task.Name)
-		// TODO: format properly !!!
-		// if isCompleted {
-		// 	table.SetCellSimple(i, 2, task.CompletedAt.Time.Format("Jan 2"))
-		// }
+		nameCell := tview.NewTableCell(task.Name).SetExpansion(1)
+		table.SetCellSimple(i, 0, fmt.Sprintf("[%d]", task.ID)).SetCell(i, 1, nameCell)
+		if isCompleted {
+			completedAt := task.CompletedAt.Time
+			completedCell := tview.NewTableCell(formatTimeAgo(completedAt)).
+				SetTextColor(colorCodeByAge(completedAt))
+			table.SetCell(i, 2, completedCell)
+		}
 	}
 
 	rowCount = table.GetRowCount()
