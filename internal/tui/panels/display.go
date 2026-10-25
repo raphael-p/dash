@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/stringpad"
 	"github.com/rivo/tview"
@@ -31,8 +32,7 @@ type DisplayPanel struct {
 }
 
 func NewDisplayPanel() *DisplayPanel {
-	frame := tview.NewFrame(nil).SetBorders(2, 2, 0, 0, 4, 4)
-	frame.SetBorder(true)
+	frame := newFrame()
 	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
 }
 
@@ -40,11 +40,23 @@ func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
 	return dp.frame
 }
 
-func (dp *DisplayPanel) getTable() (*tview.Table, error) {
+func (dp *DisplayPanel) SetPrimitive(primitive tview.Primitive) *DisplayPanel {
+	dp.frame.Clear().SetPrimitive(primitive)
+	return dp
+}
+
+func (dp *DisplayPanel) getTaskTable() (*tview.Table, error) {
 	if table, ok := dp.frame.GetPrimitive().(*tview.Table); ok {
 		return table, nil
 	}
 	return nil, errors.New("task list is not available")
+}
+
+func (dp *DisplayPanel) getTaskDisplay() (*tview.TextView, error) {
+	if textView, ok := dp.frame.GetPrimitive().(*tview.TextView); ok {
+		return textView, nil
+	}
+	return nil, errors.New("task is not available")
 }
 
 func (dp *DisplayPanel) ShowCompleted() bool {
@@ -85,7 +97,7 @@ func (dp *DisplayPanel) GetCurrentPage() error {
 
 // TODO: fix scrolling to end when going back a page
 func (dp *DisplayPanel) getPreviousPage() error {
-	table, err := dp.getTable()
+	table, err := dp.getTaskTable()
 	if err != nil {
 		return err
 	}
@@ -104,7 +116,7 @@ func (dp *DisplayPanel) getPreviousPage() error {
 }
 
 func (dp *DisplayPanel) GetNextPage() error {
-	table, err := dp.getTable()
+	table, err := dp.getTaskTable()
 	if err != nil {
 		return err
 	}
@@ -154,7 +166,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 
 	if len(tasks) == 0 {
 		pages[pageIndex] = taskPage{}
-		dp.frame.SetPrimitive(tview.NewTextView().SetText("No tasks. Good job :)"))
+		dp.SetPrimitive(tview.NewTextView().SetText("No tasks. Good job :)"))
 		return nil
 	}
 
@@ -162,7 +174,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
 	table := tview.NewTable()
-	defer dp.frame.SetPrimitive(table)
+	dp.SetPrimitive(table)
 	if pageIndex > 0 {
 		table.SetCellSimple(1, 0, "").SetCellSimple(1, 1, "↑ show previous page").SetCellSimple(2, 0, "")
 	}
@@ -186,19 +198,21 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
 	dp.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
 	textView := tview.NewTextView()
-	defer dp.frame.SetPrimitive(textView)
+	dp.SetPrimitive(textView)
 	if task.Description != "" {
 		fmt.Fprintf(textView, "%s\n\n", task.Description)
 	}
 
 	createdAt, updatedAt, completedAt := task.GetFormattedTimes()
 
-	labelise := func(text string) string { return stringpad.RightPad(text, 20) }
-	if completedAt != "" {
-		fmt.Fprintln(textView, labelise("completed at"), completedAt)
+	addDateFooter := func(label, value string) {
+		dp.frame.AddText(stringpad.RightPad(label, 14)+value, false, tview.AlignLeft, tcell.ColorDefault)
 	}
-	fmt.Fprintln(textView, labelise("created at"), createdAt)
-	fmt.Fprintln(textView, labelise("last updated at"), updatedAt)
+	if completedAt != "" {
+		addDateFooter("completed at", completedAt)
+	}
+	addDateFooter("created at", createdAt)
+	addDateFooter("updated at", updatedAt)
 	return task, nil
 }
 
@@ -220,9 +234,8 @@ func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
 	return dp.showTask(task)
 }
 
-// TODO: implement scroll for text view as well (necessary for big description)
-func (dp *DisplayPanel) ScrollDown() error {
-	table, err := dp.getTable()
+func (dp *DisplayPanel) ScrollDownTable() error {
+	table, err := dp.getTaskTable()
 	if err != nil {
 		return err
 	}
@@ -239,8 +252,8 @@ func (dp *DisplayPanel) ScrollDown() error {
 	return nil
 }
 
-func (dp *DisplayPanel) ScrollUp() error {
-	table, err := dp.getTable()
+func (dp *DisplayPanel) ScrollUpTable() error {
+	table, err := dp.getTaskTable()
 	if err != nil {
 		return err
 	}
@@ -252,5 +265,27 @@ func (dp *DisplayPanel) ScrollUp() error {
 	}
 
 	table.SetOffset(offset-1, 0)
+	return nil
+}
+
+func (dp *DisplayPanel) ScrollDownTask() error {
+	textView, err := dp.getTaskDisplay()
+	if err != nil {
+		return err
+	}
+	offset, _ := textView.GetScrollOffset()
+	textView.ScrollTo(offset+1, 0)
+	return nil
+}
+
+func (dp *DisplayPanel) ScrollUpTask() error {
+	textView, err := dp.getTaskDisplay()
+	if err != nil {
+		return err
+	}
+	offset, _ := textView.GetScrollOffset()
+	if offset != 0 {
+		textView.ScrollTo(offset-1, 0)
+	}
 	return nil
 }

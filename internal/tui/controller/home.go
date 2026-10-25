@@ -70,8 +70,8 @@ func configureHomeKeybinds(c *Controller, mode homeMode) *keybindmenu.KeybindMen
 		menu.AddKeybind('d', "dash", keybindmenu.DefaultBind, handler.openDash).
 			AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.Home)).
 			AddKeybind('t', "show completed tasks", keybindmenu.DefaultBind, handler.toggleTaskMode).
-			AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDown).
-			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUp)
+			AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTable).
+			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTable)
 	case activeWithInput:
 		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask).
 			AddKeybind('c', "copy task to clipboard", keybindmenu.DefaultBind, handler.copyTask).
@@ -79,8 +79,8 @@ func configureHomeKeybinds(c *Controller, mode homeMode) *keybindmenu.KeybindMen
 			AddKeybind('p', "bump task priority", keybindmenu.DefaultBind, handler.bumpTaskFromHome)
 	case completed:
 		menu.AddKeybind('t', "show active tasks", keybindmenu.DefaultBind, handler.toggleTaskMode).
-			AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDown).
-			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUp)
+			AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTable).
+			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTable)
 	case completedWithInput:
 		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask).
 			AddKeybind('c', "copy task to clipboard", keybindmenu.DefaultBind, handler.copyTask).

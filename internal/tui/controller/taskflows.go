@@ -53,6 +53,8 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 			AddKeybind('p', "bump task priority", keybindmenu.DefaultBind, handler.bumpTaskFromEdit(task.ID))
 	}
 	menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTaskFromEdit(task.ID, back)).
+		AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTask).
+		AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTask).
 		AddKeybind('b', "back", keybindmenu.DefaultBind, func(_ rune) { back() }).
 		AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit)
 	configureCommandLine(c, menu, keybindInput)

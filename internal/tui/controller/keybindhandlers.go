@@ -199,15 +199,29 @@ func (ka *keybindHandler) toggleTaskMode(_ rune) {
 	ka.c.Home()
 }
 
-func (ka *keybindHandler) scrollDown(_ rune) {
-	err := ka.c.displayPanel.ScrollDown()
+func (ka *keybindHandler) scrollDownTable(_ rune) {
+	err := ka.c.displayPanel.ScrollDownTable()
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
 	}
 }
 
-func (ka *keybindHandler) scrollUp(_ rune) {
-	err := ka.c.displayPanel.ScrollUp()
+func (ka *keybindHandler) scrollUpTable(_ rune) {
+	err := ka.c.displayPanel.ScrollUpTable()
+	if err != nil {
+		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))
+	}
+}
+
+func (ka *keybindHandler) scrollDownTask(_ rune) {
+	err := ka.c.displayPanel.ScrollDownTask()
+	if err != nil {
+		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
+	}
+}
+
+func (ka *keybindHandler) scrollUpTask(_ rune) {
+	err := ka.c.displayPanel.ScrollUpTask()
 	if err != nil {
 		ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))
 	}

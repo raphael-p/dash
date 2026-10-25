@@ -12,8 +12,8 @@ type NavigationPanel struct {
 
 func NewNavigationPanel() *NavigationPanel {
 	textView := tview.NewTextView().SetDynamicColors(true)
-	frame := tview.NewFrame(nil).SetBorders(2, 2, 0, 0, 4, 4)
-	frame.SetBorder(true).SetBorderColor(tcell.ColorLimeGreen)
+	frame := newFrame()
+	frame.SetBorderColor(tcell.ColorLimeGreen)
 	return &NavigationPanel{frame, textView}
 }
 
