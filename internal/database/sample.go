@@ -108,7 +108,18 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 
 	rng := rand.New(rand.NewChaCha8([32]byte{1}))
 	for range randomEntryCount {
-		_, err = DB.Exec(insertTask, randomTaskGenerator(rng)...)
+		_, err = DB.Exec(insertTask, randomTaskGenerator(rng, false)...)
+		if err != nil {
+			return err
+		}
+	}
+
+	insertCompleted := `
+	INSERT INTO tasks (name, description, created_at, updated_at, time_spent_seconds, completed_at) 
+	VALUES (?, ?, ?, ?, ?, ?)
+	`
+	for range randomEntryCount {
+		_, err = DB.Exec(insertCompleted, randomTaskGenerator(rng, true)...)
 		if err != nil {
 			return err
 		}
@@ -117,15 +128,51 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 	return nil
 }
 
-func randomTaskGenerator(rng *rand.Rand) []any {
-	createdTime := time.Unix(rng.Int64N(time.Now().Unix()), 0)
-	return []any{
+func randomBetweenTimeAndNow(rng *rand.Rand, t time.Time) time.Time {
+	now := time.Now()
+
+	var from time.Time
+	switch rng.IntN(6) {
+	case 0:
+		from = now.Add(-5 * time.Minute)
+	case 1:
+		from = now.Add(-7 * 24 * time.Hour)
+	case 2:
+		from = now.AddDate(0, -1, 0)
+	case 3:
+		from = now.AddDate(0, -9, 0)
+	case 4:
+		from = now.AddDate(-3, 0, 0)
+	case 5:
+		from = t
+	}
+
+	if from.Before(t) {
+		from = t
+	}
+
+	start, end := from.Unix(), now.Unix()
+	if start >= end {
+		return now
+	}
+
+	return time.Unix(start+rng.Int64N(end-start), 0)
+}
+
+func randomTaskGenerator(rng *rand.Rand, isCompleted bool) []any {
+	createdTime := randomBetweenTimeAndNow(rng, time.Unix(0, 0))
+	updatedTime := randomBetweenTimeAndNow(rng, createdTime)
+	args := []any{
 		generateWords(rng, 2, 3),
 		generateWords(rng, 4, 10),
 		createdTime,
-		time.Unix(rng.Int64N(time.Now().Unix()-createdTime.Unix())+createdTime.Unix(), 0),
+		updatedTime,
 		rng.Uint64N(2000),
 	}
+	if isCompleted {
+		args = append(args, updatedTime)
+	}
+	return args
 }
 
 func generateWords(rng *rand.Rand, minWords, maxWords uint) string {
