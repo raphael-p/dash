@@ -11,9 +11,7 @@ type InfoPanel struct {
 }
 
 func NewInfoPanel() *InfoPanel {
-	textView := tview.NewTextView().
-		SetScrollable(true).
-		SetDynamicColors(true)
+	textView := tview.NewTextView().SetScrollable(true).SetDynamicColors(true)
 	textView.SetBorderPadding(1, 1, 2, 2)
 	return &InfoPanel{textView}
 }

@@ -1,6 +1,7 @@
 package panels
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/raphael-p/dash/internal/database"
@@ -23,20 +24,27 @@ func newDisplayPanelTab() *displayPanelTab {
 }
 
 type DisplayPanel struct {
-	textView     *tview.TextView
+	frame        *tview.Frame
 	activeTab    *displayPanelTab
 	completedTab *displayPanelTab
 	mode         database.TaskMode
 }
 
 func NewDisplayPanel() *DisplayPanel {
-	panel := tview.NewTextView().SetWordWrap(true)
-	panel.SetBorder(true).SetBorderPadding(1, 1, 2, 2)
-	return &DisplayPanel{panel, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
+	frame := tview.NewFrame(nil).SetBorders(2, 2, 0, 0, 4, 4)
+	frame.SetBorder(true)
+	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
 }
 
 func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
-	return dp.textView
+	return dp.frame
+}
+
+func (dp *DisplayPanel) getTable() (*tview.Table, error) {
+	if table, ok := dp.frame.GetPrimitive().(*tview.Table); ok {
+		return table, nil
+	}
+	return nil, errors.New("task list is not available")
 }
 
 func (dp *DisplayPanel) ShowCompleted() bool {
@@ -75,22 +83,31 @@ func (dp *DisplayPanel) GetCurrentPage() error {
 	return dp.listTasks(dp.getTab().currentPageIndex)
 }
 
+// TODO: fix scrolling to end when going back a page
 func (dp *DisplayPanel) getPreviousPage() error {
+	table, err := dp.getTable()
+	if err != nil {
+		return err
+	}
 	tab := dp.getTab()
 	if tab.currentPageIndex == 0 {
 		return nil // intentional noop
 	}
 
 	pageIndex := tab.currentPageIndex - 1
-	err := dp.listTasks(pageIndex)
+	err = dp.listTasks(pageIndex)
 	if err == nil {
 		tab.currentPageIndex = pageIndex
-		dp.textView.ScrollToEnd()
+		table.ScrollToEnd()
 	}
 	return err
 }
 
 func (dp *DisplayPanel) GetNextPage() error {
+	table, err := dp.getTable()
+	if err != nil {
+		return err
+	}
 	tab := dp.getTab()
 	currentPage := tab.pages[tab.currentPageIndex]
 	if !currentPage.hasNext {
@@ -98,32 +115,36 @@ func (dp *DisplayPanel) GetNextPage() error {
 	}
 
 	pageIndex := tab.currentPageIndex + 1
-	err := dp.listTasks(pageIndex)
+	err = dp.listTasks(pageIndex)
 	if err == nil {
 		tab.currentPageIndex = pageIndex
-		dp.textView.ScrollToBeginning()
+		table.ScrollToBeginning()
 	}
 	return err
 }
 
+func (dp *DisplayPanel) SetTitle(title string) *DisplayPanel {
+	dp.frame.SetTitle(title)
+	return dp
+}
+
 func (dp *DisplayPanel) listTasks(pageIndex uint) error {
-	dp.textView.Clear()
-	if dp.mode == database.CompletedTasks {
-		dp.textView.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
+	isCompleted := dp.mode == database.CompletedTasks
+	if isCompleted {
+		dp.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
 	} else {
-		dp.textView.SetTitle(fmt.Sprintf(" Active Tasks (page %d) ", pageIndex+1))
+		dp.SetTitle(fmt.Sprintf(" Active Tasks (page %d) ", pageIndex+1))
 	}
 
 	pages := dp.getTab().pages
 	var cursor database.TaskCursor
 	if pageIndex != 0 {
 		cursor.ID = pages[pageIndex-1].lastTask.ID
-		if dp.mode == database.CompletedTasks {
+		if isCompleted {
 			cursor.Timestamp = pages[pageIndex-1].lastTask.CompletedAt
 		} else {
 			cursor.Timestamp = pages[pageIndex-1].lastTask.PriorityBumpedAt
 		}
-
 	}
 
 	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor)
@@ -133,45 +154,51 @@ func (dp *DisplayPanel) listTasks(pageIndex uint) error {
 
 	if len(tasks) == 0 {
 		pages[pageIndex] = taskPage{}
-		fmt.Fprintln(dp.textView, "No tasks. Good job :)")
+		dp.frame.SetPrimitive(tview.NewTextView().SetText("No tasks. Good job :)"))
 		return nil
 	}
 
 	// store pagination metadata
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
+	table := tview.NewTable()
+	defer dp.frame.SetPrimitive(table)
 	if pageIndex > 0 {
-		fmt.Fprintf(dp.textView, "\n↑ show previous page\n\n")
+		table.SetCellSimple(1, 0, "").SetCellSimple(1, 1, "↑ show previous page").SetCellSimple(2, 0, "")
 	}
-	for idx, task := range tasks {
-		fmt.Fprint(
-			dp.textView,
-			stringpad.RightPad(fmt.Sprintf("[%d]", task.ID), 8),
-			task.Name,
-		)
-		if idx+1 < len(tasks) {
-			fmt.Fprint(dp.textView, "\n")
-		}
+	rowCount := table.GetRowCount()
+	for taskIndex, task := range tasks {
+		i := taskIndex + rowCount
+		table.SetCellSimple(i, 0, fmt.Sprintf("[%d]", task.ID)).SetCellSimple(i, 1, task.Name)
+		// TODO: format properly !!!
+		// if isCompleted {
+		// 	table.SetCellSimple(i, 2, task.CompletedAt.Time.Format("Jan 2"))
+		// }
 	}
+
+	rowCount = table.GetRowCount()
 	if hasNext {
-		fmt.Fprintf(dp.textView, "\n\n↓ show next page\n")
+		table.SetCellSimple(rowCount+1, 0, "").SetCellSimple(rowCount+1, 1, "↓ show next page").SetCellSimple(rowCount+2, 0, "")
 	}
 	return nil
 }
 
 func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
-	dp.textView.Clear()
-	dp.textView.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
+	dp.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
+	textView := tview.NewTextView()
+	defer dp.frame.SetPrimitive(textView)
 	if task.Description != "" {
-		fmt.Fprintf(dp.textView, "%s\n\n", task.Description)
+		fmt.Fprintf(textView, "%s\n\n", task.Description)
 	}
 
 	createdAt, updatedAt, completedAt := task.GetFormattedTimes()
+
+	labelise := func(text string) string { return stringpad.RightPad(text, 20) }
 	if completedAt != "" {
-		fmt.Fprintf(dp.textView, "Completed at: %s\n", completedAt)
+		fmt.Fprintln(textView, labelise("completed at"), completedAt)
 	}
-	fmt.Fprintf(dp.textView, "Created at: %s\n", createdAt)
-	fmt.Fprintf(dp.textView, "Last updated: %s\n", updatedAt)
+	fmt.Fprintln(textView, labelise("created at"), createdAt)
+	fmt.Fprintln(textView, labelise("last updated at"), updatedAt)
 	return task, nil
 }
 
@@ -193,28 +220,37 @@ func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
 	return dp.showTask(task)
 }
 
+// TODO: implement scroll for text view as well (necessary for big description)
 func (dp *DisplayPanel) ScrollDown() error {
-	offset, _ := dp.textView.GetScrollOffset()
+	table, err := dp.getTable()
+	if err != nil {
+		return err
+	}
+	offset, _ := table.GetOffset()
 
 	// determine whether to fetch the next page
-	lineCount := dp.textView.GetWrappedLineCount()
-	_, _, _, height := dp.textView.GetInnerRect()
-	if offset+height >= lineCount {
+	rowCount := table.GetRowCount()
+	_, _, _, height := table.GetInnerRect()
+	if offset+height >= rowCount {
 		return dp.GetNextPage()
 	}
 
-	dp.textView.ScrollTo(offset+1, 0)
+	table.SetOffset(offset+1, 0)
 	return nil
 }
 
 func (dp *DisplayPanel) ScrollUp() error {
-	offset, _ := dp.textView.GetScrollOffset()
+	table, err := dp.getTable()
+	if err != nil {
+		return err
+	}
+	offset, _ := table.GetOffset()
 
 	// determine whether to fetch the previous page
 	if offset == 0 {
 		return dp.getPreviousPage()
 	}
 
-	dp.textView.ScrollTo(offset-1, 0)
+	table.SetOffset(offset-1, 0)
 	return nil
 }
