@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -67,6 +68,19 @@ func handleCommand(command string) {
 			os.Exit(1)
 		}
 		fmt.Printf("new task created: %d\n", task.ID)
+	case "update":
+		if !getConfirmation("are you sure you want to update dash?") {
+			fmt.Println("update cancelled")
+			os.Exit(0)
+		}
+		cmdStr := "curl -fsSL https://github.com/raphael-p/dash/releases/latest/download/install.sh | sh"
+		cmd := exec.Command("sh", "-c", cmdStr)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("udpdate failed: %v\n", err)
+			os.Exit(1)
+		}
 	case "wipe":
 		if getConfirmation("are you sure you want to wipe the database?") {
 			database.Wipe()
@@ -74,7 +88,7 @@ func handleCommand(command string) {
 			fmt.Println("wipe cancelled")
 		}
 	default:
-		fmt.Println("unknown command, usage: dsh [extract|generate|init|task|wipe]")
+		fmt.Println("unknown command, usage: dsh [extract|generate|init|task|update|wipe]")
 		os.Exit(2)
 	}
 }
