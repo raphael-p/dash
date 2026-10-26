@@ -10,10 +10,18 @@ import (
 	"github.com/rivo/tview"
 )
 
+const headerFooterPadding int = 1
+
 func newFrame() *tview.Frame {
-	frame := tview.NewFrame(nil).SetBorders(1, 1, 1, 1, 2, 2)
+	frame := tview.NewFrame(nil).SetBorders(1, 1, headerFooterPadding, headerFooterPadding, 2, 2)
 	frame.SetBorder(true)
 	return frame
+}
+
+func getFrameAvailableRows(frame *tview.Frame) int {
+	_, _, _, height := frame.GetInnerRect()
+	headerAndFooterRows := (1 + 2*headerFooterPadding) * 2
+	return height - headerAndFooterRows
 }
 
 func makeTaskTable(tasks []database.Task, isCompleted bool) *tview.Table {
@@ -29,7 +37,7 @@ func makeTaskTable(tasks []database.Task, isCompleted bool) *tview.Table {
 
 		idCell := tview.NewTableCell(fmt.Sprintf("[%d]", task.ID))
 		nameCell := tview.NewTableCell(task.Name).SetExpansion(1).SetReference(task.Name)
-		timeAgoCell := tview.NewTableCell(formatTimeAgo(ts)).SetTextColor(colorCodeByAge(ts))
+		timeAgoCell := tview.NewTableCell(formatTimeAgo(ts)).SetTextColor(colourCodeByAge(ts))
 		table.SetCell(row, 0, idCell).SetCell(row, 1, nameCell).SetCell(row, 2, timeAgoCell)
 	}
 
@@ -73,7 +81,7 @@ func enableDynamicTruncation(table *tview.Table, targetCol int, fixedCols ...int
 	})
 }
 
-func colorCodeByAge(t time.Time) tcell.Color {
+func colourCodeByAge(t time.Time) tcell.Color {
 	d := time.Since(t)
 	day := 24 * time.Hour
 	switch {

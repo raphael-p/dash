@@ -8,8 +8,6 @@ import (
 	"github.com/raphael-p/dash/pkg/logger"
 )
 
-const taskPageLimit int = 30
-
 type TaskMode uint8
 
 const (
@@ -138,7 +136,7 @@ func GetTopTask() (Task, error) {
 	return tasks[0], err
 }
 
-func GetTasksPaginated(mode TaskMode, cursor TaskCursor) ([]Task, bool, error) {
+func GetTasksPaginated(mode TaskMode, cursor TaskCursor, taskPageLimit int) ([]Task, bool, error) {
 	logger.Trace(fmt.Sprintf(
 		"retrieving up to %d tasks after cursor (id: %d, timestamp: %s)",
 		taskPageLimit, cursor.ID, cursor.Timestamp.Time,

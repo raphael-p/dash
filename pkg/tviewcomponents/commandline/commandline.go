@@ -12,10 +12,10 @@ type CommandLine struct {
 	textArea *tview.TextArea
 }
 
-func New(chevronColour tcell.Color) *CommandLine {
+func New(chevronColour, placeholderColour tcell.Color) *CommandLine {
 	chevron := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf("[%s::b]>[-:-:-] ", chevronColour))
 	textArea := tview.NewTextArea()
-	textArea.SetPlaceholderStyle(textArea.GetPlaceholderStyle().Foreground(tcell.ColorGray))
+	textArea.SetPlaceholderStyle(textArea.GetPlaceholderStyle().Foreground(placeholderColour))
 	flex := tview.NewFlex().AddItem(tview.NewBox(), 2, 0, false).AddItem(chevron, 2, 0, false).AddItem(textArea, 0, 1, true)
 	return &CommandLine{flex, textArea}
 }

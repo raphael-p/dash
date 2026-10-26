@@ -11,10 +11,10 @@ import (
 
 func startTUI() {
 	app := tview.NewApplication()
-	displayPanel := panels.NewDisplayPanel()
+	displayPanel := panels.NewDisplayPanel(tcell.ColorGray)
 	infoPanel := panels.NewInfoPanel()
-	navPanel := panels.NewNavigationPanel()
-	commandLine := commandline.New(tcell.ColorLimeGreen)
+	navPanel := panels.NewNavigationPanel(tcell.ColorLimeGreen)
+	commandLine := commandline.New(tcell.ColorLimeGreen, tcell.ColorGray)
 
 	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(navPanel.GetPrimitive(), 0, 3, false).

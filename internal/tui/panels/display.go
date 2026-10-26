@@ -10,6 +10,8 @@ import (
 	"github.com/rivo/tview"
 )
 
+const MIMINUM_TASKS_PER_PAGE int = 20
+
 type taskPage struct {
 	lastTask database.Task
 	hasNext  bool
@@ -25,15 +27,17 @@ func newDisplayPanelTab() *displayPanelTab {
 }
 
 type DisplayPanel struct {
-	frame        *tview.Frame
-	activeTab    *displayPanelTab
-	completedTab *displayPanelTab
-	mode         database.TaskMode
+	frame              *tview.Frame
+	activeTab          *displayPanelTab
+	completedTab       *displayPanelTab
+	mode               database.TaskMode
+	rowSpace           int
+	headerFooterColour tcell.Color
 }
 
-func NewDisplayPanel() *DisplayPanel {
+func NewDisplayPanel(headerFooterColour tcell.Color) *DisplayPanel {
 	frame := newFrame()
-	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
+	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0, headerFooterColour}
 }
 
 func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
@@ -132,17 +136,22 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 		} else {
 			cursor.Timestamp = pages[pageIndex-1].lastTask.PriorityBumpedAt
 		}
+	} else {
+		dp.rowSpace = getFrameAvailableRows(dp.frame)
 	}
 
-	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor)
+	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor, max(MIMINUM_TASKS_PER_PAGE, dp.rowSpace))
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %w", err)
 	}
 
 	if len(tasks) == 0 {
-		pages[pageIndex] = taskPage{}
-		dp.SetPrimitive(tview.NewTextView().SetText("No tasks. Good job :)"))
-		return nil
+		delete(pages, pageIndex)
+		if pageIndex == 0 {
+			dp.SetPrimitive(tview.NewTextView().SetText("No tasks. Good job :)"))
+			return nil
+		}
+		return dp.listTasks(pageIndex-1, scrollToEnd)
 	}
 
 	// store pagination metadata
@@ -151,10 +160,10 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	table := makeTaskTable(tasks, isCompleted)
 	dp.SetPrimitive(table)
 	if pageIndex > 0 {
-		dp.frame.AddText("↑ previous page", true, tview.AlignLeft, tcell.ColorGray)
+		dp.frame.AddText("↑ previous page", true, tview.AlignLeft, dp.headerFooterColour)
 	}
 	if hasNext {
-		dp.frame.AddText("↓ next page", false, tview.AlignLeft, tcell.ColorGray)
+		dp.frame.AddText("↓ next page", false, tview.AlignLeft, dp.headerFooterColour)
 	}
 
 	if scrollToEnd {
@@ -176,7 +185,7 @@ func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
 	createdAt, updatedAt, completedAt := task.GetFormattedTimes()
 
 	addDateFooter := func(label, value string) {
-		dp.frame.AddText(stringpad.RightPad(label, 14)+value, false, tview.AlignLeft, tcell.ColorDefault)
+		dp.frame.AddText(stringpad.RightPad(label, 14)+value, false, tview.AlignLeft, dp.headerFooterColour)
 	}
 	if completedAt != "" {
 		addDateFooter("completed at", completedAt)

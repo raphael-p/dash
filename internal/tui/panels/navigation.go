@@ -10,10 +10,10 @@ type NavigationPanel struct {
 	textView *tview.TextView
 }
 
-func NewNavigationPanel() *NavigationPanel {
+func NewNavigationPanel(borderColour tcell.Color) *NavigationPanel {
 	textView := tview.NewTextView().SetDynamicColors(true)
 	frame := newFrame()
-	frame.SetBorderColor(tcell.ColorLimeGreen)
+	frame.SetBorderColor(borderColour)
 	return &NavigationPanel{frame, textView}
 }
 
