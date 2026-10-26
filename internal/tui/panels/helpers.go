@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/pkg/stringpad"
 	"github.com/rivo/tview"
 )
 
@@ -15,33 +16,61 @@ func newFrame() *tview.Frame {
 	return frame
 }
 
-func makeTaskTable(tasks []database.Task, hasPrevious, hasNext, isCompleted bool) *tview.Table {
+func makeTaskTable(tasks []database.Task, isCompleted bool) *tview.Table {
 	table := tview.NewTable()
-	i := 0
-	if hasPrevious {
-		table.SetCellSimple(1, 0, "").SetCellSimple(1, 1, "↑ show previous page")
-		i = 3
-	}
-	for _, task := range tasks {
-		idCell := tview.NewTableCell(fmt.Sprintf("[%d]", task.ID))
-		nameCell := tview.NewTableCell(task.Name).SetExpansion(1)
 
-		var timeAgo time.Time
+	for row, task := range tasks {
+		var ts time.Time
 		if isCompleted && task.CompletedAt.Valid {
-			timeAgo = task.CompletedAt.Time
+			ts = task.CompletedAt.Time
 		} else {
-			timeAgo = task.CreatedAt
+			ts = task.CreatedAt
 		}
-		timeAgoCell := tview.NewTableCell(formatTimeAgo(timeAgo)).SetTextColor(colorCodeByAge(timeAgo))
 
-		table.SetCell(i, 0, idCell).SetCell(i, 1, nameCell).SetCell(i, 2, timeAgoCell)
-		i++
+		idCell := tview.NewTableCell(fmt.Sprintf("[%d]", task.ID))
+		nameCell := tview.NewTableCell(task.Name).SetExpansion(1).SetReference(task.Name)
+		timeAgoCell := tview.NewTableCell(formatTimeAgo(ts)).SetTextColor(colorCodeByAge(ts))
+		table.SetCell(row, 0, idCell).SetCell(row, 1, nameCell).SetCell(row, 2, timeAgoCell)
 	}
 
-	if hasNext {
-		table.SetCellSimple(i+1, 0, "").SetCellSimple(i+1, 1, "↓ show next page").SetCellSimple(i+2, 0, "")
-	}
+	enableDynamicTruncation(table, 1, 0, 2)
+
 	return table
+}
+
+// Truncate targetCol text on table size changes so fixedCols are always displayed
+func enableDynamicTruncation(table *tview.Table, targetCol int, fixedCols ...int) {
+	var lastWidth int
+
+	table.SetDrawFunc(func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
+		_, _, tabeWidth, _ := table.GetInnerRect()
+		if tabeWidth == lastWidth || tabeWidth <= 0 {
+			return x, y, width, height
+		}
+		lastWidth = tabeWidth
+
+		fixedWidth := 0
+		for _, col := range fixedCols {
+			_, _, colWidth := table.GetCell(0, col).GetLastPosition()
+			fixedWidth += colWidth
+		}
+		separatorWidth := table.GetColumnCount()
+		remainingWidth := max(tabeWidth-fixedWidth-separatorWidth, 4)
+
+		for r := 0; r < table.GetRowCount(); r++ {
+			cell := table.GetCell(r, targetCol)
+			if cell == nil {
+				continue
+			}
+			text, ok := cell.GetReference().(string)
+			if !ok || text == "" {
+				text = cell.Text
+			}
+			cell.SetText(stringpad.TruncateString(text, remainingWidth))
+		}
+
+		return x, y, width, height
+	})
 }
 
 func colorCodeByAge(t time.Time) tcell.Color {

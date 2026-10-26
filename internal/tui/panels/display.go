@@ -148,8 +148,14 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	// store pagination metadata
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
-	table := makeTaskTable(tasks, pageIndex > 0, hasNext, isCompleted)
+	table := makeTaskTable(tasks, isCompleted)
 	dp.SetPrimitive(table)
+	if pageIndex > 0 {
+		dp.frame.AddText("↑ previous page", true, tview.AlignLeft, tcell.ColorGray)
+	}
+	if hasNext {
+		dp.frame.AddText("↓ next page", false, tview.AlignLeft, tcell.ColorGray)
+	}
 
 	if scrollToEnd {
 		table.ScrollToEnd()
