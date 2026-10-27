@@ -122,6 +122,36 @@ func (c *Controller) bumpTask(id int64) bool {
 	return bumped
 }
 
+func (c *Controller) pauseTask(id int64) bool {
+	paused, err := database.PauseTask(int64(id))
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedPause, id, err))
+		return false
+	}
+
+	if paused {
+		c.infoPanel.Info(fmt.Sprintf("paused task [%d]", id))
+	} else {
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
+	}
+	return paused
+}
+
+func (c *Controller) unpauseTask(id int64) bool {
+	unpaused, err := database.UnpauseTask(id)
+	if err != nil {
+		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedUnpause, id, err))
+		return false
+	}
+
+	if unpaused {
+		c.infoPanel.Info(fmt.Sprintf("unpaused task [%d]", id))
+	} else {
+		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
+	}
+	return unpaused
+}
+
 func (c *Controller) reactivateTask(id int64) bool {
 	reactivated, err := database.ReactivateTask(id)
 	if err != nil {

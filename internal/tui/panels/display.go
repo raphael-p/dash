@@ -30,6 +30,7 @@ type DisplayPanel struct {
 	frame              *tview.Frame
 	activeTab          *displayPanelTab
 	completedTab       *displayPanelTab
+	pausedTab          *displayPanelTab
 	mode               database.TaskMode
 	rowSpace           int
 	headerFooterColour tcell.Color
@@ -37,7 +38,7 @@ type DisplayPanel struct {
 
 func NewDisplayPanel(headerFooterColour tcell.Color) *DisplayPanel {
 	frame := newFrame()
-	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0, headerFooterColour}
+	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0, headerFooterColour}
 }
 
 func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
@@ -49,32 +50,32 @@ func (dp *DisplayPanel) SetPrimitive(primitive tview.Primitive) *DisplayPanel {
 	return dp
 }
 
-func (dp *DisplayPanel) ShowCompleted() bool {
-	return dp.mode == database.CompletedTasks
+func (dp *DisplayPanel) GetTaskMode() database.TaskMode {
+	return dp.mode
 }
 
-func (dp *DisplayPanel) IsEmpty() bool {
+func (dp *DisplayPanel) HasTasks() bool {
 	for _, page := range dp.getTab().pages {
 		if page.lastTask.ID != 0 {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func (dp *DisplayPanel) getTab() *displayPanelTab {
-	if dp.mode == database.CompletedTasks {
+	switch dp.mode {
+	case database.CompletedTasks:
 		return dp.completedTab
+	case database.PausedTasks:
+		return dp.pausedTab
+	default:
+		return dp.activeTab
 	}
-	return dp.activeTab
 }
 
 func (dp *DisplayPanel) ToggleTaskMode() {
-	if dp.mode == database.CompletedTasks {
-		dp.mode = database.ActiveTasks
-	} else {
-		dp.mode = database.CompletedTasks
-	}
+	dp.mode = dp.mode.GetNext()
 }
 
 func (dp *DisplayPanel) ResetPagination() {
@@ -120,21 +121,19 @@ func (dp *DisplayPanel) SetTitle(title string) *DisplayPanel {
 }
 
 func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
-	isCompleted := dp.mode == database.CompletedTasks
-	if isCompleted {
-		dp.SetTitle(fmt.Sprintf(" Completed Tasks (page %d) ", pageIndex+1))
-	} else {
-		dp.SetTitle(fmt.Sprintf(" Active Tasks (page %d) ", pageIndex+1))
-	}
+	dp.SetTitle(fmt.Sprintf(" %s Tasks (page %d) ", dp.mode.ToString(), pageIndex+1))
 
 	pages := dp.getTab().pages
 	var cursor database.TaskCursor
 	if pageIndex != 0 {
 		cursor.ID = pages[pageIndex-1].lastTask.ID
-		if isCompleted {
-			cursor.Timestamp = pages[pageIndex-1].lastTask.CompletedAt
-		} else {
+		switch dp.mode {
+		case database.ActiveTasks:
 			cursor.Timestamp = pages[pageIndex-1].lastTask.PriorityBumpedAt
+		case database.CompletedTasks:
+			cursor.Timestamp = pages[pageIndex-1].lastTask.CompletedAt
+		case database.PausedTasks:
+			cursor.Timestamp = pages[pageIndex-1].lastTask.PausedAt
 		}
 	} else {
 		dp.rowSpace = getFrameAvailableRows(dp.frame)
@@ -157,7 +156,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	// store pagination metadata
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
-	table := makeTaskTable(tasks, isCompleted)
+	table := makeTaskTable(tasks)
 	dp.SetPrimitive(table)
 	if pageIndex > 0 {
 		dp.frame.AddText("↑ previous page", true, tview.AlignLeft, dp.headerFooterColour)
@@ -182,16 +181,19 @@ func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
 		fmt.Fprintf(textView, "%s\n\n", task.Description)
 	}
 
-	createdAt, updatedAt, completedAt := task.GetFormattedTimes()
+	createdAt, updatedAt, completedAt, pausedAt := task.GetFormattedTimes()
 
 	addDateFooter := func(label, value string) {
 		dp.frame.AddText(stringpad.RightPad(label, 14)+value, false, tview.AlignLeft, dp.headerFooterColour)
 	}
+	addDateFooter("updated at", updatedAt)
 	if completedAt != "" {
 		addDateFooter("completed at", completedAt)
 	}
+	if pausedAt != "" {
+		addDateFooter("paused at", pausedAt)
+	}
 	addDateFooter("created at", createdAt)
-	addDateFooter("updated at", updatedAt)
 	return task, nil
 }
 

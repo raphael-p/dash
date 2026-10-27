@@ -213,6 +213,36 @@ func (ka *keybindHandler) unmarkTaskDone(_ rune) {
 	}
 }
 
+func (ka *keybindHandler) pauseTaskFromHome(_ rune) {
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		if ka.c.pauseTask(id) {
+			ka.c.refreshTasks()
+			ka.c.commandLine.Clear()
+		}
+	}
+}
+
+func (ka *keybindHandler) unpauseTaskFromHome(_ rune) {
+	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+		if ka.c.unpauseTask(id) {
+			ka.c.refreshTasks()
+			ka.c.commandLine.Clear()
+		}
+	}
+}
+
+func (ka *keybindHandler) pauseTaskFromEdit(id int64) func(rune) {
+	return func(_ rune) {
+		ka.c.pauseTask(id)
+	}
+}
+
+func (ka *keybindHandler) unpauseTaskFromEdit(id int64) func(rune) {
+	return func(_ rune) {
+		ka.c.unpauseTask(id)
+	}
+}
+
 func (ka *keybindHandler) toggleTaskMode(_ rune) {
 	ka.c.displayPanel.ToggleTaskMode()
 	ka.c.Home()

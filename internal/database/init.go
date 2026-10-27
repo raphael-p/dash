@@ -3,12 +3,14 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"slices"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/raphael-p/dash/pkg/logger"
 )
 
-const schemaVersion int = 1
+const schemaVersion int = 2
 
 var DB *sql.DB
 
@@ -63,16 +65,23 @@ var setSchemaVersion = DBInitOperation{
 	down: "PRAGMA user_version = 0;",
 }
 
+var addPausedAtToTasks = DBInitOperation{
+	name: "add paused_at to tasks",
+	up:   "ALTER TABLE tasks ADD COLUMN paused_at DATETIME;",
+	down: "ALTER TABLE tasks DROP COLUMN paused_at;",
+}
+
 var initOperations = []DBInitOperation{
 	createTasks,
 	createTaskValidationTriggers,
 	setSchemaVersion,
+	addPausedAtToTasks,
 }
 
 func Initialise() {
 	for _, op := range initOperations {
 		_, err := DB.Exec(op.up)
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "duplicate column name") {
 			logger.Fatalf("database initialisation error on '%s': %v", op.name, err)
 		}
 	}
@@ -80,7 +89,7 @@ func Initialise() {
 }
 
 func Wipe() {
-	for _, op := range initOperations {
+	for _, op := range slices.Backward(initOperations) {
 		_, err := DB.Exec(op.down)
 		if err != nil {
 			logger.Fatalf("rollback error on '%s': %v", op.name, err)
@@ -99,7 +108,7 @@ func CheckVersion() {
 
 	if dbVersion > 0 {
 		if dbVersion != schemaVersion {
-			logger.Fatalf("database version is out-of-sync: need %d, got %d", schemaVersion, dbVersion)
+			logger.Fatalf("database version is out-of-sync: need %d, got %d\nplease run dsh init", schemaVersion, dbVersion)
 		}
 		logger.Debugf("database has schema version %d", dbVersion)
 	}

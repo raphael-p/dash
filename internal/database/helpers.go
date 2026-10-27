@@ -26,14 +26,13 @@ func scanRow(row scannable) (Task, error) {
 	var id int64
 	var name, description string
 	var createdAt, updatedAt time.Time
-	var completedAt sql.NullTime
-	var priorityBumpedAt sql.NullTime
+	var completedAt, pausedAt, priorityBumpedAt sql.NullTime
 	var timeSpentSeconds sql.NullInt16
 
-	err := row.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt, &priorityBumpedAt, &timeSpentSeconds)
+	err := row.Scan(&id, &name, &description, &createdAt, &updatedAt, &completedAt, &pausedAt, &priorityBumpedAt, &timeSpentSeconds)
 	if err != nil {
 		return task, err
 	}
-	task = Task{id, name, description, createdAt, updatedAt, completedAt, priorityBumpedAt, timeSpentSeconds}
+	task = Task{id, name, description, createdAt, updatedAt, completedAt, pausedAt, priorityBumpedAt, timeSpentSeconds}
 	return task, nil
 }

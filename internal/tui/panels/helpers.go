@@ -24,13 +24,15 @@ func getFrameAvailableRows(frame *tview.Frame) int {
 	return height - headerAndFooterRows
 }
 
-func makeTaskTable(tasks []database.Task, isCompleted bool) *tview.Table {
+func makeTaskTable(tasks []database.Task) *tview.Table {
 	table := tview.NewTable()
 
 	for row, task := range tasks {
 		var ts time.Time
-		if isCompleted && task.CompletedAt.Valid {
+		if task.CompletedAt.Valid {
 			ts = task.CompletedAt.Time
+		} else if task.PausedAt.Valid {
+			ts = task.PausedAt.Time
 		} else {
 			ts = task.CreatedAt
 		}

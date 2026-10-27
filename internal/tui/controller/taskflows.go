@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/pkg/stringpad"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
@@ -43,18 +44,32 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	handler := &keybindHandler{c}
 	menu := configureKeybindMenu(handler, nil, keybindInput)
+
 	if task.CompletedAt.Valid {
 		menu.AddKeybind('u', "reactivate", keybindmenu.DefaultBind, handler.reactivateTaskFromEdit(task.ID))
-	} else {
-		menu.AddKeybind('n', "change name", keybindmenu.DefaultBind, handler.editTaskFlowName(task, back)).
-			AddKeybind('d', "change description", keybindmenu.DefaultBind, handler.editTaskFlowDescription(task, back)).
-			AddKeybind('p', "bump priority", keybindmenu.DefaultBind, handler.bumpTaskFromEdit(task.ID))
+	} else if task.PausedAt.Valid {
+		menu.AddKeybind('u', "unpause", keybindmenu.DefaultBind, handler.unpauseTaskFromEdit(task.ID))
 	}
-	menu.AddKeybind('r', "remove", keybindmenu.DefaultBind, handler.removeTaskFromEdit(task, back)).
-		AddKeybind('c', "copy description", keybindmenu.DefaultBind, handler.copy(task.Description)).
-		AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTask).
-		AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTask).
-		AddKeybind('b', "back", keybindmenu.DefaultBind, func(_ rune) { back() }).
+
+	if !task.CompletedAt.Valid {
+		menu.AddKeybind('n', "change name", keybindmenu.DefaultBind, handler.editTaskFlowName(task, back)).
+			AddKeybind('d', "change description", keybindmenu.DefaultBind, handler.editTaskFlowDescription(task, back))
+	}
+
+	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
+		menu.AddKeybind('f', "put first", keybindmenu.DefaultBind, handler.bumpTaskFromEdit(task.ID)).
+			AddKeybind('p', "pause", keybindmenu.DefaultBind, handler.pauseTaskFromEdit(task.ID))
+
+	}
+
+	menu.AddKeybind('c', "copy description", keybindmenu.DefaultBind, handler.copy(task.Description)).
+		AddKeybind('r', "remove", keybindmenu.DefaultBind, handler.removeTaskFromEdit(task, back))
+
+	if stringpad.LineCount(task.Description) > 2 { // heuristic to reduce visual clutter
+		menu.AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTask).
+			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTask)
+	}
+	menu.AddKeybind('b', "back", keybindmenu.DefaultBind, func(_ rune) { back() }).
 		AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit)
 	configureCommandLine(c, menu, keybindInput)
 

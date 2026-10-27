@@ -44,7 +44,9 @@ func main() {
 	defer db.Close()
 	database.DB = db
 
-	database.CheckVersion()
+	if len(os.Args) < 2 || (os.Args[1] != "init" && os.Args[1] != "wipe") {
+		database.CheckVersion()
+	}
 
 	if len(os.Args) < 2 {
 		logger.Debugf("starting dash TUI (app version %s)", AppVersion)

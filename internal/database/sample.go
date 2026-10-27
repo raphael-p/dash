@@ -125,6 +125,17 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 		}
 	}
 
+	insertPaused := `
+	INSERT INTO tasks (name, description, created_at, updated_at, time_spent_seconds, paused_at) 
+	VALUES (?, ?, ?, ?, ?, ?)
+	`
+	for range randomEntryCount {
+		_, err = DB.Exec(insertPaused, randomTaskGenerator(rng, true)...)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

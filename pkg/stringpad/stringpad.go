@@ -29,3 +29,10 @@ func TruncateString(s string, maxLen int) string {
 	}
 	return string(runes[:maxLen-1]) + "…"
 }
+
+func LineCount(s string) int {
+	if len(s) == 0 {
+		return 0
+	}
+	return strings.Count(s, "\n") + 1
+}

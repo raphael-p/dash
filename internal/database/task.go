@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/raphael-p/dash/pkg/logger"
@@ -13,7 +15,23 @@ type TaskMode uint8
 const (
 	ActiveTasks TaskMode = iota
 	CompletedTasks
+	PausedTasks
 )
+
+func (tm TaskMode) GetNext() TaskMode {
+	return TaskMode((tm + 1) % 3)
+}
+
+func (tm TaskMode) ToString() string {
+	switch tm {
+	case CompletedTasks:
+		return "Completed"
+	case PausedTasks:
+		return "Paused"
+	default:
+		return "Active"
+	}
+}
 
 type TaskCursor struct {
 	ID        int64
@@ -27,8 +45,17 @@ type Task struct {
 	CreatedAt        time.Time     `json:"created_at"`
 	UpdatedAt        time.Time     `json:"updated_at"`
 	CompletedAt      sql.NullTime  `json:"completed_at"`
+	PausedAt         sql.NullTime  `json:"paused_at"`
 	PriorityBumpedAt sql.NullTime  `json:"priority_bumped_at"`
 	TimeSpentSeconds sql.NullInt16 `json:"time_spent_seconds"`
+}
+
+func (Task) SQLColumns() string {
+	var names []string
+	for field := range reflect.TypeFor[Task]().Fields() {
+		names = append(names, field.Tag.Get("json"))
+	}
+	return strings.Join(names, ", ")
 }
 
 func CreateTask(name, description string) (Task, error) {
@@ -54,7 +81,7 @@ func CreateTask(name, description string) (Task, error) {
 		return Task{}, fmt.Errorf("%w: %w", errLastInsertFetchFailed, err)
 	}
 
-	return Task{taskID, name, description, createdAt, updatedAt, sql.NullTime{}, sql.NullTime{}, sql.NullInt16{}}, nil
+	return Task{taskID, name, description, createdAt, updatedAt, sql.NullTime{}, sql.NullTime{}, sql.NullTime{}, sql.NullInt16{}}, nil
 }
 
 func GetTask(id int64) (Task, error) {
@@ -62,7 +89,7 @@ func GetTask(id int64) (Task, error) {
 		return Task{}, fmt.Errorf("%w, got %d", ErrIDNotPositive, id)
 	}
 
-	query := `SELECT * FROM tasks WHERE id = ?;`
+	query := fmt.Sprintf(`SELECT %s FROM tasks WHERE id = ?;`, Task{}.SQLColumns())
 	logger.Debugf("retrieving task [%d]", id)
 	row := DB.QueryRow(query, id)
 	task, err := scanRow(row)
@@ -80,10 +107,10 @@ func executeTasksQuery(sqlConditions string, sqlConditionsArgs []any, sqlSort st
 	}
 
 	query := fmt.Sprintf(`
-    SELECT * FROM tasks
+    SELECT %s FROM tasks
 	WHERE %s
     ORDER BY %s, id ASC %s;
-    `, sqlConditions, sqlSort, limitClause)
+    `, Task{}.SQLColumns(), sqlConditions, sqlSort, limitClause)
 
 	var tasks []Task
 	rows, err := DB.Query(query, sqlConditionsArgs...)
@@ -111,15 +138,24 @@ func GetCompletedTasksSince(since time.Time) ([]Task, error) {
 	return executeTasksQuery("completed_at IS NOT NULL AND completed_at >= ?", []any{since}, "completed_at ASC", 0)
 }
 
-func getTaskQueryParts(mode TaskMode, cursor TaskCursor) (string, []any, string) {
-	if mode == CompletedTasks && !cursor.Timestamp.Valid {
-		return "completed_at IS NOT NULL AND id > ?", []any{cursor.ID}, "completed_at DESC"
-	} else if mode == CompletedTasks {
-		return "completed_at IS NOT NULL AND completed_at < ?", []any{cursor.Timestamp}, "completed_at DESC"
-	} else if cursor.Timestamp.Valid {
-		return "completed_at IS NULL AND (priority_bumped_at IS NULL OR priority_bumped_at < ?)", []any{cursor.Timestamp}, "priority_bumped_at DESC"
+func getTaskQueryParts(mode TaskMode, cursor TaskCursor) (where string, args []any, orderBy string) {
+	var baseWhere, cursorWhere string
+	switch mode {
+	case CompletedTasks:
+		baseWhere, cursorWhere, orderBy = "completed_at IS NOT NULL", "completed_at < ?", "completed_at DESC"
+	case PausedTasks:
+		baseWhere = "completed_at IS NULL AND paused_at IS NOT NULL"
+		cursorWhere, orderBy = "paused_at > ?", "paused_at ASC"
+	case ActiveTasks:
+		baseWhere = "completed_at IS NULL AND paused_at IS NULL"
+		cursorWhere = "(priority_bumped_at IS NULL OR priority_bumped_at < ?)"
+		orderBy = "priority_bumped_at DESC"
+	}
+
+	if cursor.Timestamp.Valid {
+		return baseWhere + " AND " + cursorWhere, []any{cursor.Timestamp}, orderBy
 	} else {
-		return "completed_at IS NULL AND id > ?", []any{cursor.ID}, "priority_bumped_at DESC"
+		return baseWhere + " AND id > ?", []any{cursor.ID}, orderBy
 	}
 }
 
@@ -217,6 +253,40 @@ func BumpTask(taskID int64) (bool, error) {
 	return count > 0, err
 }
 
+func PauseTask(taskID int64) (bool, error) {
+	pauseTask := `
+	UPDATE tasks
+	SET paused_at = ?
+	WHERE id = ?;
+	`
+
+	logger.Debugf("pausing task [%d]", taskID)
+	res, err := DB.Exec(pauseTask, time.Now(), taskID)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
+}
+
+func UnpauseTask(taskID int64) (bool, error) {
+	unpauseTask := `
+	UPDATE tasks
+	SET paused_at = NULL
+	WHERE id = ?;
+	`
+
+	logger.Debugf("unpausing task [%d]", taskID)
+	res, err := DB.Exec(unpauseTask, taskID)
+	if err != nil {
+		return false, err
+	}
+
+	count, err := res.RowsAffected()
+	return count > 0, err
+}
+
 func ReactivateTask(taskID int64) (bool, error) {
 	reactivateTask := `
 	UPDATE tasks
@@ -234,11 +304,14 @@ func ReactivateTask(taskID int64) (bool, error) {
 	return count > 0, err
 }
 
-func (t *Task) GetFormattedTimes() (createdAt string, updatedAt string, completedAt string) {
+func (t *Task) GetFormattedTimes() (createdAt, updatedAt, completedAt, pausedAt string) {
 	createdAt = t.CreatedAt.Format(time.DateTime)
 	updatedAt = t.UpdatedAt.Format(time.DateTime)
 	if t.CompletedAt.Valid {
 		completedAt = t.CompletedAt.Time.Format(time.DateTime)
 	}
-	return createdAt, updatedAt, completedAt
+	if t.PausedAt.Valid {
+		pausedAt = t.PausedAt.Time.Format(time.DateTime)
+	}
+	return createdAt, updatedAt, completedAt, pausedAt
 }
