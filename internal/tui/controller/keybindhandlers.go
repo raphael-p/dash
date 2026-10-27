@@ -6,8 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/internal/tui/panels"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
 type keybindHandler struct {
@@ -16,6 +18,25 @@ type keybindHandler struct {
 
 func (ka *keybindHandler) backToHome(_ rune) {
 	ka.c.Home()
+}
+
+func (ka *keybindHandler) askForConfirmation(action string, onYes, onNo func()) {
+	handler := &keybindHandler{ka.c}
+	menu := configureKeybindMenu(handler, nil, keybindInput)
+	menu.AddKeybind('y', "yes", keybindmenu.DefaultBind, func(_ rune) { onYes() }).
+		AddKeybind('n', "no", keybindmenu.DefaultBind, func(_ rune) { onNo() })
+	configureCommandLine(ka.c, menu, keybindInput)
+	ka.c.navPanel.SetText(fmt.Sprintf("confirm action: %s?\n\n%s", action, menu.GenerateText()))
+}
+
+func (ka *keybindHandler) copy(s string) func(rune) {
+	return func(_ rune) {
+		if err := clipboard.WriteAll(s); err != nil {
+			ka.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedCopy, err))
+		} else {
+			ka.c.infoPanel.Info("copied to clipboard")
+		}
+	}
 }
 
 func (ka *keybindHandler) clearLine(_ rune) {
@@ -89,12 +110,6 @@ func (ka *keybindHandler) bumpTaskFromEdit(id int64) func(rune) {
 	}
 }
 
-func (ka *keybindHandler) copyTask(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
-		ka.c.copyTask(id)
-	}
-}
-
 func (ka *keybindHandler) editDashTask(_ rune) {
 	ka.c.editTaskFlow(currentDashTask, ka.c.openDash)
 }
@@ -154,18 +169,21 @@ func (ka *keybindHandler) reactivateTaskFromEdit(id int64) func(rune) {
 
 func (ka *keybindHandler) removeTaskFromHome(_ rune) {
 	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
-		if ka.c.removeTask(id) {
-			ka.c.refreshTasks()
-			ka.c.commandLine.Clear()
-		}
+		ka.askForConfirmation(
+			fmt.Sprintf("delete task [%d]", id),
+			func() { ka.c.removeTask(id); ka.c.Home() },
+			ka.c.Home,
+		)
 	}
 }
 
-func (ka *keybindHandler) removeTaskFromEdit(id int64, back func()) func(rune) {
+func (ka *keybindHandler) removeTaskFromEdit(task *database.Task, back func()) func(rune) {
 	return func(_ rune) {
-		if ka.c.removeTask(id) {
-			back()
-		}
+		ka.askForConfirmation(
+			fmt.Sprintf("delete task [%d]", task.ID),
+			func() { ka.c.removeTask(task.ID); back() },
+			func() { ka.c.editTaskFlow(task, back) },
+		)
 	}
 }
 

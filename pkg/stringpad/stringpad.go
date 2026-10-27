@@ -17,7 +17,8 @@ func RightPad(str string, spaceCount uint8) string {
 	return str + strings.Repeat(" ", padCount)
 }
 
-// Rune-wise string truncation, when truncation occurs, appends …
+// TruncateString performts rune-wise string truncation,
+// when truncation occurs, appends …
 func TruncateString(s string, maxLen int) string {
 	if maxLen < 1 {
 		return ""

@@ -10,7 +10,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-const MIMINUM_TASKS_PER_PAGE int = 20
+const minimumTasksPerPage int = 20
 
 type taskPage struct {
 	lastTask database.Task
@@ -140,7 +140,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 		dp.rowSpace = getFrameAvailableRows(dp.frame)
 	}
 
-	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor, max(MIMINUM_TASKS_PER_PAGE, dp.rowSpace))
+	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor, max(minimumTasksPerPage, dp.rowSpace))
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %w", err)
 	}

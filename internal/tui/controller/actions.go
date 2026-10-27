@@ -3,7 +3,6 @@ package controller
 import (
 	"fmt"
 
-	"github.com/atotto/clipboard"
 	"github.com/raphael-p/dash/internal/database"
 )
 
@@ -121,22 +120,6 @@ func (c *Controller) bumpTask(id int64) bool {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop.", id))
 	}
 	return bumped
-}
-
-func (c *Controller) copyTask(id int64) {
-	task, err := database.GetTask(id)
-	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedGet, id, err))
-		return
-	}
-
-	err = clipboard.WriteAll(fmt.Sprintf("%s\n%s", task.Name, task.Description))
-	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("%w [%d]: %w", errFailedCopy, id, err))
-		return
-	}
-
-	c.infoPanel.Info(fmt.Sprintf("copied task [%d] to clipboard", id))
 }
 
 func (c *Controller) reactivateTask(id int64) bool {

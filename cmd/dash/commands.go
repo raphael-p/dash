@@ -37,7 +37,6 @@ func handleCommand(command string) {
 			fmt.Fprintf(os.Stderr, "extract: %v\n", err)
 			os.Exit(2)
 		}
-		fmt.Println(since)
 		if err := extractCompleted(since); err != nil {
 			fmt.Fprintf(os.Stderr, "extract: %v\n", err)
 			os.Exit(1)
@@ -159,7 +158,6 @@ func parseExtractCompleted(args []string) (time.Time, error) {
 
 func extractCompleted(since time.Time) error {
 	tasks, err := database.GetCompletedTasksSince(since)
-	fmt.Println(tasks)
 	if err != nil {
 		return err
 	}

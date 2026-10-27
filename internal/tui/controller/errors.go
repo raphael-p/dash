@@ -7,7 +7,7 @@ var (
 	errIDNotInt         = errors.New("task ID is not an integer")
 	errInvalidInsertion = errors.New("invalid task insertion order")
 	errFailedBump       = errors.New("failed to bump task priority")
-	errFailedCopy       = errors.New("failed to copy task to clipboard")
+	errFailedCopy       = errors.New("failed to copy string")
 	errFailedCreate     = errors.New("failed to create task")
 	errFailedDashStart  = errors.New("failed to start dash")
 	errFailedDashUpdate = errors.New("failed to update time spent on task")

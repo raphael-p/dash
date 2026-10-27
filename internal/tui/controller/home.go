@@ -74,7 +74,6 @@ func configureHomeKeybinds(c *Controller, mode homeMode) *keybindmenu.KeybindMen
 			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTable)
 	case activeWithInput:
 		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask).
-			AddKeybind('c', "copy task to clipboard", keybindmenu.DefaultBind, handler.copyTask).
 			AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTaskFromHome).
 			AddKeybind('p', "bump task priority", keybindmenu.DefaultBind, handler.bumpTaskFromHome)
 	case completed:
@@ -83,7 +82,6 @@ func configureHomeKeybinds(c *Controller, mode homeMode) *keybindmenu.KeybindMen
 			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTable)
 	case completedWithInput:
 		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask).
-			AddKeybind('c', "copy task to clipboard", keybindmenu.DefaultBind, handler.copyTask).
 			AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTaskFromHome).
 			AddKeybind('u', "reactivate task", keybindmenu.DefaultBind, handler.reactivateTaskFromHome)
 	case activeWithNoTasks:

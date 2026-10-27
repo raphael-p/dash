@@ -41,18 +41,17 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 }
 
 func (c *Controller) editTaskFlow(task *database.Task, back func()) {
-	c.infoPanel.Clear()
-
 	handler := &keybindHandler{c}
 	menu := configureKeybindMenu(handler, nil, keybindInput)
 	if task.CompletedAt.Valid {
-		menu.AddKeybind('u', "reactivate task", keybindmenu.DefaultBind, handler.reactivateTaskFromEdit(task.ID))
+		menu.AddKeybind('u', "reactivate", keybindmenu.DefaultBind, handler.reactivateTaskFromEdit(task.ID))
 	} else {
 		menu.AddKeybind('n', "change name", keybindmenu.DefaultBind, handler.editTaskFlowName(task, back)).
 			AddKeybind('d', "change description", keybindmenu.DefaultBind, handler.editTaskFlowDescription(task, back)).
-			AddKeybind('p', "bump task priority", keybindmenu.DefaultBind, handler.bumpTaskFromEdit(task.ID))
+			AddKeybind('p', "bump priority", keybindmenu.DefaultBind, handler.bumpTaskFromEdit(task.ID))
 	}
-	menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTaskFromEdit(task.ID, back)).
+	menu.AddKeybind('r', "remove", keybindmenu.DefaultBind, handler.removeTaskFromEdit(task, back)).
+		AddKeybind('c', "copy description", keybindmenu.DefaultBind, handler.copy(task.Description)).
 		AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTask).
 		AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTask).
 		AddKeybind('b', "back", keybindmenu.DefaultBind, func(_ rune) { back() }).
