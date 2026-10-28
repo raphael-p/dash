@@ -1,32 +1,17 @@
 package main
 
 import (
-	"bufio"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/raphael-p/dash/internal/database"
 )
 
-func getConfirmation(prompt string) bool {
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("%s [y/yes]: ", prompt)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		return false
-	}
-	input = strings.TrimSpace(strings.ToLower(input))
-	return input == "y" || input == "yes"
-}
-
-func handleCommand(command string) {
+func handleAppCommand(command string) bool {
 	switch command {
 	case "extract":
 		since, err := parseExtractCompleted(os.Args[2:])
@@ -53,8 +38,6 @@ func handleCommand(command string) {
 			os.Exit(2)
 		}
 		database.FillWithSampleData(*randomEntryCount)
-	case "init":
-		database.Initialise()
 	case "task":
 		name, description, err := parseCreateTask(os.Args[2:])
 		if err != nil {
@@ -67,29 +50,10 @@ func handleCommand(command string) {
 			os.Exit(1)
 		}
 		fmt.Printf("new task created: %d\n", task.ID)
-	case "update":
-		if !getConfirmation("are you sure you want to update dash?") {
-			fmt.Println("update cancelled")
-			os.Exit(0)
-		}
-		cmdStr := "curl -fsSL https://github.com/raphael-p/dash/releases/latest/download/install.sh | sh"
-		cmd := exec.Command("sh", "-c", cmdStr)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Printf("udpdate failed: %v\n", err)
-			os.Exit(1)
-		}
-	case "wipe":
-		if getConfirmation("are you sure you want to wipe the database?") {
-			database.Wipe()
-		} else {
-			fmt.Println("wipe cancelled")
-		}
 	default:
-		fmt.Println("unknown command, usage: dsh [extract|generate|init|task|update|wipe]")
-		os.Exit(2)
+		return false
 	}
+	return true
 }
 
 func parseCreateTask(args []string) (string, string, error) {
@@ -163,33 +127,9 @@ func extractCompleted(since time.Time) error {
 	}
 	rows := make([]map[string]any, 0, len(tasks))
 	for _, task := range tasks {
-		rows = append(rows, taskAsJSON(task))
+		rows = append(rows, task.JSON())
 	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
 	return encoder.Encode(rows)
-}
-
-func taskAsJSON(task database.Task) map[string]any {
-	return map[string]any{
-		"id": task.ID, "name": task.Name, "description": task.Description,
-		"created_at": task.CreatedAt, "updated_at": task.UpdatedAt,
-		"completed_at":       nullableTime(task.CompletedAt),
-		"priority_bumped_at": nullableTime(task.PriorityBumpedAt),
-		"time_spent_seconds": nullableInt(task.TimeSpentSeconds),
-	}
-}
-
-func nullableTime(value sql.NullTime) any {
-	if value.Valid {
-		return value.Time
-	}
-	return nil
-}
-
-func nullableInt(value sql.NullInt16) any {
-	if value.Valid {
-		return value.Int16
-	}
-	return nil
 }

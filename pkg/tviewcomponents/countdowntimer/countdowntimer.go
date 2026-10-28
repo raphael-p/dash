@@ -125,11 +125,9 @@ func (t *CountdownTimer) Stop() {
 	}
 }
 
-func initialiseRedraw(app *tview.Application, t *CountdownTimer) time.Time {
+func initialiseRedraw(queueUpdateDraw func(func()), t *CountdownTimer) time.Time {
 	startTime := time.Now()
-	app.QueueUpdateDraw(func() {
-		t.countdown.SetText(t.config.StartMessage)
-	})
+	queueUpdateDraw(func() { t.countdown.SetText(t.config.StartMessage) })
 	select {
 	case <-time.After(StartMessageDuration):
 	case <-t.interruptSignal:
@@ -146,7 +144,7 @@ func setTickerDuration(ticker *time.Ticker, timescale timescale) {
 	}
 }
 
-func (t *CountdownTimer) Start(app *tview.Application) {
+func (t *CountdownTimer) Start(queueUpdateDraw func(func())) {
 	// noop if timer is running to ensure single redraw thread
 	if !t.isRunning.CompareAndSwap(false, true) {
 		return
@@ -163,15 +161,13 @@ func (t *CountdownTimer) Start(app *tview.Application) {
 	default:
 	}
 
-	go (func(app *tview.Application, t *CountdownTimer) {
+	go (func(queueUpdateDraw func(func()), t *CountdownTimer) {
 		defer func() {
 			t.isRunning.Store(false)
-			app.QueueUpdateDraw(func() {
-				t.countdown.SetText(t.config.EndMessage)
-			})
+			queueUpdateDraw(func() { t.countdown.SetText(t.config.EndMessage) })
 		}()
 
-		startTime := initialiseRedraw(app, t)
+		startTime := initialiseRedraw(queueUpdateDraw, t)
 		lastSideEffectRun := startTime
 
 		ticker := time.NewTicker(1)
@@ -188,7 +184,7 @@ func (t *CountdownTimer) Start(app *tview.Application) {
 			case <-t.interruptSignal:
 				return
 			case <-t.reinitialiseSignal:
-				startTime = initialiseRedraw(app, t)
+				startTime = initialiseRedraw(queueUpdateDraw, t)
 				sideEffectTicker.Reset(t.config.SideEffectPeriod)
 				lastSideEffectRun = startTime
 				continue
@@ -209,11 +205,9 @@ func (t *CountdownTimer) Start(app *tview.Application) {
 				setTickerDuration(ticker, timescale)
 			}
 
-			app.QueueUpdateDraw(func() {
-				t.countdown.SetText(fmt.Sprintf("%s %s remaining", timeRemaining, unitName))
-			})
+			queueUpdateDraw(func() { t.countdown.SetText(fmt.Sprintf("%s %s remaining", timeRemaining, unitName)) })
 		}
 
 		t.config.PeriodicSideEffect(lastSideEffectRun, true)
-	})(app, t)
+	})(queueUpdateDraw, t)
 }

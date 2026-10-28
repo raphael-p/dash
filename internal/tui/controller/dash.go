@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gen2brain/beeep"
+	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/logger"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/countdowntimer"
@@ -52,7 +53,7 @@ func trackTime(c *Controller) func(time.Time, bool) {
 func (c *Controller) openDash() {
 	timer, isNew := countdowntimer.Instance()
 
-	t, err := c.displayPanel.ShowTopTask()
+	t, err := database.GetTopTask()
 	currentDashTask = &t
 	if err != nil {
 		if !errors.Is(err, database.ErrNotFound) {
@@ -62,13 +63,14 @@ func (c *Controller) openDash() {
 		c.Home()
 		return
 	}
+	c.displayPanel.ShowTask(t)
 	if lastDashTask == nil {
 		lastDashTask = currentDashTask
 	}
 
 	handler := &keybindHandler{c}
 	menu := configureKeybindMenu(handler, nil, keybindInput).
-		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.app) }).
+		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
 		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
 		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.openDash)).
@@ -83,9 +85,9 @@ func (c *Controller) openDash() {
 		timer.SetConfig(countdowntimer.Config{
 			StartMessage:       "lock in.",
 			EndMessage:         "dash complete. restart when ready.",
-			CountdownDuration:  c.config.dashDuration,
+			CountdownDuration:  config.C.DashDuration,
 			PeriodicSideEffect: trackTime(c),
 		})
-		timer.Start(c.app)
+		timer.Start(c.queueUpdateDraw)
 	}
 }

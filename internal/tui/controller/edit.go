@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/pkg/stringpad"
+	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
@@ -46,9 +46,9 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	menu := configureKeybindMenu(handler, nil, keybindInput)
 
 	if task.CompletedAt.Valid {
-		menu.AddKeybind('u', "reactivate", keybindmenu.DefaultBind, handler.reactivateTaskFromEdit(task.ID))
+		menu.AddKeybind('u', "reactivate", keybindmenu.DefaultBind, handler.reactivateTask(task, func() {}))
 	} else if task.PausedAt.Valid {
-		menu.AddKeybind('u', "unpause", keybindmenu.DefaultBind, handler.unpauseTaskFromEdit(task.ID))
+		menu.AddKeybind('u', "unpause", keybindmenu.DefaultBind, handler.toggleTaskPause(task, func() {}))
 	}
 
 	if !task.CompletedAt.Valid {
@@ -57,15 +57,15 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
-		menu.AddKeybind('f', "put first", keybindmenu.DefaultBind, handler.bumpTaskFromEdit(task.ID)).
-			AddKeybind('p', "pause", keybindmenu.DefaultBind, handler.pauseTaskFromEdit(task.ID))
+		menu.AddKeybind('f', "put first", keybindmenu.DefaultBind, handler.bumpTask(task, func() {})).
+			AddKeybind('p', "pause", keybindmenu.DefaultBind, handler.toggleTaskPause(task, func() {}))
 
 	}
 
 	menu.AddKeybind('c', "copy description", keybindmenu.DefaultBind, handler.copy(task.Description)).
 		AddKeybind('r', "remove", keybindmenu.DefaultBind, handler.removeTaskFromEdit(task, back))
 
-	if stringpad.LineCount(task.Description) > 2 { // heuristic to reduce visual clutter
+	if strutil.LineCount(task.Description) > 2 { // heuristic to reduce visual clutter
 		menu.AddKeybind('j', "scroll down", keybindmenu.DefaultBind, handler.scrollDownTask).
 			AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTask)
 	}

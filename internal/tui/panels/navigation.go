@@ -2,17 +2,18 @@ package panels
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/internal/tui/components"
 	"github.com/rivo/tview"
 )
 
 type NavigationPanel struct {
-	frame    *tview.Frame
+	frame    *components.Frame
 	textView *tview.TextView
 }
 
 func NewNavigationPanel(borderColour tcell.Color) *NavigationPanel {
 	textView := tview.NewTextView().SetDynamicColors(true)
-	frame := newFrame()
+	frame := components.NewFrame()
 	frame.SetBorderColor(borderColour)
 	return &NavigationPanel{frame, textView}
 }

@@ -1,4 +1,4 @@
-package stringpad
+package strutil
 
 import (
 	"strings"
@@ -17,9 +17,9 @@ func RightPad(str string, spaceCount uint8) string {
 	return str + strings.Repeat(" ", padCount)
 }
 
-// TruncateString performts rune-wise string truncation,
+// RuneTruncate performs rune-wise string truncation,
 // when truncation occurs, appends …
-func TruncateString(s string, maxLen int) string {
+func RuneTruncate(s string, maxLen int) string {
 	if maxLen < 1 {
 		return ""
 	}
@@ -28,11 +28,4 @@ func TruncateString(s string, maxLen int) string {
 		return s
 	}
 	return string(runes[:maxLen-1]) + "…"
-}
-
-func LineCount(s string) int {
-	if len(s) == 0 {
-		return 0
-	}
-	return strings.Count(s, "\n") + 1
 }

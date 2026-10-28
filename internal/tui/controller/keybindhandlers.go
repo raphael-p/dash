@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"cmp"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -9,6 +10,8 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/internal/tui/panels"
+	"github.com/raphael-p/dash/pkg/sqlutil"
+	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
@@ -62,7 +65,7 @@ func (ka *keybindHandler) openDash(_ rune) {
 }
 
 func (ka *keybindHandler) quit(_ rune) {
-	ka.c.app.Stop()
+	ka.c.stop()
 }
 
 func (ka *keybindHandler) addTaskFlow(back func()) func(rune) {
@@ -73,7 +76,7 @@ func (ka *keybindHandler) addTaskFlow(back func()) func(rune) {
 
 func (ka *keybindHandler) addTaskFlowSubmitName(back func()) func(rune) {
 	return func(_ rune) {
-		if name := getInputOrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); name != "" {
+		if name := strutil.OrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); name != "" {
 			ka.c.addTaskDescription(name, back)
 		}
 	}
@@ -81,7 +84,7 @@ func (ka *keybindHandler) addTaskFlowSubmitName(back func()) func(rune) {
 
 func (ka *keybindHandler) addTaskFlowSubmitDescription(name string, back func()) func(rune) {
 	return func(_ rune) {
-		if description := getInputOrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); description != "" {
+		if description := strutil.OrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); description != "" {
 			ka.c.addTaskInsertionOrder(name, description, back)
 		}
 	}
@@ -95,18 +98,15 @@ func (ka *keybindHandler) addTaskFlowSubmit(name, description string, insertionO
 	}
 }
 
-func (ka *keybindHandler) bumpTaskFromHome(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
-		if ka.c.bumpTask(id) {
-			ka.c.refreshTasks()
-			ka.c.commandLine.Clear()
-		}
-	}
-}
-
-func (ka *keybindHandler) bumpTaskFromEdit(id int64) func(rune) {
+func (ka *keybindHandler) bumpTask(task *database.Task, onSuccess func()) func(rune) {
 	return func(_ rune) {
-		ka.c.bumpTask(id)
+		task = cmp.Or(task, ka.c.getTaskFromCommandLine())
+		if task != nil {
+			task.PriorityBumpedAt = sqlutil.NowNullTime()
+			if ka.c.updateTask(task, "priority bump") {
+				onSuccess()
+			}
+		}
 	}
 }
 
@@ -128,8 +128,9 @@ func (ka *keybindHandler) editTaskFlowDescription(task *database.Task, back func
 
 func (ka *keybindHandler) editTaskFlowSubmitName(task *database.Task, back func()) func(rune) {
 	return func(_ rune) {
-		if name := getInputOrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); name != "" {
-			if ka.c.editTask(task, name, "") {
+		if name := strutil.OrWarn(ka.c.commandLine.GetInput(), "name", ka.c.infoPanel.Warn); name != "" {
+			task.Name = name
+			if ka.c.updateTask(task, "name change") {
 				ka.c.openTask(task.ID, back)
 			}
 		}
@@ -138,8 +139,9 @@ func (ka *keybindHandler) editTaskFlowSubmitName(task *database.Task, back func(
 
 func (ka *keybindHandler) editTaskFlowSubmitDescription(task *database.Task, back func()) func(rune) {
 	return func(_ rune) {
-		if description := getInputOrWarn(ka.c.commandLine.GetInput(), "description", ka.c.infoPanel.Warn); description != "" {
-			if ka.c.editTask(task, "", description) {
+		if description := strutil.OrWarn(ka.c.commandLine.GetInput(), "description", ka.c.infoPanel.Warn); description != "" {
+			task.Description = description
+			if ka.c.updateTask(task, "description change") {
 				ka.c.openTask(task.ID, back)
 			}
 		}
@@ -147,28 +149,25 @@ func (ka *keybindHandler) editTaskFlowSubmitDescription(task *database.Task, bac
 }
 
 func (ka *keybindHandler) openTask(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+	if id, ok := strutil.ParseIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
 		ka.c.openTask(id, ka.c.Home)
 	}
 }
 
-func (ka *keybindHandler) reactivateTaskFromHome(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
-		if ka.c.reactivateTask(id) {
-			ka.c.refreshTasks()
-			ka.c.commandLine.Clear()
+func (ka *keybindHandler) reactivateTask(task *database.Task, onSuccess func()) func(rune) {
+	return func(_ rune) {
+		task = cmp.Or(task, ka.c.getTaskFromCommandLine())
+		if task != nil {
+			task.CompletedAt = sql.NullTime{Valid: false}
+			if ka.c.updateTask(task, "reactivate") {
+				onSuccess()
+			}
 		}
 	}
 }
 
-func (ka *keybindHandler) reactivateTaskFromEdit(id int64) func(rune) {
-	return func(_ rune) {
-		ka.c.reactivateTask(id)
-	}
-}
-
 func (ka *keybindHandler) removeTaskFromHome(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
+	if id, ok := strutil.ParseIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
 		ka.askForConfirmation(
 			fmt.Sprintf("delete task [%d]", id),
 			func() { ka.c.removeTask(id); ka.c.Home() },
@@ -213,33 +212,24 @@ func (ka *keybindHandler) unmarkTaskDone(_ rune) {
 	}
 }
 
-func (ka *keybindHandler) pauseTaskFromHome(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
-		if ka.c.pauseTask(id) {
-			ka.c.refreshTasks()
-			ka.c.commandLine.Clear()
-		}
-	}
-}
-
-func (ka *keybindHandler) unpauseTaskFromHome(_ rune) {
-	if id, ok := getIDOrWarn(ka.c.commandLine.GetInput(), ka.c.infoPanel.Warn); ok {
-		if ka.c.unpauseTask(id) {
-			ka.c.refreshTasks()
-			ka.c.commandLine.Clear()
-		}
-	}
-}
-
-func (ka *keybindHandler) pauseTaskFromEdit(id int64) func(rune) {
+func (ka *keybindHandler) toggleTaskPause(task *database.Task, onSuccess func()) func(rune) {
 	return func(_ rune) {
-		ka.c.pauseTask(id)
-	}
-}
+		task = cmp.Or(task, ka.c.getTaskFromCommandLine())
+		if task != nil {
+			if task.PausedAt.Valid {
+				task.PausedAt = sql.NullTime{Valid: false}
+				if ka.c.updateTask(task, "unpause") {
+					onSuccess()
+				}
 
-func (ka *keybindHandler) unpauseTaskFromEdit(id int64) func(rune) {
-	return func(_ rune) {
-		ka.c.unpauseTask(id)
+			} else {
+				task.PausedAt = sqlutil.NowNullTime()
+				if ka.c.updateTask(task, "pause") {
+					onSuccess()
+				}
+
+			}
+		}
 	}
 }
 

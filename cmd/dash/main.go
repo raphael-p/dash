@@ -6,20 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/pkg/configreader"
+	"github.com/raphael-p/dash/internal/tui/controller"
 	"github.com/raphael-p/dash/pkg/logger"
+	"github.com/rivo/tview"
 )
 
 var AppVersion = "dev"
-
-type Config struct {
-	DashDurationSeconds  uint16 `json:"dash_duration_seconds"`
-	DescriptionCharLimit int    `json:"description_char_limit"`
-	NameCharLimit        int    `json:"name_char_limit"`
-}
-
-var config *Config = &Config{}
 
 func defaultDataDir() string {
 	home, err := os.UserHomeDir()
@@ -35,7 +29,7 @@ func main() {
 	logger.Create(dataDir, false)
 	defer logger.Close()
 
-	configreader.ReadConfigFile(dataDir, config)
+	config.Initialise(dataDir)
 
 	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "dash.db"))
 	if err != nil {
@@ -44,16 +38,27 @@ func main() {
 	defer db.Close()
 	database.DB = db
 
-	if len(os.Args) < 2 || (os.Args[1] != "init" && os.Args[1] != "wipe") {
-		database.CheckVersion()
-	}
-
 	if len(os.Args) < 2 {
 		logger.Debugf("starting dash TUI (app version %s)", AppVersion)
-		startTUI()
-	} else {
-		command := os.Args[1]
-		logger.Debugf("executing command %s (app version %s)", command, AppVersion)
-		handleCommand(command)
+		database.CheckVersion()
+		app := tview.NewApplication()
+		controller.Initialise(app)
+		if err := app.Run(); err != nil {
+			logger.Fatal(err.Error())
+		}
+		os.Exit(0)
 	}
+
+	command := os.Args[1]
+	logger.Debugf("executing command %s (app version %s)", command, AppVersion)
+	if handleSysCommand(command) || handleDBCommand(command) {
+		os.Exit(0)
+	}
+	database.CheckVersion()
+	if handleAppCommand(command) {
+		os.Exit(0)
+	}
+
+	logger.Info("unknown command, usage: dsh [extract|generate|init|task|update|version|wipe]")
+	os.Exit(2)
 }

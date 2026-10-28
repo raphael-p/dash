@@ -3,10 +3,10 @@ package database
 import "errors"
 
 var (
-	ErrIDNotPositive = errors.New("task ID must be greater than zero")
-	ErrNotFound      = errors.New("no task found")
+	ErrNotFound = errors.New("no task found")
 )
 
 var (
+	errIDNotPositive         = errors.New("task ID must be greater than zero")
 	errLastInsertFetchFailed = errors.New("failed to retrieve last insert ID")
 )

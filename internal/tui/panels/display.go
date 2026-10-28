@@ -6,7 +6,8 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/pkg/stringpad"
+	"github.com/raphael-p/dash/internal/tui/components"
+	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/rivo/tview"
 )
 
@@ -27,7 +28,7 @@ func newDisplayPanelTab() *displayPanelTab {
 }
 
 type DisplayPanel struct {
-	frame              *tview.Frame
+	frame              *components.Frame
 	activeTab          *displayPanelTab
 	completedTab       *displayPanelTab
 	pausedTab          *displayPanelTab
@@ -37,7 +38,7 @@ type DisplayPanel struct {
 }
 
 func NewDisplayPanel(headerFooterColour tcell.Color) *DisplayPanel {
-	frame := newFrame()
+	frame := components.NewFrame()
 	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0, headerFooterColour}
 }
 
@@ -136,7 +137,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 			cursor.Timestamp = pages[pageIndex-1].lastTask.PausedAt
 		}
 	} else {
-		dp.rowSpace = getFrameAvailableRows(dp.frame)
+		dp.rowSpace = dp.frame.GetAvailableRows()
 	}
 
 	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor, max(minimumTasksPerPage, dp.rowSpace))
@@ -156,7 +157,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	// store pagination metadata
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
-	table := makeTaskTable(tasks)
+	table := components.NewTaskTable(tasks)
 	dp.SetPrimitive(table)
 	if pageIndex > 0 {
 		dp.frame.AddText("↑ previous page", true, tview.AlignLeft, dp.headerFooterColour)
@@ -173,7 +174,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	return nil
 }
 
-func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
+func (dp *DisplayPanel) ShowTask(task database.Task) (database.Task, error) {
 	dp.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
 	textView := tview.NewTextView()
 	dp.SetPrimitive(textView)
@@ -181,38 +182,20 @@ func (dp *DisplayPanel) showTask(task database.Task) (database.Task, error) {
 		fmt.Fprintf(textView, "%s\n\n", task.Description)
 	}
 
-	createdAt, updatedAt, completedAt, pausedAt := task.GetFormattedTimes()
-
 	addDateFooter := func(label, value string) {
-		dp.frame.AddText(stringpad.RightPad(label, 14)+value, false, tview.AlignLeft, dp.headerFooterColour)
+		dp.frame.AddText(strutil.RightPad(label, 14)+value, false, tview.AlignLeft, dp.headerFooterColour)
 	}
-	addDateFooter("updated at", updatedAt)
+	addDateFooter("updated at", strutil.FormatTime(task.UpdatedAt))
+	completedAt := strutil.FormatTime(task.CompletedAt)
 	if completedAt != "" {
 		addDateFooter("completed at", completedAt)
 	}
+	pausedAt := strutil.FormatTime(task.PausedAt)
 	if pausedAt != "" {
 		addDateFooter("paused at", pausedAt)
 	}
-	addDateFooter("created at", createdAt)
+	addDateFooter("created at", strutil.FormatTime(task.CreatedAt))
 	return task, nil
-}
-
-func (dp *DisplayPanel) ShowTopTask() (database.Task, error) {
-	task, err := database.GetTopTask()
-	if err != nil {
-		return database.Task{}, fmt.Errorf("could not retrieve top task: %w", err)
-	}
-
-	return dp.showTask(task)
-}
-
-func (dp *DisplayPanel) ShowTaskByID(taskID int64) (database.Task, error) {
-	task, err := database.GetTask(int64(taskID))
-	if err != nil {
-		return database.Task{}, fmt.Errorf("could not retrieve task [%d]: %w", taskID, err)
-	}
-
-	return dp.showTask(task)
 }
 
 type scrollDirection int

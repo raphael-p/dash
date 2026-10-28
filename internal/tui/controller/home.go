@@ -39,15 +39,16 @@ func configureHomeKeybinds(c *Controller) *keybindmenu.KeybindMenu {
 	}
 
 	if hasInput {
+		onSuccess := func() { c.refreshTasks(); c.commandLine.Clear() }
 		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask)
 		switch taskMode {
 		case database.CompletedTasks:
-			menu.AddKeybind('u', "reactivate task", keybindmenu.DefaultBind, handler.reactivateTaskFromHome)
+			menu.AddKeybind('u', "reactivate task", keybindmenu.DefaultBind, handler.reactivateTask(nil, onSuccess))
 		case database.ActiveTasks:
-			menu.AddKeybind('f', "put task first", keybindmenu.DefaultBind, handler.bumpTaskFromHome)
-			menu.AddKeybind('u', "pause task", keybindmenu.DefaultBind, handler.pauseTaskFromHome)
+			menu.AddKeybind('f', "put task first", keybindmenu.DefaultBind, handler.bumpTask(nil, onSuccess))
+			menu.AddKeybind('u', "pause task", keybindmenu.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
 		case database.PausedTasks:
-			menu.AddKeybind('u', "unpause task", keybindmenu.DefaultBind, handler.unpauseTaskFromHome)
+			menu.AddKeybind('u', "unpause task", keybindmenu.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
 		}
 		menu.AddKeybind('r', "remove task", keybindmenu.DefaultBind, handler.removeTaskFromHome)
 	} else {

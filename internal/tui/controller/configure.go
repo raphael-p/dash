@@ -2,11 +2,9 @@ package controller
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/raphael-p/dash/internal/database"
+	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
@@ -24,12 +22,12 @@ func configureCommandLine(c *Controller, menu *keybindmenu.KeybindMenu, mode com
 	var placeholder string
 	switch mode {
 	case descriptionInput:
-		charLimit = c.config.descriptionCharLimit
+		charLimit = config.C.DescriptionCharLimit
 		placeholder = "enter a task description"
 	case keybindInput:
 		charLimit = 1
 	case nameInput:
-		charLimit = c.config.nameCharLimit
+		charLimit = config.C.NameCharLimit
 		placeholder = "enter a task name"
 	case taskIDInput:
 		charLimit = 9
@@ -63,37 +61,4 @@ func configureKeybindMenu(handler *keybindHandler, onEnter func(rune), mode comm
 	return menu.
 		AddKeybind(0, makeDescription("ENTER", "submit"), keybindmenu.BindEnter, onEnter).
 		AddKeybind(0, "", keybindmenu.BindBackspace, nil)
-}
-
-func getIDOrWarn(idString string, warn func(err string)) (int64, bool) {
-	id, err := extractIDFromString(idString)
-	if err != nil {
-		warn(fmt.Sprint("your input is invalid: ", err))
-		return 0, false
-	}
-	return id, true
-}
-
-func extractIDFromString(idString string) (int64, error) {
-	if idString == "" {
-		return 0, errEmptyID
-	}
-
-	id, err := strconv.ParseInt(idString, 10, 0)
-	if err != nil || id < 1 {
-		return 0, errIDNotInt
-	}
-
-	if id < 1 {
-		return 0, database.ErrIDNotPositive
-	}
-	return id, nil
-}
-
-func getInputOrWarn(input, label string, warn func(err string)) string {
-	if value := strings.TrimSpace(input); value != "" {
-		return value
-	}
-	warn(fmt.Sprintf("please provide a %s", label))
-	return ""
 }

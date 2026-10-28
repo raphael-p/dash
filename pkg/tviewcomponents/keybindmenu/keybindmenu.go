@@ -125,7 +125,7 @@ func (hm *KeybindMenu) GenerateInputCapture() func(event *tcell.EventKey) *tcell
 		key := event.Rune()
 		mods := event.Modifiers()
 
-		if hm.isScrollable && (eventKey == tcell.KeyDown || eventKey == tcell.KeyUp) {
+		if hm.isScrollable && (eventKey == tcell.KeyDown || eventKey == tcell.KeyUp || eventKey == tcell.KeyLeft || eventKey == tcell.KeyRight) {
 			return event
 		}
 
