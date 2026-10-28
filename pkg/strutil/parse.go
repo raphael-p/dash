@@ -80,7 +80,7 @@ func ParseIDOrWarn(s string, warn func(err string)) (int64, bool) {
 	return id, true
 }
 
-// Relative time returns how long ago the timestamp was in a
+// RelativeTime returns how long ago the timestamp was in a
 // concise format
 //
 // e.g. "1d", "2w", "3y"

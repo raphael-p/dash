@@ -21,7 +21,7 @@ type AppConfig struct {
 var C *AppConfig = &AppConfig{}
 
 func Initialise(dataDir string) {
-	var rawConfig *fileConfig = &fileConfig{}
+	rawConfig := &fileConfig{}
 	configreader.ReadConfigFile(dataDir, rawConfig)
 	dashDuration := time.Duration(rawConfig.DashDurationSeconds) * time.Second
 	C = &AppConfig{dashDuration, rawConfig.DescriptionCharLimit, rawConfig.NameCharLimit}
