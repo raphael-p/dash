@@ -18,10 +18,11 @@ type Controller struct {
 }
 
 func Initialise(app *tview.Application) {
-	commandLine := commandline.New(tcell.ColorLimeGreen, tcell.ColorGray)
-	displayPanel := panels.NewDisplayPanel(tcell.ColorGray)
+	highlightColour, secondaryColour := tcell.ColorLimeGreen, tcell.ColorGray
+	commandLine := commandline.New(highlightColour, secondaryColour)
+	displayPanel := panels.NewDisplayPanel(secondaryColour)
 	infoPanel := panels.NewInfoPanel()
-	navPanel := panels.NewNavigationPanel(tcell.ColorLimeGreen)
+	navPanel := panels.NewNavigationPanel(highlightColour, secondaryColour)
 
 	grid := components.NewGrid(displayPanel.GetPrimitive(), infoPanel.GetPrimitive(), navPanel.GetPrimitive(), commandLine.GetPrimitive(), 25, 80)
 

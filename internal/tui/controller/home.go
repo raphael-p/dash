@@ -46,7 +46,7 @@ func configureHomeKeybinds(c *Controller) *keybindmenu.KeybindMenu {
 			menu.AddKeybind('u', "reactivate task", keybindmenu.DefaultBind, handler.reactivateTask(nil, onSuccess))
 		case database.ActiveTasks:
 			menu.AddKeybind('f', "put task first", keybindmenu.DefaultBind, handler.bumpTask(nil, onSuccess))
-			menu.AddKeybind('u', "pause task", keybindmenu.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
+			menu.AddKeybind('p', "pause task", keybindmenu.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
 		case database.PausedTasks:
 			menu.AddKeybind('u', "unpause task", keybindmenu.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
 		}

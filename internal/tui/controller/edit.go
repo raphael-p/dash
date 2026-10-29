@@ -6,6 +6,7 @@ import (
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
+	"github.com/rivo/tview"
 )
 
 func (c *Controller) addTaskName(back func()) {
@@ -25,7 +26,8 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 	menu := configureKeybindMenu(&keybindHandler{c}, handler.addTaskFlowSubmitDescription(name, back), descriptionInput)
 	configureCommandLine(c, menu, descriptionInput)
 
-	c.navPanel.SetTitle("Add New Task (description)").SetText(fmt.Sprintf("name: %s\n\ndescription: ?\n\n%s", name, menu.GenerateText()))
+	c.navPanel.SetTitle("Add New Task (description)").
+		SetText(fmt.Sprintf("name: %s\n\ndescription: ?\n\n%s", tview.Escape(name), menu.GenerateText()))
 }
 
 func (c *Controller) addTaskInsertionOrder(name, description string, back func()) {
@@ -38,7 +40,8 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 		AddKeybind('l', "insert last", keybindmenu.DefaultBind, handler.addTaskFlowSubmit(name, description, InsertLast, back))
 	configureCommandLine(c, menu, keybindInput)
 
-	c.navPanel.SetTitle("Add New Task (insert)").SetText(fmt.Sprintf("name: %s\n\ndescription: %s\n\n%s", name, description, menu.GenerateText()))
+	c.navPanel.SetTitle("Add New Task (insert)").
+		SetText(fmt.Sprintf("name: %s\n\ndescription: %s\n\n%s", tview.Escape(name), tview.Escape(description), menu.GenerateText()))
 }
 
 func (c *Controller) editTaskFlow(task *database.Task, back func()) {

@@ -28,18 +28,17 @@ func newDisplayPanelTab() *displayPanelTab {
 }
 
 type DisplayPanel struct {
-	frame              *components.Frame
-	activeTab          *displayPanelTab
-	completedTab       *displayPanelTab
-	pausedTab          *displayPanelTab
-	mode               database.TaskMode
-	rowSpace           int
-	headerFooterColour tcell.Color
+	frame        *components.Frame
+	activeTab    *displayPanelTab
+	completedTab *displayPanelTab
+	pausedTab    *displayPanelTab
+	mode         database.TaskMode
+	rowSpace     int
 }
 
 func NewDisplayPanel(headerFooterColour tcell.Color) *DisplayPanel {
-	frame := components.NewFrame()
-	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0, headerFooterColour}
+	frame := components.NewFrame(headerFooterColour)
+	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0}
 }
 
 func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
@@ -101,7 +100,7 @@ func (dp *DisplayPanel) getPreviousPage() error {
 	return err
 }
 
-func (dp *DisplayPanel) GetNextPage() error {
+func (dp *DisplayPanel) getNextPage() error {
 	tab := dp.getTab()
 	currentPage := tab.pages[tab.currentPageIndex]
 	if !currentPage.hasNext {
@@ -117,7 +116,7 @@ func (dp *DisplayPanel) GetNextPage() error {
 }
 
 func (dp *DisplayPanel) SetTitle(title string) *DisplayPanel {
-	dp.frame.SetTitle(title)
+	dp.frame.SetTitle(tview.Escape(title))
 	return dp
 }
 
@@ -157,15 +156,14 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	// store pagination metadata
 	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
-	table := components.NewTaskTable(tasks)
+	table := components.NewTable(tasks)
 	dp.SetPrimitive(table)
 	if pageIndex > 0 {
-		dp.frame.AddText("↑ previous page", true, tview.AlignLeft, dp.headerFooterColour)
+		dp.frame.AddHeader("↑ previous page")
 	}
 	if hasNext {
-		dp.frame.AddText("↓ next page", false, tview.AlignLeft, dp.headerFooterColour)
+		dp.frame.AddFooter("↓ next page")
 	}
-
 	if scrollToEnd {
 		table.ScrollToEnd()
 	} else {
@@ -182,63 +180,34 @@ func (dp *DisplayPanel) ShowTask(task database.Task) (database.Task, error) {
 		fmt.Fprintf(textView, "%s\n\n", task.Description)
 	}
 
-	addDateFooter := func(label, value string) {
-		dp.frame.AddText(strutil.RightPad(label, 14)+value, false, tview.AlignLeft, dp.headerFooterColour)
-	}
-	addDateFooter("updated at", strutil.FormatTime(task.UpdatedAt))
-	completedAt := strutil.FormatTime(task.CompletedAt)
-	if completedAt != "" {
-		addDateFooter("completed at", completedAt)
-	}
-	pausedAt := strutil.FormatTime(task.PausedAt)
-	if pausedAt != "" {
-		addDateFooter("paused at", pausedAt)
-	}
-	addDateFooter("created at", strutil.FormatTime(task.CreatedAt))
+	dp.frame.AddDateFooter(strutil.FormatTime(task.UpdatedAt), "updated at")
+	dp.frame.AddDateFooter(strutil.FormatTime(task.CompletedAt), "completed at")
+	dp.frame.AddDateFooter(strutil.FormatTime(task.PausedAt), "paused at")
 	return task, nil
 }
 
-type scrollDirection int
-
-const (
-	ScrollDown scrollDirection = iota
-	ScrollUp
-)
-
-func (dp *DisplayPanel) ScrollTable(direction scrollDirection) error {
-	table, ok := dp.frame.GetPrimitive().(*tview.Table)
+func (dp *DisplayPanel) ScrollTable(direction components.ScrollDirection) error {
+	table, ok := dp.frame.GetPrimitive().(*components.Table)
 	if !ok {
 		return errors.New("task list is not available")
 	}
-	offset, _ := table.GetOffset()
-
-	if direction == ScrollDown {
-		// determine whether to fetch the next page
-		rowCount := table.GetRowCount()
-		_, _, _, height := table.GetInnerRect()
-		if offset+height >= rowCount {
-			return dp.GetNextPage()
-		}
-		table.SetOffset(offset+1, 0)
-	} else {
-		// determine whether to fetch the previous page
-		if offset == 0 {
+	if table.Scroll(components.ScrollDirection(direction)) {
+		if direction == components.ScrollDown {
+			return dp.getNextPage()
+		} else {
 			return dp.getPreviousPage()
 		}
-		table.SetOffset(offset-1, 0)
 	}
 	return nil
 }
 
-func (dp *DisplayPanel) ScrollTask(direction scrollDirection) error {
+func (dp *DisplayPanel) ScrollTask(direction components.ScrollDirection) error {
 	textView, ok := dp.frame.GetPrimitive().(*tview.TextView)
 	if !ok {
 		return errors.New("task is not available")
 	}
 	offset, _ := textView.GetScrollOffset()
-
-	if direction == ScrollDown {
-		offset, _ := textView.GetScrollOffset()
+	if direction == components.ScrollDown {
 		textView.ScrollTo(offset+1, 0)
 	} else if offset != 0 {
 		textView.ScrollTo(offset-1, 0)
