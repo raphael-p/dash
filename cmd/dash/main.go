@@ -11,6 +11,7 @@ import (
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/internal/tui/controller"
 	"github.com/raphael-p/dash/pkg/logger"
+	"github.com/raphael-p/dash/pkg/sqlitebackup"
 	"github.com/rivo/tview"
 )
 
@@ -32,12 +33,19 @@ func main() {
 
 	config.Initialise(dataDir)
 
-	db, err := sql.Open("sqlite3", filepath.Join(dataDir, "dash.db"))
+	dbPath := filepath.Join(dataDir, "dash.db")
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		logger.Fatalf("failed to open database: %v", err)
 	}
 	defer db.Close()
 	database.DB = db
+
+	go func() {
+		if err := sqlitebackup.Backup(db, dbPath); err != nil {
+			logger.Warning(fmt.Sprintf("database backup failed: %v", err))
+		}
+	}()
 
 	if len(os.Args) < 2 {
 		logger.Debugf("starting dash TUI (app version %s)", AppVersion)
