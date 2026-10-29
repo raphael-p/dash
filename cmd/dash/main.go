@@ -3,6 +3,7 @@ package main
 import (
 	"cmp"
 	"database/sql"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -59,6 +60,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	logger.Info("unknown command, usage: dsh [extract|generate|init|task|update|version|wipe]")
+	fmt.Printf("unknown command, usage: \n\n%s\n", helpText())
 	os.Exit(2)
 }

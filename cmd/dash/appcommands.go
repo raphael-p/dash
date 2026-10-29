@@ -26,18 +26,6 @@ func handleAppCommand(command string) bool {
 			fmt.Fprintf(os.Stderr, "extract: %v\n", err)
 			os.Exit(1)
 		}
-	case "generate":
-		generateCmd := flag.NewFlagSet("generate", flag.ExitOnError)
-		randomEntryCount := generateCmd.Int("randomEntryCount", 0, "number of random entries to generate on top of the default entries")
-		err := generateCmd.Parse(os.Args[2:])
-		if err != nil {
-			if errors.Is(err, flag.ErrHelp) {
-				os.Exit(0)
-			}
-			fmt.Fprintf(os.Stderr, "generate: %v\n", err)
-			os.Exit(2)
-		}
-		database.FillWithSampleData(*randomEntryCount)
 	case "task":
 		name, description, err := parseCreateTask(os.Args[2:])
 		if err != nil {

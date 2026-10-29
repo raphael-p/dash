@@ -21,15 +21,15 @@ Start the dashboard:
 dsh
 ```
 
-Command-line commands:
+Examples of CLI commands:
 
 ```sh
-dsh init                         # initialise the database
-dsh generate                     # add sample data
-dsh generate -randomEntryCount 5 # add sample data and five random tasks
-dsh wipe                         # delete all data, after confirmation
-dsh extract --days 7             # export tasks completed in the last 7 days
-dsh extract --since 2026-01-01   # export tasks completed since a date
+dsh help                                   # full command description
+dsh init                                   # initialise the database
+dsh extract --days 7                       # export tasks completed in the last 7 days
+dsh extract --since 2026-01-01             # export tasks completed since a date
+dsh task "hello world!" "my first task"    # create your first task
+dsh db:wipe                                # delete all data, after confirmation
 ```
 
 Set `DASH_DATA_DIR` to use another data directory:
