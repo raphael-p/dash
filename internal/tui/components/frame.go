@@ -1,7 +1,7 @@
 package components
 
 import (
-	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/rivo/tview"
 )
@@ -10,21 +10,20 @@ const headerFooterPadding int = 1
 
 type Frame struct {
 	*tview.Frame
-	headerFooterColour tcell.Color
 }
 
-func NewFrame(headerFooterColour tcell.Color) *Frame {
+func NewFrame() *Frame {
 	frame := tview.NewFrame(nil).SetBorders(1, 1, headerFooterPadding, headerFooterPadding, 2, 2)
 	frame.SetBorder(true)
-	return &Frame{frame, headerFooterColour}
+	return &Frame{frame}
 }
 
 func (f *Frame) AddHeader(header string) {
-	f.AddText(header, true, tview.AlignLeft, f.headerFooterColour)
+	f.AddText(header, true, tview.AlignLeft, config.C.SecondaryColour)
 }
 
 func (f *Frame) AddFooter(footer string) {
-	f.AddText(footer, false, tview.AlignLeft, f.headerFooterColour)
+	f.AddText(footer, false, tview.AlignLeft, config.C.SecondaryColour)
 }
 
 func (f *Frame) AddDateFooter(date, label string) {

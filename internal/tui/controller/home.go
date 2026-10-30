@@ -4,22 +4,20 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 )
 
 func (c *Controller) Home() {
 	c.refreshTasks()
-	configureCommandLine(c, nil, taskIDInput)
+	c.commandLine.Clear()
 
 	setWrapper := func() {
-		menu := configureHomeKeybinds(c)
-		c.navPanel.SetText(menu.GenerateText())
-		if c.displayPanel.HasTasks() {
-			c.commandLine.SetInputCapture(menu.GenerateInputCapture()) // avoid full reset
-		} else {
-			configureCommandLine(c, menu, keybindInput)
-		}
+		menu, mode := configureHomeKeybinds(c)
+		c.navPanel.SetText(menu.Text())
+		charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
+		c.commandLine.Set(charLimit, placeholder, menu.InputCapture())
 	}
 	c.commandLine.SetChangedFunc(setWrapper)
 	setWrapper()
@@ -27,19 +25,22 @@ func (c *Controller) Home() {
 	c.navPanel.SetTitle("Welcome to Dash!")
 }
 
-func configureHomeKeybinds(c *Controller) *keybindmenu.KeybindMenu {
+func configureHomeKeybinds(c *Controller) (*keybindmenu.KeybindMenu, config.InputMode) {
 	taskMode, hasInput, hasTasks := c.displayPanel.GetTaskMode(), c.commandLine.HasInput(), c.displayPanel.HasTasks()
 
 	handler := &keybindHandler{c}
 	var menu *keybindmenu.KeybindMenu
+	var mode config.InputMode
 	if hasTasks {
-		menu = configureKeybindMenu(handler, handler.openTask, taskIDInput)
+		mode = config.TaskIDInput
+		menu = handler.newMenu(mode, handler.openTask)
 	} else {
-		menu = configureKeybindMenu(handler, nil, keybindInput)
+		mode = config.KeybindInput
+		menu = keybindmenu.New()
 	}
 
 	if hasInput {
-		onSuccess := func() { c.refreshTasks(); c.commandLine.Clear() }
+		onSuccess := func() { c.Home() }
 		menu.AddKeybind('o', "open task", keybindmenu.DefaultBind, handler.openTask)
 		switch taskMode {
 		case database.CompletedTasks:
@@ -67,5 +68,5 @@ func configureHomeKeybinds(c *Controller) *keybindmenu.KeybindMenu {
 				AddKeybind('k', "scroll up", keybindmenu.DefaultBind, handler.scrollUpTable)
 		}
 	}
-	return menu.AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit)
+	return menu.AddKeybind('q', "quit", keybindmenu.DefaultBind, handler.quit), mode
 }

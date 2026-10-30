@@ -89,23 +89,29 @@ func Initialise() {
 }
 
 func Wipe() {
-	for _, op := range slices.Backward(initOperations) {
-		_, err := DB.Exec(op.down)
-		if err != nil {
-			logger.Fatalf("rollback error on '%s': %v", op.name, err)
+	if getVersion() > 0 {
+		for _, op := range slices.Backward(initOperations) {
+			_, err := DB.Exec(op.down)
+			if err != nil {
+				logger.Fatalf("rollback error on '%s': %v", op.name, err)
+			}
 		}
+		logger.Info("database wiped")
 	}
-	logger.Info("database wiped")
 	Initialise()
 }
 
-func CheckVersion() {
+func getVersion() int {
 	var dbVersion int
 	err := DB.QueryRow("PRAGMA user_version;").Scan(&dbVersion)
 	if err != nil {
 		logger.Fatalf("failed to read database version: %v", err)
 	}
+	return dbVersion
+}
 
+func CheckVersion() {
+	dbVersion := getVersion()
 	if dbVersion > 0 {
 		if dbVersion != schemaVersion {
 			logger.Fatalf("database version is out-of-sync: need %d, got %d\nplease run dsh init", schemaVersion, dbVersion)

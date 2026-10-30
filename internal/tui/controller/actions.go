@@ -111,12 +111,12 @@ func (c *Controller) removeTask(id int64) bool {
 func (c *Controller) updateTask(task *database.Task, operation string) bool {
 	updated, err := task.Update()
 	if err != nil {
-		c.infoPanel.Error(fmt.Errorf("%w: %s on task [%d]: %w", errFailedUpdate, operation, task.ID, err))
+		c.infoPanel.Error(fmt.Errorf("%w on task [%d]: %s: %w", errFailedUpdate, task.ID, operation, err))
 		return false
 	}
 
 	if updated {
-		c.infoPanel.Info(fmt.Sprintf("task [%d]: %s success", task.ID, operation))
+		c.infoPanel.Info(fmt.Sprintf("task [%d]: %s", task.ID, operation))
 	} else {
 		c.infoPanel.Warn(fmt.Sprintf("task [%d] does not exist, noop", task.ID))
 	}

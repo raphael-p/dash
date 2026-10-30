@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/internal/tui/components"
 	"github.com/raphael-p/dash/pkg/strutil"
@@ -36,8 +35,8 @@ type DisplayPanel struct {
 	rowSpace     int
 }
 
-func NewDisplayPanel(headerFooterColour tcell.Color) *DisplayPanel {
-	frame := components.NewFrame(headerFooterColour)
+func NewDisplayPanel() *DisplayPanel {
+	frame := components.NewFrame()
 	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0}
 }
 
@@ -173,7 +172,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 }
 
 func (dp *DisplayPanel) ShowTask(task database.Task) (database.Task, error) {
-	dp.SetTitle(fmt.Sprintf("Task %d: %s", task.ID, task.Name))
+	dp.SetTitle(fmt.Sprintf(" Task %d: %s ", task.ID, task.Name))
 	textView := tview.NewTextView()
 	dp.SetPrimitive(textView)
 	if task.Description != "" {

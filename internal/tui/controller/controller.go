@@ -2,9 +2,11 @@ package controller
 
 import (
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/tui/components"
 	"github.com/raphael-p/dash/internal/tui/panels"
 	"github.com/raphael-p/dash/pkg/tviewcomponents/commandline"
+	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
 	"github.com/rivo/tview"
 )
 
@@ -18,12 +20,7 @@ type Controller struct {
 }
 
 func Initialise(app *tview.Application) {
-	highlightColour, secondaryColour := tcell.ColorLimeGreen, tcell.ColorGray
-	commandLine := commandline.New(highlightColour, secondaryColour)
-	displayPanel := panels.NewDisplayPanel(secondaryColour)
-	infoPanel := panels.NewInfoPanel()
-	navPanel := panels.NewNavigationPanel(highlightColour, secondaryColour)
-
+	commandLine, displayPanel, infoPanel, navPanel := commandline.New(), panels.NewDisplayPanel(), panels.NewInfoPanel(), panels.NewNavigationPanel()
 	grid := components.NewGrid(displayPanel.GetPrimitive(), infoPanel.GetPrimitive(), navPanel.GetPrimitive(), commandLine.GetPrimitive(), 25, 80)
 
 	// grid retains scroll offsets after shrinking to fit the focused command,
@@ -40,11 +37,14 @@ func Initialise(app *tview.Application) {
 
 	queueUpdateDraw := func(f func()) { app.QueueUpdateDraw(f) }
 	c := &Controller{queueUpdateDraw, app.Stop, commandLine, navPanel, infoPanel, displayPanel}
+	fallback := func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) }
+	keybindmenu.SetDefaults(fallback, config.C.HighlightColour)
 
 	// global ESC shortcut that returns the user to the home screen
 	grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
 			displayPanel.ResetPagination()
+			c.infoPanel.Clear()
 			c.Home()
 			return nil
 		}

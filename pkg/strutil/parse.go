@@ -74,7 +74,7 @@ func parseID(s string) (int64, error) {
 func ParseIDOrWarn(s string, warn func(err string)) (int64, bool) {
 	id, err := parseID(s)
 	if err != nil {
-		warn(fmt.Sprint("your input is invalid: ", err))
+		warn(fmt.Sprint("invalid input: ", err))
 		return 0, false
 	}
 	return id, true

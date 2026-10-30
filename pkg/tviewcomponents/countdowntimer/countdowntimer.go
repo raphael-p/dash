@@ -32,6 +32,7 @@ type Config struct {
 	CountdownDuration        time.Duration
 	PeriodicSideEffect       func(lastRunTime time.Time, isEnd bool) // function that runs periodically and on timer end
 	SideEffectPeriod         time.Duration
+	TextColour               tcell.Color
 }
 
 type CountdownTimer struct {
@@ -51,13 +52,8 @@ var Instance = func() (*CountdownTimer, bool) {
 	isNew := false
 	once.Do(func() {
 		countdown := tview.NewTextView()
-		countdown.SetTextColor(tcell.ColorLimeGreen)
-
 		text := tview.NewTextView().SetDynamicColors(true)
-
-		layout := tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(countdown, 3, 0, false).
-			AddItem(text, 0, 1, false)
+		layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(countdown, 3, 0, false).AddItem(text, 0, 1, false)
 
 		instance = CountdownTimer{
 			Layout:             layout,
@@ -76,6 +72,7 @@ func (t *CountdownTimer) SetConfig(config Config) {
 	config.SideEffectPeriod = cmp.Or(config.SideEffectPeriod, DefaultSideEffectPeriod)
 	config.CountdownDuration = cmp.Or(config.CountdownDuration, DefaultCountdownDuration)
 	instance.config = config
+	instance.countdown.SetTextColor(config.TextColour)
 }
 
 func (t *CountdownTimer) SetInputCapture(ip func(event *tcell.EventKey) *tcell.EventKey) *tview.Box {

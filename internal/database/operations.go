@@ -90,23 +90,29 @@ func GetCompletedTasksSince(since time.Time) ([]Task, error) {
 }
 
 func getTaskQueryParts(mode TaskMode, cursor TaskCursor) (where string, args []any, orderBy string) {
-	var baseWhere, cursorWhere string
+	var whereBase, whereID, whereTS string
 	switch mode {
 	case CompletedTasks:
-		baseWhere, cursorWhere, orderBy = "completed_at IS NOT NULL", "completed_at < ?", "completed_at DESC"
+		orderBy = "completed_at DESC"
+		whereBase, whereTS = "completed_at IS NOT NULL", "completed_at < ?"
 	case PausedTasks:
-		baseWhere = "completed_at IS NULL AND paused_at IS NOT NULL"
-		cursorWhere, orderBy = "paused_at > ?", "paused_at ASC"
+		orderBy = "paused_at ASC"
+		whereBase, whereTS = "completed_at IS NULL AND paused_at IS NOT NULL", "paused_at > ?"
 	case ActiveTasks:
-		baseWhere = "completed_at IS NULL AND paused_at IS NULL"
-		cursorWhere = "(priority_bumped_at IS NULL OR priority_bumped_at < ?)"
 		orderBy = "priority_bumped_at DESC"
+		whereBase = "completed_at IS NULL AND paused_at IS NULL"
+		whereID = "priority_bumped_at IS NULL AND ID > ?"
+		whereTS = "priority_bumped_at IS NULL OR priority_bumped_at < ?"
 	}
 
 	if cursor.Timestamp.Valid {
-		return baseWhere + " AND " + cursorWhere, []any{cursor.Timestamp}, orderBy
+		where = fmt.Sprintf("(%s) AND (%s)", whereBase, whereTS)
+		return where, []any{cursor.Timestamp}, orderBy
+	} else if cursor.ID > 0 && whereID != "" {
+		where = fmt.Sprintf("(%s) AND (%s)", whereBase, whereID)
+		return where, []any{cursor.ID}, orderBy
 	} else {
-		return baseWhere + " AND id > ?", []any{cursor.ID}, orderBy
+		return whereBase, []any{}, orderBy
 	}
 }
 

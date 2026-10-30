@@ -22,16 +22,16 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 	VALUES (?, ?, ?, ?, ?)
 	`
 
-	createdTime0 := time.Date(2015, time.September, 21, 19, 53, 20, 0, time.UTC)
-	updatedTime0 := createdTime0.Add(time.Second * 124590)
+	createdTime0 := time.Now().Add(-5 * time.Hour)
+	updatedTime0 := createdTime0.Add(time.Second * 124)
 	timeSpent0 := 3600
 	_, err := DB.Exec(insertTask, "datajack override", "bypass corporate firewalls and extract encrypted payloads", createdTime0, updatedTime0, timeSpent0)
 	if err != nil {
 		return err
 	}
 
-	createdTime1 := time.Date(2016, time.April, 6, 9, 56, 2, 0, time.UTC)
-	updatedTime1 := createdTime1.Add(-time.Second * 124590)
+	createdTime1 := time.Now().Add(-50 * time.Hour)
+	updatedTime1 := createdTime1.Add(-time.Second * 1590)
 	timeSpent1 := 829
 	_, err = DB.Exec(insertTask, "neon trace", "track digital footprints across the city's undernet", createdTime1, updatedTime1, timeSpent1)
 	if err != nil {
@@ -46,15 +46,15 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 		return err
 	}
 
-	createdTime3 := time.Date(2015, time.September, 21, 19, 53, 24, 0, time.UTC)
-	updatedTime3 := createdTime3.Add(time.Second * 43542)
+	createdTime3 := time.Now().Add(-200 * time.Hour)
+	updatedTime3 := createdTime3.Add(time.Second * 3542)
 	timeSpent3 := 304
 	_, err = DB.Exec(insertTask, "chrome smuggler", "transport illegal cyberware through police scanners", createdTime3, updatedTime3, timeSpent3)
 	if err != nil {
 		return err
 	}
 
-	createdTime4 := time.Date(2015, time.September, 21, 19, 54, 26, 0, time.UTC)
+	createdTime4 := time.Now().Add(-12 * time.Minute)
 	updatedTime4 := createdTime4.Add(time.Second * 132)
 	timeSpent4 := 186
 	_, err = DB.Exec(insertTask, "ghostline breach", "penetrate abandoned server farms for lost archives", createdTime4, updatedTime4, timeSpent4)
@@ -62,23 +62,23 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 		return err
 	}
 
-	createdTime5 := time.Date(2015, time.September, 21, 19, 55, 29, 0, time.UTC)
-	updatedTime5 := createdTime5.Add(time.Second * 84143)
+	createdTime5 := time.Now().Add(-24 * 70 * time.Hour)
+	updatedTime5 := createdTime5.Add(time.Second * 28443)
 	timeSpent5 := 60
 	_, err = DB.Exec(insertTask, "black ICE hunter", "neutralize hostile AI defenses in corporate systems", createdTime5, updatedTime5, timeSpent5)
 	if err != nil {
 		return err
 	}
 
-	createdTime6 := time.Date(2015, time.September, 21, 20, 06, 15, 0, time.UTC)
+	createdTime6 := time.Now().Add(-24 * 200 * time.Hour)
 	updatedTime6 := createdTime6.Add(time.Second * 31431)
 	_, err = DB.Exec(insertTask, "memory forge", "fabricate false identity packets for underground networks", createdTime6, updatedTime6, 0)
 	if err != nil {
 		return err
 	}
 
-	createdTime7 := time.Date(2015, time.September, 21, 23, 43, 47, 0, time.UTC)
-	updatedTime7 := createdTime7.Add(time.Second * 134175)
+	createdTime7 := time.Now().Add(-24 * 20 * time.Hour)
+	updatedTime7 := createdTime7.Add(time.Second * 4175)
 	_, err = DB.Exec(insertTask, "holojack hijack", "seize control of public hologram billboards for rebel propaganda", createdTime7, updatedTime7, 0)
 	if err != nil {
 		return err
@@ -95,8 +95,8 @@ func fillTasksWithSampleData(randomEntryCount int) error {
 		return err
 	}
 
-	createdTime9 := time.Date(2015, time.September, 22, 13, 11, 11, 0, time.UTC)
-	updatedTime9 := createdTime9.Add(time.Second * 42142)
+	createdTime9 := time.Now().Add(-24 * 6 * time.Hour)
+	updatedTime9 := createdTime9.Add(time.Second * 2142)
 	_, err = DB.Exec(insertTaskNoTimeSpent, "circuit prophet", "decode predictive algorithms from seized tech cult servers", createdTime9, updatedTime9)
 	if err != nil {
 		return err

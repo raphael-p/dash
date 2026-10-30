@@ -10,8 +10,6 @@ var (
 	errFailedDashUpdate = errors.New("failed to update time spent on task")
 	errFailedDelete     = errors.New("failed to delete task")
 	errFailedGet        = errors.New("failed to get task")
-	errFailedMark       = errors.New("failed to mark task as done")
-	errFailedUnmark     = errors.New("failed to unmark task as done")
 	errFailedUpdate     = errors.New("failed update")
 	errFailedScrollDown = errors.New("failed to scroll down")
 	errFailedScrollUp   = errors.New("failed to scroll up")

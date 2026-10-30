@@ -49,22 +49,20 @@ type Keybind struct {
 	key         rune
 }
 
+var defaultHighlightColour tcell.Color
+var defaultFallback Fallback = func(_ string) {}
+
 func New() *KeybindMenu {
-	return &KeybindMenu{func(_ string) {}, "", 0, []Keybind{}, true}
+	return &KeybindMenu{defaultFallback, "", defaultHighlightColour, []Keybind{}, true}
 }
 
-func (hm *KeybindMenu) SetFallback(fallback Fallback) *KeybindMenu {
-	hm.fallback = fallback
-	return hm
+func SetDefaults(fallback Fallback, highlightColour tcell.Color) {
+	defaultFallback = fallback
+	defaultHighlightColour = highlightColour
 }
 
 func (hm *KeybindMenu) SetFootnote(footnote string) *KeybindMenu {
 	hm.footnote = footnote
-	return hm
-}
-
-func (hm *KeybindMenu) SetHighlightColour(colour tcell.Color) *KeybindMenu {
-	hm.highlightColour = colour
 	return hm
 }
 
@@ -78,7 +76,7 @@ func (hm *KeybindMenu) DisableScrolling() *KeybindMenu {
 	return hm
 }
 
-func (hm *KeybindMenu) GenerateText() string {
+func (hm *KeybindMenu) Text() string {
 	builder := new(strings.Builder)
 
 	descriptionOnly := []Keybind{}
@@ -119,7 +117,7 @@ func (hm *KeybindMenu) GenerateText() string {
 	return builder.String()
 }
 
-func (hm *KeybindMenu) GenerateInputCapture() func(event *tcell.EventKey) *tcell.EventKey {
+func (hm *KeybindMenu) InputCapture() func(event *tcell.EventKey) *tcell.EventKey {
 	return func(event *tcell.EventKey) *tcell.EventKey {
 		eventKey := event.Key()
 		key := event.Rune()

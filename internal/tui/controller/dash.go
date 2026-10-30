@@ -69,16 +69,18 @@ func (c *Controller) openDash() {
 	}
 
 	handler := &keybindHandler{c}
-	menu := configureKeybindMenu(handler, nil, keybindInput).
+	mode := config.KeybindInput
+	menu := keybindmenu.New().
 		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
 		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
 		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.openDash)).
 		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editDashTask).
-		AddKeybind('b', "back", keybindmenu.DefaultBind, handler.backToHome)
-	configureCommandLine(c, menu, keybindInput)
+		AddKeybind('b', "back", keybindmenu.DefaultBind, func(_ rune) { c.Home(); c.infoPanel.Clear() })
 
-	timer.SetText(menu.GenerateText())
+	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
+	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
+	timer.SetText(menu.Text())
 	c.navPanel.SetTitle("Dash").SetPrimitive(timer.Layout)
 
 	if isNew {
@@ -87,6 +89,7 @@ func (c *Controller) openDash() {
 			EndMessage:         "dash complete. restart when ready.",
 			CountdownDuration:  config.C.DashDuration,
 			PeriodicSideEffect: trackTime(c),
+			TextColour:         config.C.HighlightColour,
 		})
 		timer.Start(c.queueUpdateDraw)
 	}
