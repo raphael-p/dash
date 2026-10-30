@@ -29,6 +29,7 @@ dsh init                                   # initialise the database
 dsh extract --days 7                       # export tasks completed in the last 7 days
 dsh extract --since 2026-01-01             # export tasks completed since a date
 dsh task "hello world!" "my first task"    # create your first task
+dsh update                                 # download the latest version of dash from github
 dsh db:wipe                                # delete all data, after confirmation
 ```
 
