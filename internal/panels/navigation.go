@@ -1,8 +1,8 @@
 package panels
 
 import (
+	"github.com/raphael-p/dash/internal/components"
 	"github.com/raphael-p/dash/internal/config"
-	"github.com/raphael-p/dash/internal/tui/components"
 	"github.com/rivo/tview"
 )
 

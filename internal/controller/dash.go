@@ -11,8 +11,7 @@ import (
 	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/logger"
-	"github.com/raphael-p/dash/pkg/tviewcomponents/countdowntimer"
-	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
+	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
 var currentDashTask *database.Task
@@ -51,7 +50,7 @@ func trackTime(c *Controller) func(time.Time, bool) {
 }
 
 func (c *Controller) openDash() {
-	timer, isNew := countdowntimer.Instance()
+	timer, isNew := tviewcomponents.Timer()
 
 	t, err := database.GetTopTask()
 	currentDashTask = &t
@@ -70,13 +69,13 @@ func (c *Controller) openDash() {
 
 	handler := &keybindHandler{c}
 	mode := config.KeybindInput
-	menu := keybindmenu.New().
-		AddKeybind('r', "restart timer", keybindmenu.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
-		AddKeybind('d', "mark task as done", keybindmenu.DefaultBind, handler.markTaskDone).
-		AddKeybind('u', "unmark task as done", keybindmenu.DefaultBind, handler.unmarkTaskDone).
-		AddKeybind('a', "add a new task", keybindmenu.DefaultBind, handler.addTaskFlow(c.openDash)).
-		AddKeybind('e', "edit task", keybindmenu.DefaultBind, handler.editDashTask).
-		AddKeybind('b', "back", keybindmenu.DefaultBind, func(_ rune) { c.Home(); c.infoPanel.Clear() })
+	menu := tviewcomponents.NewKeybindMenu().
+		AddKeybind('r', "restart timer", tviewcomponents.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
+		AddKeybind('d', "mark task as done", tviewcomponents.DefaultBind, handler.markTaskDone).
+		AddKeybind('u', "unmark task as done", tviewcomponents.DefaultBind, handler.unmarkTaskDone).
+		AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, handler.addTaskFlow(c.openDash)).
+		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, handler.editDashTask).
+		AddKeybind('b', "back", tviewcomponents.DefaultBind, func(_ rune) { c.Home(); c.infoPanel.Clear() })
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -84,12 +83,11 @@ func (c *Controller) openDash() {
 	c.navPanel.SetTitle("Dash").SetPrimitive(timer.Layout)
 
 	if isNew {
-		timer.SetConfig(countdowntimer.Config{
+		timer.SetConfig(tviewcomponents.TimerConfig{
 			StartMessage:       "lock in.",
 			EndMessage:         "dash complete. restart when ready.",
 			CountdownDuration:  config.C.DashDuration,
 			PeriodicSideEffect: trackTime(c),
-			TextColour:         config.C.HighlightColour,
 		})
 		timer.Start(c.queueUpdateDraw)
 	}

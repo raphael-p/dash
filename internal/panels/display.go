@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/raphael-p/dash/internal/components"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/internal/tui/components"
 	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/rivo/tview"
 )

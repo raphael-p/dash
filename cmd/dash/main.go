@@ -9,8 +9,8 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/config"
+	"github.com/raphael-p/dash/internal/controller"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/internal/tui/controller"
 	"github.com/raphael-p/dash/pkg/logger"
 	"github.com/raphael-p/dash/pkg/sqlitebackup"
 	"github.com/rivo/tview"

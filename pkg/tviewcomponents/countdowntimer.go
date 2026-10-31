@@ -1,4 +1,4 @@
-package countdowntimer
+package tviewcomponents
 
 import (
 	"cmp"
@@ -27,19 +27,18 @@ const (
 	timescaleSeconds
 )
 
-type Config struct {
+type TimerConfig struct {
 	StartMessage, EndMessage string
 	CountdownDuration        time.Duration
 	PeriodicSideEffect       func(lastRunTime time.Time, isEnd bool) // function that runs periodically and on timer end
 	SideEffectPeriod         time.Duration
-	TextColour               tcell.Color
 }
 
 type CountdownTimer struct {
 	Layout             *tview.Flex
 	countdown          *tview.TextView
 	text               *tview.TextView
-	config             Config
+	config             TimerConfig
 	isRunning          atomic.Bool
 	reinitialiseSignal chan struct{}
 	interruptSignal    chan struct{}
@@ -48,10 +47,11 @@ type CountdownTimer struct {
 var instance CountdownTimer
 var once sync.Once
 
-var Instance = func() (*CountdownTimer, bool) {
+var Timer = func() (*CountdownTimer, bool) {
 	isNew := false
 	once.Do(func() {
 		countdown := tview.NewTextView()
+		instance.countdown.SetTextColor(defaultHighlightColour)
 		text := tview.NewTextView().SetDynamicColors(true)
 		layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(countdown, 3, 0, false).AddItem(text, 0, 1, false)
 
@@ -68,11 +68,10 @@ var Instance = func() (*CountdownTimer, bool) {
 	return &instance, isNew
 }
 
-func (t *CountdownTimer) SetConfig(config Config) {
+func (t *CountdownTimer) SetConfig(config TimerConfig) {
 	config.SideEffectPeriod = cmp.Or(config.SideEffectPeriod, DefaultSideEffectPeriod)
 	config.CountdownDuration = cmp.Or(config.CountdownDuration, DefaultCountdownDuration)
 	instance.config = config
-	instance.countdown.SetTextColor(config.TextColour)
 }
 
 func (t *CountdownTimer) SetInputCapture(ip func(event *tcell.EventKey) *tcell.EventKey) *tview.Box {

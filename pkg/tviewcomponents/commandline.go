@@ -1,4 +1,4 @@
-package commandline
+package tviewcomponents
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type CommandLine struct {
 	textArea *tview.TextArea
 }
 
-func New() *CommandLine {
+func NewCommandLine() *CommandLine {
 	chevron := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf("[%s::b]>[-:-:-] ", config.C.HighlightColour))
 	textArea := tview.NewTextArea()
 	textArea.SetPlaceholderStyle(textArea.GetPlaceholderStyle().Foreground(config.C.SecondaryColour))

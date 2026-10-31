@@ -7,7 +7,7 @@ import (
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/raphael-p/dash/pkg/tcellutil"
-	"github.com/raphael-p/dash/pkg/tviewcomponents/tableutil"
+	"github.com/raphael-p/dash/pkg/tviewcomponents"
 	"github.com/rivo/tview"
 )
 
@@ -35,7 +35,7 @@ func NewTable(tasks []database.Task) *Table {
 		table.SetCell(row, 0, idCell).SetCell(row, 1, nameCell).SetCell(row, 2, timeAgoCell)
 	}
 
-	tableutil.EnableDynamicTruncation(table, 1, 0, 2)
+	tviewcomponents.EnableDynamicTruncation(table, 1, 0, 2)
 
 	return &Table{table}
 }

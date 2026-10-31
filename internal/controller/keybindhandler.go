@@ -7,20 +7,20 @@ import (
 	"strings"
 
 	"github.com/atotto/clipboard"
+	"github.com/raphael-p/dash/internal/components"
 	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/internal/tui/components"
 	"github.com/raphael-p/dash/pkg/sqlutil"
 	"github.com/raphael-p/dash/pkg/strutil"
-	"github.com/raphael-p/dash/pkg/tviewcomponents/keybindmenu"
+	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
 type keybindHandler struct {
 	c *Controller
 }
 
-func (kh *keybindHandler) newMenu(mode config.InputMode, onEnter keybindmenu.Handler) *keybindmenu.KeybindMenu {
-	menu := keybindmenu.New()
+func (kh *keybindHandler) newMenu(mode config.InputMode, onEnter tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
+	menu := tviewcomponents.NewKeybindMenu()
 
 	makeDescription := func(shortcut, function string) string {
 		return fmt.Sprintf("[%s::b]%s[-:-:-]\t%s", config.C.HighlightColour, shortcut, function)
@@ -28,20 +28,20 @@ func (kh *keybindHandler) newMenu(mode config.InputMode, onEnter keybindmenu.Han
 
 	switch mode {
 	case config.DescriptionInput:
-		menu.AddKeybind(0, makeDescription("CTRL+J", "new line"), keybindmenu.BindNewLine, kh.newLine)
+		menu.AddKeybind(0, makeDescription("CTRL+J", "new line"), tviewcomponents.BindNewLine, kh.newLine)
 		fallthrough
 	case config.NameInput:
-		menu.AddKeybind(0, "", keybindmenu.BindPrintable, nil).
-			AddKeybind(0, makeDescription("CTRL+U", "clear line"), keybindmenu.BindClearLine, kh.clearLine)
+		menu.AddKeybind(0, "", tviewcomponents.BindPrintable, nil).
+			AddKeybind(0, makeDescription("CTRL+U", "clear line"), tviewcomponents.BindClearLine, kh.clearLine)
 	case config.TaskIDInput:
-		menu.AddKeybind(0, "", keybindmenu.BindNumber, nil)
+		menu.AddKeybind(0, "", tviewcomponents.BindNumber, nil)
 	default:
 		return menu
 	}
 
 	return menu.
-		AddKeybind(0, makeDescription("ENTER", "submit"), keybindmenu.BindEnter, onEnter).
-		AddKeybind(0, "", keybindmenu.BindBackspace, nil)
+		AddKeybind(0, makeDescription("ENTER", "submit"), tviewcomponents.BindEnter, onEnter).
+		AddKeybind(0, "", tviewcomponents.BindBackspace, nil)
 }
 
 func (kh *keybindHandler) backToHome(_ rune) {
@@ -50,9 +50,9 @@ func (kh *keybindHandler) backToHome(_ rune) {
 
 func (kh *keybindHandler) askForConfirmation(action string, onYes, onNo func()) {
 	mode := config.KeybindInput
-	menu := keybindmenu.New()
-	menu.AddKeybind('y', "yes", keybindmenu.DefaultBind, func(_ rune) { onYes() }).
-		AddKeybind('n', "no", keybindmenu.DefaultBind, func(_ rune) { onNo() })
+	menu := tviewcomponents.NewKeybindMenu()
+	menu.AddKeybind('y', "yes", tviewcomponents.DefaultBind, func(_ rune) { onYes() }).
+		AddKeybind('n', "no", tviewcomponents.DefaultBind, func(_ rune) { onNo() })
 	kh.c.commandLine.Clear().Set(config.GetCharLimit(mode), config.GetPlaceholder(mode), nil)
 	kh.c.navPanel.SetText(fmt.Sprintf("confirm action: %s?\n\n%s", action, menu.Text()))
 }

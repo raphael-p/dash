@@ -1,4 +1,4 @@
-package keybindmenu
+package tviewcomponents
 
 import (
 	"fmt"
@@ -31,34 +31,26 @@ var (
 	}
 )
 
-type Fallback = func(commandName string)
+type KeybindFallback = func(commandName string)
 type KeybindMenu struct {
-	fallback        Fallback
+	fallback        KeybindFallback
 	footnote        string
 	highlightColour tcell.Color
 	keybinds        []Keybind
 	isScrollable    bool
 }
 
-type Handler = func(key rune)
+type KeybindHandler = func(key rune)
 type DisableKeybind = func() bool
 type Keybind struct {
-	handler     Handler
+	handler     KeybindHandler
 	bind        Bind
 	description string
 	key         rune
 }
 
-var defaultHighlightColour tcell.Color
-var defaultFallback Fallback = func(_ string) {}
-
-func New() *KeybindMenu {
+func NewKeybindMenu() *KeybindMenu {
 	return &KeybindMenu{defaultFallback, "", defaultHighlightColour, []Keybind{}, true}
-}
-
-func SetDefaults(fallback Fallback, highlightColour tcell.Color) {
-	defaultFallback = fallback
-	defaultHighlightColour = highlightColour
 }
 
 func (hm *KeybindMenu) SetFootnote(footnote string) *KeybindMenu {
@@ -66,7 +58,7 @@ func (hm *KeybindMenu) SetFootnote(footnote string) *KeybindMenu {
 	return hm
 }
 
-func (hm *KeybindMenu) AddKeybind(key rune, description string, bind Bind, handler Handler) *KeybindMenu {
+func (hm *KeybindMenu) AddKeybind(key rune, description string, bind Bind, handler KeybindHandler) *KeybindMenu {
 	hm.keybinds = append(hm.keybinds, Keybind{handler, bind, description, key})
 	return hm
 }
