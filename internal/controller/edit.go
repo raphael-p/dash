@@ -38,12 +38,14 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 func (c *Controller) addTaskInsertionOrder(name, description string, back func()) {
 	c.infoPanel.Clear()
 
-	handler := &keybindHandler{c}
 	mode := config.KeybindInput
+	submit := func(insertionOrder database.TaskInsertionOrder) func() {
+		return func() { database.Service().AddTask(name, description, insertionOrder, back) }
+	}
 	menu := tviewcomponents.NewKeybindMenu().
-		AddKeybind('f', "insert first", tviewcomponents.DefaultBind, handler.addTaskFlowSubmit(name, description, InsertFirst, back)).
-		AddKeybind('n', "insert next", tviewcomponents.DefaultBind, handler.addTaskFlowSubmit(name, description, InsertNext, back)).
-		AddKeybind('l', "insert last", tviewcomponents.DefaultBind, handler.addTaskFlowSubmit(name, description, InsertLast, back))
+		AddKeybind('f', "insert first", tviewcomponents.DefaultBind, submit(database.InsertFirst)).
+		AddKeybind('n', "insert next", tviewcomponents.DefaultBind, submit(database.InsertNext)).
+		AddKeybind('l', "insert last", tviewcomponents.DefaultBind, submit(database.InsertLast))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -64,8 +66,8 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	}
 
 	if !task.CompletedAt.Valid {
-		menu.AddKeybind('n', "change name", tviewcomponents.DefaultBind, handler.editTaskFlowName(task, back)).
-			AddKeybind('d', "change description", tviewcomponents.DefaultBind, handler.editTaskFlowDescription(task, back))
+		menu.AddKeybind('n', "change name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, back) }).
+			AddKeybind('d', "change description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, back) })
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
@@ -81,8 +83,8 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 		menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, handler.scrollDownTask).
 			AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, handler.scrollUpTask)
 	}
-	menu.AddKeybind('b', "back", tviewcomponents.DefaultBind, func(_ rune) { back(); c.infoPanel.Clear() }).
-		AddKeybind('q', "quit", tviewcomponents.DefaultBind, handler.quit)
+	menu.AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { back(); c.infoPanel.Clear() }).
+		AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

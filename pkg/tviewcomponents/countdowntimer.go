@@ -34,7 +34,7 @@ type TimerConfig struct {
 	SideEffectPeriod         time.Duration
 }
 
-type CountdownTimer struct {
+type countdownTimer struct {
 	Layout             *tview.Flex
 	countdown          *tview.TextView
 	text               *tview.TextView
@@ -44,10 +44,10 @@ type CountdownTimer struct {
 	interruptSignal    chan struct{}
 }
 
-var instance CountdownTimer
+var instance countdownTimer
 var once sync.Once
 
-var Timer = func() (*CountdownTimer, bool) {
+var CountdownTimer = func() (*countdownTimer, bool) {
 	isNew := false
 	once.Do(func() {
 		countdown := tview.NewTextView()
@@ -55,7 +55,7 @@ var Timer = func() (*CountdownTimer, bool) {
 		text := tview.NewTextView().SetDynamicColors(true)
 		layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(countdown, 3, 0, false).AddItem(text, 0, 1, false)
 
-		instance = CountdownTimer{
+		instance = countdownTimer{
 			Layout:             layout,
 			countdown:          countdown,
 			text:               text,
@@ -68,21 +68,21 @@ var Timer = func() (*CountdownTimer, bool) {
 	return &instance, isNew
 }
 
-func (t *CountdownTimer) SetConfig(config TimerConfig) {
+func (t *countdownTimer) SetConfig(config TimerConfig) {
 	config.SideEffectPeriod = cmp.Or(config.SideEffectPeriod, DefaultSideEffectPeriod)
 	config.CountdownDuration = cmp.Or(config.CountdownDuration, DefaultCountdownDuration)
 	instance.config = config
 }
 
-func (t *CountdownTimer) SetInputCapture(ip func(event *tcell.EventKey) *tcell.EventKey) *tview.Box {
+func (t *countdownTimer) SetInputCapture(ip func(event *tcell.EventKey) *tcell.EventKey) *tview.Box {
 	return t.Layout.SetInputCapture(ip)
 }
 
-func (t *CountdownTimer) SetText(text string) *tview.TextView {
+func (t *countdownTimer) SetText(text string) *tview.TextView {
 	return t.text.SetText(text)
 }
 
-func (t *CountdownTimer) getTimeRemaining(startTime time.Time) (string, timescale, string) {
+func (t *countdownTimer) getTimeRemaining(startTime time.Time) (string, timescale, string) {
 	timeElapsed := time.Since(startTime)
 	timeRemaining := t.config.CountdownDuration - timeElapsed
 	if timeRemaining < 0 || timeElapsed < 0 {
@@ -107,21 +107,21 @@ func (t *CountdownTimer) getTimeRemaining(startTime time.Time) (string, timescal
 	return fmt.Sprint(timeRemainingRounded), timescale, unitName
 }
 
-func (t *CountdownTimer) Reset() {
+func (t *countdownTimer) Reset() {
 	select {
 	case t.reinitialiseSignal <- struct{}{}:
 	default:
 	}
 }
 
-func (t *CountdownTimer) Stop() {
+func (t *countdownTimer) Stop() {
 	select {
 	case t.interruptSignal <- struct{}{}:
 	default:
 	}
 }
 
-func initialiseRedraw(queueUpdateDraw func(func()), t *CountdownTimer) time.Time {
+func initialiseRedraw(queueUpdateDraw func(func()), t *countdownTimer) time.Time {
 	startTime := time.Now()
 	queueUpdateDraw(func() { t.countdown.SetText(t.config.StartMessage) })
 	select {
@@ -140,7 +140,7 @@ func setTickerDuration(ticker *time.Ticker, timescale timescale) {
 	}
 }
 
-func (t *CountdownTimer) Start(queueUpdateDraw func(func())) {
+func (t *countdownTimer) Start(queueUpdateDraw func(func())) {
 	// noop if timer is running to ensure single redraw thread
 	if !t.isRunning.CompareAndSwap(false, true) {
 		return
@@ -157,7 +157,7 @@ func (t *CountdownTimer) Start(queueUpdateDraw func(func())) {
 	default:
 	}
 
-	go (func(queueUpdateDraw func(func()), t *CountdownTimer) {
+	go (func(queueUpdateDraw func(func()), t *countdownTimer) {
 		defer func() {
 			t.isRunning.Store(false)
 			queueUpdateDraw(func() { t.countdown.SetText(t.config.EndMessage) })

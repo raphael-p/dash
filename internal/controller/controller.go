@@ -4,6 +4,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/components"
 	"github.com/raphael-p/dash/internal/config"
+	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/internal/panels"
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
 	"github.com/rivo/tview"
@@ -37,6 +38,7 @@ func Initialise(app *tview.Application) {
 
 	queueUpdateDraw := func(f func()) { app.QueueUpdateDraw(f) }
 	c := &Controller{queueUpdateDraw, app.Stop, commandLine, navPanel, infoPanel, displayPanel}
+	database.StartService(infoPanel.Error, infoPanel.Info, infoPanel.Warn)
 	tviewcomponents.SetHighlightColour(config.C.HighlightColour)
 	tviewcomponents.SetKeybindFallback(func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) })
 

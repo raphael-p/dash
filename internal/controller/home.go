@@ -10,7 +10,10 @@ import (
 )
 
 func (c *Controller) Home() {
-	c.refreshTasks()
+	err := c.displayPanel.GetCurrentPage()
+	if err != nil {
+		c.infoPanel.Error(err)
+	}
 	c.commandLine.Clear()
 
 	setWrapper := func() {
@@ -54,19 +57,19 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 		menu.AddKeybind('r', "remove task", tviewcomponents.DefaultBind, handler.removeTaskFromHome)
 	} else {
 		if taskMode == database.ActiveTasks && hasTasks {
-			menu.AddKeybind('d', "dash", tviewcomponents.DefaultBind, handler.openDash)
+			menu.AddKeybind('d', "dash", tviewcomponents.DefaultBind, c.openDash)
 		}
 		if taskMode == database.ActiveTasks {
-			menu.AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, handler.addTaskFlow(c.Home))
+			menu.AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.Home) })
 		}
 
 		toggleText := fmt.Sprintf("show %s tasks", strings.ToLower(taskMode.GetNext().ToString()))
-		menu.AddKeybind('t', toggleText, tviewcomponents.DefaultBind, handler.toggleTaskMode)
+		menu.AddKeybind('t', toggleText, tviewcomponents.DefaultBind, func() { c.displayPanel.ToggleTaskMode(); c.Home() })
 
 		if hasTasks {
 			menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, handler.scrollDownTable).
 				AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, handler.scrollUpTable)
 		}
 	}
-	return menu.AddKeybind('q', "quit", tviewcomponents.DefaultBind, handler.quit), mode
+	return menu.AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop), mode
 }

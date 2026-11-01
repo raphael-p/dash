@@ -4,7 +4,6 @@ import (
 	"cmp"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/atotto/clipboard"
 	"github.com/raphael-p/dash/internal/components"
@@ -28,11 +27,11 @@ func (kh *keybindHandler) newMenu(mode config.InputMode, onEnter tviewcomponents
 
 	switch mode {
 	case config.DescriptionInput:
-		menu.AddKeybind(0, makeDescription("CTRL+J", "new line"), tviewcomponents.BindNewLine, kh.newLine)
+		menu.AddKeybind(0, makeDescription("CTRL+J", "new line"), tviewcomponents.BindNewLine, kh.c.commandLine.NewLine)
 		fallthrough
 	case config.NameInput:
 		menu.AddKeybind(0, "", tviewcomponents.BindPrintable, nil).
-			AddKeybind(0, makeDescription("CTRL+U", "clear line"), tviewcomponents.BindClearLine, kh.clearLine)
+			AddKeybind(0, makeDescription("CTRL+U", "clear line"), tviewcomponents.BindClearLine, kh.c.commandLine.ClearLine)
 	case config.TaskIDInput:
 		menu.AddKeybind(0, "", tviewcomponents.BindNumber, nil)
 	default:
@@ -44,21 +43,17 @@ func (kh *keybindHandler) newMenu(mode config.InputMode, onEnter tviewcomponents
 		AddKeybind(0, "", tviewcomponents.BindBackspace, nil)
 }
 
-func (kh *keybindHandler) backToHome(_ rune) {
-	kh.c.Home()
-}
-
 func (kh *keybindHandler) askForConfirmation(action string, onYes, onNo func()) {
 	mode := config.KeybindInput
-	menu := tviewcomponents.NewKeybindMenu()
-	menu.AddKeybind('y', "yes", tviewcomponents.DefaultBind, func(_ rune) { onYes() }).
-		AddKeybind('n', "no", tviewcomponents.DefaultBind, func(_ rune) { onNo() })
+	menu := tviewcomponents.NewKeybindMenu().
+		AddKeybind('y', "yes", tviewcomponents.DefaultBind, onYes).
+		AddKeybind('n', "no", tviewcomponents.DefaultBind, onNo)
 	kh.c.commandLine.Clear().Set(config.GetCharLimit(mode), config.GetPlaceholder(mode), nil)
 	kh.c.navPanel.SetText(fmt.Sprintf("confirm action: %s?\n\n%s", action, menu.Text()))
 }
 
-func (kh *keybindHandler) copy(s string) func(rune) {
-	return func(_ rune) {
+func (kh *keybindHandler) copy(s string) func() {
+	return func() {
 		if err := clipboard.WriteAll(s); err != nil {
 			kh.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedCopy, err))
 		} else {
@@ -67,149 +62,110 @@ func (kh *keybindHandler) copy(s string) func(rune) {
 	}
 }
 
-func (kh *keybindHandler) clearLine(_ rune) {
-	s := kh.c.commandLine.GetInput()
-	i := strings.LastIndex(s, "\n")
-	if i == -1 {
-		kh.c.commandLine.SetInput("")
-	} else {
-		kh.c.commandLine.SetInput(s[:i])
-	}
-}
-
-func (kh *keybindHandler) newLine(_ rune) {
-	kh.c.commandLine.SetInput(kh.c.commandLine.GetInput() + "\n")
-}
-
-func (kh *keybindHandler) openDash(_ rune) {
-	kh.c.openDash()
-}
-
-func (kh *keybindHandler) quit(_ rune) {
-	kh.c.stop()
-}
-
-func (kh *keybindHandler) addTaskFlow(back func()) func(rune) {
-	return func(_ rune) {
-		kh.c.addTaskName(back)
-	}
-}
-
-func (kh *keybindHandler) addTaskFlowSubmitName(back func()) func(rune) {
-	return func(_ rune) {
+func (kh *keybindHandler) addTaskFlowSubmitName(back func()) func() {
+	return func() {
 		if name := strutil.OrWarn(kh.c.commandLine.GetInput(), "name", kh.c.infoPanel.Warn); name != "" {
 			kh.c.addTaskDescription(name, back)
 		}
 	}
 }
 
-func (kh *keybindHandler) addTaskFlowSubmitDescription(name string, back func()) func(rune) {
-	return func(_ rune) {
+func (kh *keybindHandler) addTaskFlowSubmitDescription(name string, back func()) func() {
+	return func() {
 		if description := strutil.OrWarn(kh.c.commandLine.GetInput(), "name", kh.c.infoPanel.Warn); description != "" {
 			kh.c.addTaskInsertionOrder(name, description, back)
 		}
 	}
 }
 
-func (kh *keybindHandler) addTaskFlowSubmit(name, description string, insertionOrder taskInsertionOrder, back func()) func(rune) {
-	return func(_ rune) {
-		if kh.c.addTask(name, description, insertionOrder) {
-			back()
-		}
-	}
-}
-
-func (kh *keybindHandler) bumpTask(task *database.Task, onSuccess func()) func(rune) {
-	return func(_ rune) {
-		task = cmp.Or(task, kh.c.getTaskFromCommandLine())
+func (kh *keybindHandler) bumpTask(task *database.Task, onSuccess func()) func() {
+	return func() {
+		service := database.Service()
+		task = cmp.Or(task, service.GetTaskFromString(kh.c.commandLine.GetInput()))
 		if task != nil {
 			task.PriorityBumpedAt = sqlutil.NowNullTime()
-			if kh.c.updateTask(task, "priority bumped") {
+			if service.UpdateTask(task, "priority bumped") {
 				onSuccess()
 			}
 		}
 	}
 }
 
-func (kh *keybindHandler) editDashTask(_ rune) {
-	kh.c.editTaskFlow(currentDashTask, kh.c.openDash)
-}
-
-func (kh *keybindHandler) editTaskFlowName(task *database.Task, back func()) func(rune) {
-	return func(_ rune) {
-		kh.c.editTaskName(task, back)
-	}
-}
-
-func (kh *keybindHandler) editTaskFlowDescription(task *database.Task, back func()) func(rune) {
-	return func(_ rune) {
-		kh.c.editTaskDescription(task, back)
-	}
-}
-
-func (kh *keybindHandler) editTaskFlowSubmitName(task *database.Task, back func()) func(rune) {
-	return func(_ rune) {
+func (kh *keybindHandler) editTaskFlowSubmitName(task *database.Task, back func()) func() {
+	return func() {
 		if name := strutil.OrWarn(kh.c.commandLine.GetInput(), "name", kh.c.infoPanel.Warn); name != "" {
+			service := database.Service()
 			task.Name = name
-			if kh.c.updateTask(task, "name changed") {
-				kh.c.openTask(task.ID, back)
+			if service.UpdateTask(task, "name changed") {
+				if task, ok := service.GetTask(task.ID); ok {
+					kh.c.displayPanel.ShowTask(task)
+					kh.c.editTaskFlow(&task, back)
+				}
 			}
 		}
 	}
 }
 
-func (kh *keybindHandler) editTaskFlowSubmitDescription(task *database.Task, back func()) func(rune) {
-	return func(_ rune) {
+func (kh *keybindHandler) editTaskFlowSubmitDescription(task *database.Task, back func()) func() {
+	return func() {
 		if description := strutil.OrWarn(kh.c.commandLine.GetInput(), "description", kh.c.infoPanel.Warn); description != "" {
+			service := database.Service()
 			task.Description = description
-			if kh.c.updateTask(task, "description changed") {
-				kh.c.openTask(task.ID, back)
+			if service.UpdateTask(task, "description changed") {
+				if task, ok := service.GetTask(task.ID); ok {
+					kh.c.displayPanel.ShowTask(task)
+					kh.c.editTaskFlow(&task, back)
+				}
 			}
 		}
 	}
 }
 
-func (kh *keybindHandler) openTask(_ rune) {
+func (kh *keybindHandler) openTask() {
 	if id, ok := strutil.ParseIDOrWarn(kh.c.commandLine.GetInput(), kh.c.infoPanel.Warn); ok {
-		kh.c.openTask(id, kh.c.Home)
+		if task, ok := database.Service().GetTask(id); ok {
+			kh.c.displayPanel.ShowTask(task)
+			kh.c.editTaskFlow(&task, kh.c.Home)
+		}
 	}
 }
 
-func (kh *keybindHandler) reactivateTask(task *database.Task, onSuccess func()) func(rune) {
-	return func(_ rune) {
-		task = cmp.Or(task, kh.c.getTaskFromCommandLine())
+func (kh *keybindHandler) reactivateTask(task *database.Task, onSuccess func()) func() {
+	return func() {
+		service := database.Service()
+		task = cmp.Or(task, service.GetTaskFromString(kh.c.commandLine.GetInput()))
 		if task != nil {
 			task.CompletedAt = sql.NullTime{Valid: false}
-			if kh.c.updateTask(task, "reactivated") {
+			if service.UpdateTask(task, "reactivated") {
 				onSuccess()
 			}
 		}
 	}
 }
 
-func (kh *keybindHandler) removeTaskFromHome(_ rune) {
+func (kh *keybindHandler) removeTaskFromHome() {
 	if id, ok := strutil.ParseIDOrWarn(kh.c.commandLine.GetInput(), kh.c.infoPanel.Warn); ok {
 		kh.askForConfirmation(
 			fmt.Sprintf("delete task [%d]", id),
-			func() { kh.c.removeTask(id); kh.c.Home() },
+			func() { database.Service().RemoveTask(id); kh.c.Home() },
 			kh.c.Home,
 		)
 	}
 }
 
-func (kh *keybindHandler) removeTaskFromEdit(task *database.Task, back func()) func(rune) {
-	return func(_ rune) {
+func (kh *keybindHandler) removeTaskFromEdit(task *database.Task, back func()) func() {
+	return func() {
 		kh.askForConfirmation(
 			fmt.Sprintf("delete task [%d]", task.ID),
-			func() { kh.c.removeTask(task.ID); back() },
+			func() { database.Service().RemoveTask(task.ID); back() },
 			func() { kh.c.editTaskFlow(task, back) },
 		)
 	}
 }
 
-func (kh *keybindHandler) markTaskDone(_ rune) {
+func (kh *keybindHandler) markTaskDone() {
 	currentDashTask.CompletedAt = sqlutil.NowNullTime()
-	if kh.c.updateTask(currentDashTask, "done") {
+	if database.Service().UpdateTask(currentDashTask, "done") {
 		lastDashTask = currentDashTask
 		kh.c.openDash()
 	} else {
@@ -217,30 +173,31 @@ func (kh *keybindHandler) markTaskDone(_ rune) {
 	}
 }
 
-func (kh *keybindHandler) unmarkTaskDone(_ rune) {
+func (kh *keybindHandler) unmarkTaskDone() {
 	if lastDashTask.ID == currentDashTask.ID {
 		return // noop
 	}
 	lastDashTask.CompletedAt = sql.NullTime{Valid: false}
 
-	if kh.c.updateTask(lastDashTask, "undone") {
+	if database.Service().UpdateTask(lastDashTask, "undone") {
 		kh.c.openDash()
 	}
 }
 
-func (kh *keybindHandler) toggleTaskPause(task *database.Task, onSuccess func()) func(rune) {
-	return func(_ rune) {
-		task = cmp.Or(task, kh.c.getTaskFromCommandLine())
+func (kh *keybindHandler) toggleTaskPause(task *database.Task, onSuccess func()) func() {
+	return func() {
+		service := database.Service()
+		task = cmp.Or(task, service.GetTaskFromString(kh.c.commandLine.GetInput()))
 		if task != nil {
 			if task.PausedAt.Valid {
 				task.PausedAt = sql.NullTime{Valid: false}
-				if kh.c.updateTask(task, "unpaused") {
+				if service.UpdateTask(task, "unpaused") {
 					onSuccess()
 				}
 
 			} else {
 				task.PausedAt = sqlutil.NowNullTime()
-				if kh.c.updateTask(task, "paused") {
+				if service.UpdateTask(task, "paused") {
 					onSuccess()
 				}
 
@@ -249,33 +206,28 @@ func (kh *keybindHandler) toggleTaskPause(task *database.Task, onSuccess func())
 	}
 }
 
-func (kh *keybindHandler) toggleTaskMode(_ rune) {
-	kh.c.displayPanel.ToggleTaskMode()
-	kh.c.Home()
-}
-
-func (kh *keybindHandler) scrollDownTable(_ rune) {
+func (kh *keybindHandler) scrollDownTable() {
 	err := kh.c.displayPanel.ScrollTable(components.ScrollDown)
 	if err != nil {
 		kh.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
 	}
 }
 
-func (kh *keybindHandler) scrollUpTable(_ rune) {
+func (kh *keybindHandler) scrollUpTable() {
 	err := kh.c.displayPanel.ScrollTable(components.ScrollUp)
 	if err != nil {
 		kh.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))
 	}
 }
 
-func (kh *keybindHandler) scrollDownTask(_ rune) {
+func (kh *keybindHandler) scrollDownTask() {
 	err := kh.c.displayPanel.ScrollTask(components.ScrollDown)
 	if err != nil {
 		kh.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollDown, err))
 	}
 }
 
-func (kh *keybindHandler) scrollUpTask(_ rune) {
+func (kh *keybindHandler) scrollUpTask() {
 	err := kh.c.displayPanel.ScrollTask(components.ScrollUp)
 	if err != nil {
 		kh.c.infoPanel.Error(fmt.Errorf("%w: %w", errFailedScrollUp, err))

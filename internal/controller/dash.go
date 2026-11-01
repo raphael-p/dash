@@ -50,7 +50,7 @@ func trackTime(c *Controller) func(time.Time, bool) {
 }
 
 func (c *Controller) openDash() {
-	timer, isNew := tviewcomponents.Timer()
+	timer, isNew := tviewcomponents.CountdownTimer()
 
 	t, err := database.GetTopTask()
 	currentDashTask = &t
@@ -70,12 +70,12 @@ func (c *Controller) openDash() {
 	handler := &keybindHandler{c}
 	mode := config.KeybindInput
 	menu := tviewcomponents.NewKeybindMenu().
-		AddKeybind('r', "restart timer", tviewcomponents.DefaultBind, func(_ rune) { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
+		AddKeybind('r', "restart timer", tviewcomponents.DefaultBind, func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
 		AddKeybind('d', "mark task as done", tviewcomponents.DefaultBind, handler.markTaskDone).
 		AddKeybind('u', "unmark task as done", tviewcomponents.DefaultBind, handler.unmarkTaskDone).
-		AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, handler.addTaskFlow(c.openDash)).
-		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, handler.editDashTask).
-		AddKeybind('b', "back", tviewcomponents.DefaultBind, func(_ rune) { c.Home(); c.infoPanel.Clear() })
+		AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.openDash) }).
+		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTaskFlow(currentDashTask, c.openDash) }).
+		AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { c.Home(); c.infoPanel.Clear() })
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

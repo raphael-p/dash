@@ -40,7 +40,7 @@ type KeybindMenu struct {
 	isScrollable    bool
 }
 
-type KeybindHandler = func(key rune)
+type KeybindHandler = func()
 type DisableKeybind = func() bool
 type Keybind struct {
 	handler     KeybindHandler
@@ -126,7 +126,7 @@ func (hm *KeybindMenu) InputCapture() func(event *tcell.EventKey) *tcell.EventKe
 				if keybind.handler == nil {
 					return event
 				}
-				keybind.handler(key)
+				keybind.handler()
 				hasTriggered = true
 				break
 			}

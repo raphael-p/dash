@@ -171,7 +171,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	return nil
 }
 
-func (dp *DisplayPanel) ShowTask(task database.Task) (database.Task, error) {
+func (dp *DisplayPanel) ShowTask(task database.Task) {
 	dp.SetTitle(fmt.Sprintf(" Task %d: %s ", task.ID, task.Name))
 	textView := tview.NewTextView()
 	dp.SetPrimitive(textView)
@@ -182,7 +182,6 @@ func (dp *DisplayPanel) ShowTask(task database.Task) (database.Task, error) {
 	dp.frame.AddDateFooter(strutil.FormatTime(task.UpdatedAt), "updated at")
 	dp.frame.AddDateFooter(strutil.FormatTime(task.CompletedAt), "completed at")
 	dp.frame.AddDateFooter(strutil.FormatTime(task.PausedAt), "paused at")
-	return task, nil
 }
 
 func (dp *DisplayPanel) ScrollTable(direction components.ScrollDirection) error {

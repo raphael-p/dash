@@ -2,6 +2,7 @@ package tviewcomponents
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/raphael-p/dash/internal/config"
@@ -47,6 +48,20 @@ func (cl *CommandLine) SetInput(input string) *CommandLine {
 
 func (cl *CommandLine) SetInputCapture(capture func(event *tcell.EventKey) *tcell.EventKey) *tview.Box {
 	return cl.flex.SetInputCapture(capture)
+}
+
+func (cl *CommandLine) ClearLine() {
+	s := cl.GetInput()
+	i := strings.LastIndex(s, "\n")
+	if i == -1 {
+		cl.SetInput("")
+	} else {
+		cl.SetInput(s[:i])
+	}
+}
+
+func (cl *CommandLine) NewLine() {
+	cl.SetInput(cl.GetInput() + "\n")
 }
 
 func (cl *CommandLine) GetPrimitive() tview.Primitive {
