@@ -13,9 +13,8 @@ import (
 func (c *Controller) addTaskName(back func()) {
 	c.infoPanel.Clear()
 
-	handler := &keybindHandler{c}
 	mode := config.NameInput
-	menu := handler.newMenu(mode, handler.addTaskFlowSubmitName(back))
+	menu := newMenuForInput(c, mode, addTaskFlowSubmitName(c, back))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -25,9 +24,8 @@ func (c *Controller) addTaskName(back func()) {
 func (c *Controller) addTaskDescription(name string, back func()) {
 	c.infoPanel.Clear()
 
-	handler := &keybindHandler{c}
 	mode := config.DescriptionInput
-	menu := handler.newMenu(mode, handler.addTaskFlowSubmitDescription(name, back))
+	menu := newMenuForInput(c, mode, addTaskFlowSubmitDescription(c, name, back))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -55,14 +53,13 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 }
 
 func (c *Controller) editTaskFlow(task *database.Task, back func()) {
-	handler := &keybindHandler{c}
 	mode := config.KeybindInput
 	menu := tviewcomponents.NewKeybindMenu()
 
 	if task.CompletedAt.Valid {
-		menu.AddKeybind('u', "reactivate", tviewcomponents.DefaultBind, handler.reactivateTask(task, func() {}))
+		menu.AddKeybind('u', "reactivate", tviewcomponents.DefaultBind, reactivateTask(c, task, func() {}))
 	} else if task.PausedAt.Valid {
-		menu.AddKeybind('u', "unpause", tviewcomponents.DefaultBind, handler.toggleTaskPause(task, func() {}))
+		menu.AddKeybind('u', "unpause", tviewcomponents.DefaultBind, toggleTaskPause(c, task, func() {}))
 	}
 
 	if !task.CompletedAt.Valid {
@@ -71,17 +68,17 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
-		menu.AddKeybind('f', "put first", tviewcomponents.DefaultBind, handler.bumpTask(task, func() {})).
-			AddKeybind('p', "pause", tviewcomponents.DefaultBind, handler.toggleTaskPause(task, func() {}))
+		menu.AddKeybind('f', "put first", tviewcomponents.DefaultBind, bumpTask(c, task, func() {})).
+			AddKeybind('p', "pause", tviewcomponents.DefaultBind, toggleTaskPause(c, task, func() {}))
 
 	}
 
-	menu.AddKeybind('c', "copy description", tviewcomponents.DefaultBind, handler.copy(task.Description)).
-		AddKeybind('r', "remove", tviewcomponents.DefaultBind, handler.removeTaskFromEdit(task, back))
+	menu.AddKeybind('c', "copy description", tviewcomponents.DefaultBind, copy(c, task.Description)).
+		AddKeybind('r', "remove", tviewcomponents.DefaultBind, removeTaskFromEdit(c, task, back))
 
 	if strutil.LineCount(task.Description) > 2 { // heuristic to reduce visual clutter
-		menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, handler.scrollDownTask).
-			AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, handler.scrollUpTask)
+		menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, scrollDownEdit(c)).
+			AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, scrollUpEdit(c))
 	}
 	menu.AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { back(); c.infoPanel.Clear() }).
 		AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop)
@@ -94,9 +91,8 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 func (c *Controller) editTaskName(task *database.Task, back func()) {
 	c.infoPanel.Clear()
 
-	handler := &keybindHandler{c}
 	mode := config.NameInput
-	menu := handler.newMenu(mode, handler.editTaskFlowSubmitName(task, back))
+	menu := newMenuForInput(c, mode, editTaskFlowSubmitName(c, task, back))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -107,9 +103,8 @@ func (c *Controller) editTaskName(task *database.Task, back func()) {
 func (c *Controller) editTaskDescription(task *database.Task, back func()) {
 	c.infoPanel.Clear()
 
-	handler := &keybindHandler{c}
 	mode := config.DescriptionInput
-	menu := handler.newMenu(mode, handler.editTaskFlowSubmitDescription(task, back))
+	menu := newMenuForInput(c, mode, editTaskFlowSubmitDescription(c, task, back))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

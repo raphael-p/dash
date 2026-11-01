@@ -31,12 +31,11 @@ func (c *Controller) Home() {
 func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.InputMode) {
 	taskMode, hasInput, hasTasks := c.displayPanel.GetTaskMode(), c.commandLine.HasInput(), c.displayPanel.HasTasks()
 
-	handler := &keybindHandler{c}
 	var menu *tviewcomponents.KeybindMenu
 	var mode config.InputMode
 	if hasTasks {
 		mode = config.TaskIDInput
-		menu = handler.newMenu(mode, handler.openTask)
+		menu = newMenuForInput(c, mode, openTask(c))
 	} else {
 		mode = config.KeybindInput
 		menu = tviewcomponents.NewKeybindMenu()
@@ -44,17 +43,17 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 
 	if hasInput {
 		onSuccess := func() { c.Home() }
-		menu.AddKeybind('o', "open task", tviewcomponents.DefaultBind, handler.openTask)
+		menu.AddKeybind('o', "open task", tviewcomponents.DefaultBind, openTask(c))
 		switch taskMode {
 		case database.CompletedTasks:
-			menu.AddKeybind('u', "reactivate task", tviewcomponents.DefaultBind, handler.reactivateTask(nil, onSuccess))
+			menu.AddKeybind('u', "reactivate task", tviewcomponents.DefaultBind, reactivateTask(c, nil, onSuccess))
 		case database.ActiveTasks:
-			menu.AddKeybind('f', "put task first", tviewcomponents.DefaultBind, handler.bumpTask(nil, onSuccess))
-			menu.AddKeybind('p', "pause task", tviewcomponents.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
+			menu.AddKeybind('f', "put task first", tviewcomponents.DefaultBind, bumpTask(c, nil, onSuccess))
+			menu.AddKeybind('p', "pause task", tviewcomponents.DefaultBind, toggleTaskPause(c, nil, onSuccess))
 		case database.PausedTasks:
-			menu.AddKeybind('u', "unpause task", tviewcomponents.DefaultBind, handler.toggleTaskPause(nil, onSuccess))
+			menu.AddKeybind('u', "unpause task", tviewcomponents.DefaultBind, toggleTaskPause(c, nil, onSuccess))
 		}
-		menu.AddKeybind('r', "remove task", tviewcomponents.DefaultBind, handler.removeTaskFromHome)
+		menu.AddKeybind('r', "remove task", tviewcomponents.DefaultBind, removeTaskFromHome(c))
 	} else {
 		if taskMode == database.ActiveTasks && hasTasks {
 			menu.AddKeybind('d', "dash", tviewcomponents.DefaultBind, c.openDash)
@@ -67,8 +66,8 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 		menu.AddKeybind('t', toggleText, tviewcomponents.DefaultBind, func() { c.displayPanel.ToggleTaskMode(); c.Home() })
 
 		if hasTasks {
-			menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, handler.scrollDownTable).
-				AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, handler.scrollUpTable)
+			menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, scrollDownHome(c)).
+				AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, scrollUpHome(c))
 		}
 	}
 	return menu.AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop), mode
