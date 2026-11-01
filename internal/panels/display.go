@@ -122,23 +122,12 @@ func (dp *DisplayPanel) SetTitle(title string) *DisplayPanel {
 func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	dp.SetTitle(fmt.Sprintf(" %s Tasks (page %d) ", dp.mode.ToString(), pageIndex+1))
 
-	pages := dp.getTab().pages
-	var cursor database.TaskCursor
-	if pageIndex != 0 {
-		cursor.ID = pages[pageIndex-1].lastTask.ID
-		switch dp.mode {
-		case database.ActiveTasks:
-			cursor.Timestamp = pages[pageIndex-1].lastTask.PriorityBumpedAt
-		case database.CompletedTasks:
-			cursor.Timestamp = pages[pageIndex-1].lastTask.CompletedAt
-		case database.PausedTasks:
-			cursor.Timestamp = pages[pageIndex-1].lastTask.PausedAt
-		}
-	} else {
+	if pageIndex == 0 {
 		dp.rowSpace = dp.frame.GetAvailableRows()
 	}
-
-	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, cursor, max(minimumTasksPerPage, dp.rowSpace))
+	pages := dp.getTab().pages
+	lastTask, limit := pages[pageIndex-1].lastTask, max(minimumTasksPerPage, dp.rowSpace)
+	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, lastTask, limit)
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %w", err)
 	}

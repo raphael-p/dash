@@ -32,11 +32,6 @@ func (tm TaskMode) ToString() string {
 	}
 }
 
-type TaskCursor struct {
-	ID        int64
-	Timestamp sql.NullTime
-}
-
 type Task struct {
 	ID               int64         `json:"id"`
 	Name             string        `json:"name"`

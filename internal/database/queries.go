@@ -89,35 +89,39 @@ func GetCompletedTasksSince(since time.Time) ([]Task, error) {
 	return executeTasksQuery("completed_at IS NOT NULL AND completed_at >= ?", []any{since}, "completed_at ASC", 0)
 }
 
-func getTaskQueryParts(mode TaskMode, cursor TaskCursor) (where string, args []any, orderBy string) {
+func getTaskQueryParts(mode TaskMode, prevTask Task) (where string, args []any, orderBy string) {
 	var whereBase, whereID, whereTS string
+	var timestamp sql.NullTime
 	switch mode {
 	case CompletedTasks:
+		timestamp = prevTask.CompletedAt
 		orderBy = "completed_at DESC"
 		whereBase, whereTS = "completed_at IS NOT NULL", "completed_at < ?"
 	case PausedTasks:
+		timestamp = prevTask.PausedAt
 		orderBy = "paused_at ASC"
 		whereBase, whereTS = "completed_at IS NULL AND paused_at IS NOT NULL", "paused_at > ?"
 	case ActiveTasks:
+		timestamp = prevTask.PriorityBumpedAt
 		orderBy = "priority_bumped_at DESC"
 		whereBase = "completed_at IS NULL AND paused_at IS NULL"
 		whereID = "priority_bumped_at IS NULL AND ID > ?"
 		whereTS = "priority_bumped_at IS NULL OR priority_bumped_at < ?"
 	}
 
-	if cursor.Timestamp.Valid {
+	if timestamp.Valid {
 		where = fmt.Sprintf("(%s) AND (%s)", whereBase, whereTS)
-		return where, []any{cursor.Timestamp}, orderBy
-	} else if cursor.ID > 0 && whereID != "" {
+		return where, []any{timestamp}, orderBy
+	} else if prevTask.ID > 0 && whereID != "" {
 		where = fmt.Sprintf("(%s) AND (%s)", whereBase, whereID)
-		return where, []any{cursor.ID}, orderBy
+		return where, []any{prevTask.ID}, orderBy
 	} else {
 		return whereBase, []any{}, orderBy
 	}
 }
 
 func GetTopTask() (Task, error) {
-	sqlConditions, sqlConditionsArgs, sortColumn := getTaskQueryParts(ActiveTasks, TaskCursor{})
+	sqlConditions, sqlConditionsArgs, sortColumn := getTaskQueryParts(ActiveTasks, Task{})
 	tasks, err := executeTasksQuery(sqlConditions, sqlConditionsArgs, sortColumn, 1)
 	if err != nil {
 		return Task{}, err
@@ -129,13 +133,12 @@ func GetTopTask() (Task, error) {
 	return tasks[0], err
 }
 
-func GetTasksPaginated(mode TaskMode, cursor TaskCursor, taskPageLimit int) ([]Task, bool, error) {
+func GetTasksPaginated(mode TaskMode, prevTask Task, taskPageLimit int) ([]Task, bool, error) {
 	logger.Trace(fmt.Sprintf(
-		"retrieving up to %d tasks after cursor (id: %d, timestamp: %s)",
-		taskPageLimit, cursor.ID, cursor.Timestamp.Time,
+		"retrieving up to %d tasks after previous task [%d]", taskPageLimit, prevTask.ID,
 	))
 
-	sqlConditions, sqlConditionsArgs, sortColumn := getTaskQueryParts(mode, cursor)
+	sqlConditions, sqlConditionsArgs, sortColumn := getTaskQueryParts(mode, prevTask)
 	tasks, err := executeTasksQuery(sqlConditions, sqlConditionsArgs, sortColumn, taskPageLimit+1)
 	if err != nil {
 		return tasks, false, err
