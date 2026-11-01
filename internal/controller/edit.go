@@ -1,58 +1,13 @@
 package controller
 
 import (
-	"fmt"
-
 	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/strutil"
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
-	"github.com/rivo/tview"
 )
 
-func (c *Controller) addTaskName(back func()) {
-	c.infoPanel.Clear()
-
-	mode := config.NameInput
-	menu := newMenuForInput(c, mode, addTaskFlowSubmitName(c, back))
-
-	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
-	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
-	c.navPanel.SetTitle("Add New Task (name)").SetText(fmt.Sprintf("name: ?\n\ndescription: ?\n\n%s", menu.Text()))
-}
-
-func (c *Controller) addTaskDescription(name string, back func()) {
-	c.infoPanel.Clear()
-
-	mode := config.DescriptionInput
-	menu := newMenuForInput(c, mode, addTaskFlowSubmitDescription(c, name, back))
-
-	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
-	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
-	c.navPanel.SetTitle("Add New Task (description)").
-		SetText(fmt.Sprintf("name: %s\n\ndescription: ?\n\n%s", tview.Escape(name), menu.Text()))
-}
-
-func (c *Controller) addTaskInsertionOrder(name, description string, back func()) {
-	c.infoPanel.Clear()
-
-	mode := config.KeybindInput
-	submit := func(insertionOrder database.TaskInsertionOrder) func() {
-		return func() { database.Service().AddTask(name, description, insertionOrder, back) }
-	}
-	menu := tviewcomponents.NewKeybindMenu().
-		AddKeybind('f', "insert first", tviewcomponents.DefaultBind, submit(database.InsertFirst)).
-		AddKeybind('n', "insert next", tviewcomponents.DefaultBind, submit(database.InsertNext)).
-		AddKeybind('l', "insert last", tviewcomponents.DefaultBind, submit(database.InsertLast))
-
-	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
-	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
-	c.navPanel.
-		SetTitle("Add New Task (insert)").
-		SetText(fmt.Sprintf("name: %s\n\ndescription: %s\n\n%s", tview.Escape(name), tview.Escape(description), menu.Text()))
-}
-
-func (c *Controller) editTaskFlow(task *database.Task, back func()) {
+func (c *Controller) editTask(task *database.Task, back func()) {
 	mode := config.KeybindInput
 	menu := tviewcomponents.NewKeybindMenu()
 
@@ -63,8 +18,14 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	}
 
 	if !task.CompletedAt.Valid {
-		menu.AddKeybind('n', "change name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, back) }).
-			AddKeybind('d', "change description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, back) })
+		onSuccess := func() {
+			if task, ok := database.Service().GetTask(task.ID); ok {
+				c.displayPanel.ShowTask(task)
+				c.editTask(&task, back)
+			}
+		}
+		menu.AddKeybind('n', "change name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, onSuccess) }).
+			AddKeybind('d', "change description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, onSuccess) })
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
@@ -88,11 +49,11 @@ func (c *Controller) editTaskFlow(task *database.Task, back func()) {
 	c.navPanel.SetTitle("Edit Task").SetText(menu.Text())
 }
 
-func (c *Controller) editTaskName(task *database.Task, back func()) {
+func (c *Controller) editTaskName(task *database.Task, onSuccess func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newMenuForInput(c, mode, editTaskFlowSubmitName(c, task, back))
+	menu := newMenuForInput(c, mode, submitName(c, task, onSuccess))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -100,11 +61,11 @@ func (c *Controller) editTaskName(task *database.Task, back func()) {
 	c.navPanel.SetTitle("Edit Task (name)").SetText(menu.Text())
 }
 
-func (c *Controller) editTaskDescription(task *database.Task, back func()) {
+func (c *Controller) editTaskDescription(task *database.Task, onSuccess func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newMenuForInput(c, mode, editTaskFlowSubmitDescription(c, task, back))
+	menu := newMenuForInput(c, mode, submitDescription(c, task, onSuccess))
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

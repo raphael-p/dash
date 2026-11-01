@@ -73,7 +73,7 @@ func (c *Controller) openDash() {
 		AddKeybind('d', "mark task as done", tviewcomponents.DefaultBind, markTaskDone(c)).
 		AddKeybind('u', "unmark task as done", tviewcomponents.DefaultBind, unmarkTaskDone(c)).
 		AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.openDash) }).
-		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTaskFlow(currentDashTask, c.openDash) }).
+		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTask(currentDashTask, c.openDash) }).
 		AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { c.Home(); c.infoPanel.Clear() })
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)

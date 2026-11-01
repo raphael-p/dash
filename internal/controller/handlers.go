@@ -58,7 +58,7 @@ func copy(c *Controller, s string) tviewcomponents.KeybindHandler {
 	}
 }
 
-func addTaskFlowSubmitName(c *Controller, back func()) tviewcomponents.KeybindHandler {
+func submitNameCandidate(c *Controller, back func()) tviewcomponents.KeybindHandler {
 	return func() {
 		if name := strutil.OrWarn(c.commandLine.GetInput(), "name", c.infoPanel.Warn); name != "" {
 			c.addTaskDescription(name, back)
@@ -66,7 +66,7 @@ func addTaskFlowSubmitName(c *Controller, back func()) tviewcomponents.KeybindHa
 	}
 }
 
-func addTaskFlowSubmitDescription(c *Controller, name string, back func()) tviewcomponents.KeybindHandler {
+func submitDescriptionCandidate(c *Controller, name string, back func()) tviewcomponents.KeybindHandler {
 	return func() {
 		if description := strutil.OrWarn(c.commandLine.GetInput(), "name", c.infoPanel.Warn); description != "" {
 			c.addTaskInsertionOrder(name, description, back)
@@ -87,31 +87,23 @@ func bumpTask(c *Controller, task *database.Task, onSuccess func()) tviewcompone
 	}
 }
 
-func editTaskFlowSubmitName(c *Controller, task *database.Task, back func()) tviewcomponents.KeybindHandler {
+func submitName(c *Controller, task *database.Task, onSuccess func()) tviewcomponents.KeybindHandler {
 	return func() {
 		if name := strutil.OrWarn(c.commandLine.GetInput(), "name", c.infoPanel.Warn); name != "" {
-			service := database.Service()
 			task.Name = name
-			if service.UpdateTask(task, "name changed") {
-				if task, ok := service.GetTask(task.ID); ok {
-					c.displayPanel.ShowTask(task)
-					c.editTaskFlow(&task, back)
-				}
+			if database.Service().UpdateTask(task, "name changed") {
+				onSuccess()
 			}
 		}
 	}
 }
 
-func editTaskFlowSubmitDescription(c *Controller, task *database.Task, back func()) tviewcomponents.KeybindHandler {
+func submitDescription(c *Controller, task *database.Task, onSuccess func()) tviewcomponents.KeybindHandler {
 	return func() {
 		if description := strutil.OrWarn(c.commandLine.GetInput(), "description", c.infoPanel.Warn); description != "" {
-			service := database.Service()
 			task.Description = description
-			if service.UpdateTask(task, "description changed") {
-				if task, ok := service.GetTask(task.ID); ok {
-					c.displayPanel.ShowTask(task)
-					c.editTaskFlow(&task, back)
-				}
+			if database.Service().UpdateTask(task, "description changed") {
+				onSuccess()
 			}
 		}
 	}
@@ -122,7 +114,7 @@ func openTask(c *Controller) tviewcomponents.KeybindHandler {
 		if id, ok := strutil.ParseIDOrWarn(c.commandLine.GetInput(), c.infoPanel.Warn); ok {
 			if task, ok := database.Service().GetTask(id); ok {
 				c.displayPanel.ShowTask(task)
-				c.editTaskFlow(&task, c.Home)
+				c.editTask(&task, c.Home)
 			}
 		}
 	}
@@ -160,7 +152,7 @@ func removeTaskFromEdit(c *Controller, task *database.Task, back func()) tviewco
 			c,
 			fmt.Sprintf("delete task [%d]", task.ID),
 			func() { database.Service().RemoveTask(task.ID); back() },
-			func() { c.editTaskFlow(task, back) },
+			func() { c.editTask(task, back) },
 		)
 	}
 }
