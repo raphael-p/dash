@@ -22,19 +22,8 @@ type Controller struct {
 func Initialise(app *tview.Application) {
 	commandLine := tviewcomponents.NewCommandLine()
 	displayPanel, infoPanel, navPanel := panels.NewDisplayPanel(), panels.NewInfoPanel(), panels.NewNavigationPanel()
-	grid := components.NewGrid(displayPanel.GetPrimitive(), infoPanel.GetPrimitive(), navPanel.GetPrimitive(), commandLine.GetPrimitive(), 25, 80)
-
-	// grid retains scroll offsets after shrinking to fit the focused command,
-	// need to reset them on resize so the content returns when the terminal expands
-	var lastWidth, lastHeight int
-	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
-		width, height := screen.Size()
-		if width != lastWidth || height != lastHeight {
-			grid.SetOffset(0, 0)
-			lastWidth, lastHeight = width, height
-		}
-		return false
-	})
+	grid := components.NewGrid(displayPanel.GetPrimitive(), infoPanel.GetPrimitive(), navPanel.GetPrimitive(), commandLine.GetPrimitive())
+	configureResizeHandling(app, grid)
 
 	queueUpdateDraw := func(f func()) { app.QueueUpdateDraw(f) }
 	c := &Controller{queueUpdateDraw, app.Stop, commandLine, navPanel, infoPanel, displayPanel}
@@ -55,4 +44,27 @@ func Initialise(app *tview.Application) {
 
 	c.Home()
 	app.SetRoot(grid, true)
+}
+
+func configureResizeHandling(app *tview.Application, grid *components.Grid) {
+	// grid retains scroll offsets after shrinking to fit the focused command,
+	// need to reset them on resize so the content returns when the terminal expands
+	var lastWidth, lastHeight int
+	var resized bool
+	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		width, height := screen.Size()
+		resized = width != lastWidth || height != lastHeight
+		if resized {
+			grid.SetOffset(0, 0)
+			lastWidth, lastHeight = width, height
+		}
+		return false
+	})
+	// avoids artifacts on resize
+	app.SetAfterDrawFunc(func(screen tcell.Screen) {
+		if resized {
+			screen.Sync()
+			resized = false
+		}
+	})
 }

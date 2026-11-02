@@ -4,29 +4,57 @@ import (
 	"github.com/rivo/tview"
 )
 
-func NewGrid(
-	display, info, nav, command tview.Primitive,
-	minHeight, minWidth int,
-) *tview.Grid {
-	spacer := tview.NewBox()
+// heuristic to avoid truncation
+const (
+	minArea, minHeight, minWidth int = 1200, 10, 40
+	reducedHeight, reducedWidth  int = 27, 80
+	infoHeight, spacerHeight     int = 5, 1
+)
 
-	// minimal display
-	grid := tview.NewGrid().SetRows(-2, 5, 1, -1).SetColumns(-3, -1).
-		AddItem(display, 0, 0, 3, 2, 0, 0, false).
-		AddItem(command, 3, 0, 1, 2, 0, 0, true)
+type Grid struct {
+	*tview.Grid
+	display, info, nav, command tview.Primitive
+	spacer, tooSmall            tview.Primitive
+	width, height               int
+}
 
-	// short display
-	grid.AddItem(display, 0, 0, 3, 1, 0, minWidth, false).
-		AddItem(nav, 0, 1, 3, 1, 0, minWidth, false)
+func NewGrid(display, info, nav, command tview.Primitive) *Grid {
+	g := &Grid{
+		Grid:    tview.NewGrid(),
+		display: display, info: info, nav: nav, command: command,
+		spacer:   tview.NewBox(),
+		tooSmall: tview.NewTextView().SetText("terminal too small, please resize").SetTextAlign(tview.AlignCenter),
+	}
+	g.layout(reducedWidth, reducedHeight)
+	return g
+}
 
-	// narrow display
-	grid.AddItem(display, 0, 0, 2, 2, minHeight, 0, false)
+func (g *Grid) SetRect(x, y, width, height int) {
+	g.Grid.SetRect(x, y, width, height)
+	if width != g.width || height != g.height {
+		g.layout(width, height)
+	}
+}
 
-	// regular display, added last so it wins ties with the short display
-	grid.AddItem(display, 0, 0, 2, 1, minHeight, minWidth, false).
-		AddItem(nav, 0, 1, 1, 1, minHeight, minWidth, false).
-		AddItem(info, 1, 1, 1, 1, minHeight, minWidth, false).
-		AddItem(spacer, 2, 0, 1, 2, minHeight, 0, false)
-
-	return grid
+func (g *Grid) layout(width, height int) {
+	g.width, g.height = width, height
+	g.Clear().SetOffset(0, 0)
+	switch {
+	case width < minWidth || height < minHeight || width*height < minArea:
+		g.SetRows(spacerHeight, -1).SetColumns(-1).
+			AddItem(g.spacer, 0, 0, 1, 1, 0, 0, false).
+			AddItem(g.tooSmall, 1, 0, 1, 1, 0, 0, false)
+	case height < reducedHeight, width < reducedWidth:
+		g.SetRows(-3, -1).SetColumns(-2, -1).
+			AddItem(g.display, 0, 0, 1, 1, 0, 0, false).
+			AddItem(g.nav, 0, 1, 1, 1, 0, 0, false).
+			AddItem(g.command, 1, 0, 1, 2, 0, 0, true)
+	default:
+		g.SetRows(-2, infoHeight, spacerHeight, -1).SetColumns(-3, -1).
+			AddItem(g.display, 0, 0, 2, 1, 0, 0, false).
+			AddItem(g.nav, 0, 1, 1, 1, 0, 0, false).
+			AddItem(g.info, 1, 1, 1, 1, 0, 0, false).
+			AddItem(g.spacer, 2, 0, 1, 2, 0, 0, false).
+			AddItem(g.command, 3, 0, 1, 2, 0, 0, true)
+	}
 }

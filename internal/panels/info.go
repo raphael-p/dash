@@ -3,6 +3,7 @@ package panels
 import (
 	"fmt"
 
+	"github.com/raphael-p/dash/internal/components"
 	"github.com/rivo/tview"
 )
 
@@ -12,7 +13,7 @@ type InfoPanel struct {
 
 func NewInfoPanel() *InfoPanel {
 	textView := tview.NewTextView().SetScrollable(true).SetDynamicColors(true)
-	textView.SetBorderPadding(1, 1, 2, 2)
+	textView.SetBorderPadding(components.HeightPadding, components.HeightPadding, components.WidthPadding, components.WidthPadding)
 	return &InfoPanel{textView}
 }
 
