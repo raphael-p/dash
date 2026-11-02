@@ -59,10 +59,10 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 			menu.AddKeybind('d', "dash", tviewcomponents.DefaultBind, c.openDash)
 		}
 		if taskMode == database.ActiveTasks {
-			menu.AddKeybind('a', "add a new task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.Home) })
+			menu.AddKeybind('a', "add task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.Home) })
 		}
 
-		toggleText := fmt.Sprintf("show %s tasks", strings.ToLower(taskMode.GetNext().ToString()))
+		toggleText := fmt.Sprintf("show %s", strings.ToLower(taskMode.GetNext().ToString()))
 		menu.AddKeybind('t', toggleText, tviewcomponents.DefaultBind, func() { c.displayPanel.ToggleTaskMode(); c.Home() })
 
 		if hasTasks {

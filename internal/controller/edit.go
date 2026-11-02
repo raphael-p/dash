@@ -24,8 +24,8 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 				c.editTask(&task, back)
 			}
 		}
-		menu.AddKeybind('n', "change name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, onSuccess) }).
-			AddKeybind('d', "change description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, onSuccess) })
+		menu.AddKeybind('n', "edit name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, onSuccess) }).
+			AddKeybind('d', "edit description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, onSuccess) })
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
