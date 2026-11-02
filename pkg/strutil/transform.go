@@ -3,6 +3,8 @@ package strutil
 import (
 	"strings"
 	"unicode/utf8"
+
+	"github.com/rivo/uniseg"
 )
 
 // RightPad pads str with spaces on the right up to spaceCount runes.
@@ -17,15 +19,25 @@ func RightPad(str string, spaceCount uint8) string {
 	return str + strings.Repeat(" ", padCount)
 }
 
-// RuneTruncate performs rune-wise string truncation,
-// when truncation occurs, appends …
-func RuneTruncate(s string, maxLen int) string {
-	if maxLen < 1 {
+// UnicodeTruncate performs unicode-aware string truncation.
+// When truncation occurs, it appends "…".
+func UnicodeTruncate(s string, width int) string {
+	if width <= 0 {
 		return ""
 	}
-	runes := []rune(s)
-	if len(runes) <= maxLen {
+	if uniseg.StringWidth(s) <= width {
 		return s
 	}
-	return string(runes[:maxLen-1]) + "…"
+	var result strings.Builder
+	remaining := width - uniseg.StringWidth("…")
+	graphemes := uniseg.NewGraphemes(s)
+	for graphemes.Next() {
+		if graphemes.Width() > remaining {
+			break
+		}
+		result.WriteString(graphemes.Str())
+		remaining -= graphemes.Width()
+	}
+	result.WriteRune('…')
+	return result.String()
 }

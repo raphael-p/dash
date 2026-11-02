@@ -6,8 +6,9 @@ import (
 	"github.com/rivo/tview"
 )
 
-// EnableDynamicTruncation truncate targetCol text on table size changes
-// so fixedCols are always displayed
+// EnableDynamicTruncation fits a plain-text target column around fixed columns.
+// Store the raw target text in each cell's string reference before enabling it.
+// This helper is for borderless tables with a single-cell column separator.
 func EnableDynamicTruncation(table *tview.Table, targetCol int, fixedCols ...int) {
 	var lastWidth int
 
@@ -35,7 +36,7 @@ func EnableDynamicTruncation(table *tview.Table, targetCol int, fixedCols ...int
 			if !ok || text == "" {
 				text = cell.Text
 			}
-			cell.SetText(strutil.RuneTruncate(text, remainingWidth))
+			cell.SetText(strutil.UnicodeTruncate(text, remainingWidth))
 		}
 
 		return x, y, width, height

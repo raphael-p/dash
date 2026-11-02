@@ -8,6 +8,7 @@ require (
 	github.com/gen2brain/beeep v0.11.2
 	github.com/mattn/go-sqlite3 v1.14.48
 	github.com/rivo/tview v0.42.0
+	github.com/rivo/uniseg v0.4.7
 )
 
 require (
@@ -20,7 +21,6 @@ require (
 	github.com/jackmordaunt/icns/v3 v3.0.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.4.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
-	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/sergeymakinen/go-bmp v1.0.0 // indirect
 	github.com/sergeymakinen/go-ico v1.0.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
