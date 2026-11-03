@@ -50,8 +50,7 @@ var once sync.Once
 var CountdownTimer = func() (*countdownTimer, bool) {
 	isNew := false
 	once.Do(func() {
-		countdown := tview.NewTextView()
-		instance.countdown.SetTextColor(defaultHighlightColour)
+		countdown := tview.NewTextView().SetTextColor(defaultHighlightColour)
 		text := tview.NewTextView().SetDynamicColors(true)
 		layout := tview.NewFlex().SetDirection(tview.FlexRow).AddItem(countdown, 3, 0, false).AddItem(text, 0, 1, false)
 
