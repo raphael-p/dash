@@ -1,8 +1,19 @@
 # Dash
 
-![Dash preview](preview.png)
+Dash is a lightweight task manager and focus timer for terminal.
 
-Dash is a small terminal task dashboard backed by SQLite.
+**Plan**
+
+![home page](preview_home.png)
+
+**Lock in**
+
+![dash](preview_dash.png)
+
+**Track**
+
+![completed tasks](preview_completed.png)
+
 
 ## Install
 
