@@ -42,8 +42,8 @@ func Initialise(app *tview.Application) {
 		return event
 	})
 
-	c.Home()
 	app.SetRoot(grid, true)
+	go app.QueueUpdateDraw(c.Home)
 }
 
 func configureResizeHandling(app *tview.Application, grid *components.Grid) {

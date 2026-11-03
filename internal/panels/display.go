@@ -10,7 +10,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-const minimumTasksPerPage int = 20
+const minimumTasksPerPage int = 5
 
 type taskPage struct {
 	lastTask database.Task
@@ -20,10 +20,11 @@ type taskPage struct {
 type displayPanelTab struct {
 	pages            map[uint]taskPage
 	currentPageIndex uint
+	pageSize         int
 }
 
 func newDisplayPanelTab() *displayPanelTab {
-	return &displayPanelTab{map[uint]taskPage{}, 0}
+	return &displayPanelTab{map[uint]taskPage{}, 0, minimumTasksPerPage}
 }
 
 type DisplayPanel struct {
@@ -32,12 +33,11 @@ type DisplayPanel struct {
 	completedTab *displayPanelTab
 	pausedTab    *displayPanelTab
 	mode         database.TaskMode
-	rowSpace     int
 }
 
 func NewDisplayPanel() *DisplayPanel {
 	frame := components.NewFrame()
-	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks, 0}
+	return &DisplayPanel{frame, newDisplayPanelTab(), newDisplayPanelTab(), newDisplayPanelTab(), database.ActiveTasks}
 }
 
 func (dp *DisplayPanel) GetPrimitive() tview.Primitive {
@@ -122,18 +122,18 @@ func (dp *DisplayPanel) SetTitle(title string) *DisplayPanel {
 func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	dp.SetTitle(fmt.Sprintf(" %s Tasks (page %d) ", dp.mode.ToString(), pageIndex+1))
 
+	tab := dp.getTab()
 	if pageIndex == 0 {
-		dp.rowSpace = dp.frame.GetAvailableRows()
+		tab.pageSize = max(dp.frame.GetAvailableRows(), minimumTasksPerPage)
 	}
-	pages := dp.getTab().pages
-	lastTask, limit := pages[pageIndex-1].lastTask, max(minimumTasksPerPage, dp.rowSpace)
+	lastTask, limit := tab.pages[pageIndex-1].lastTask, max(minimumTasksPerPage, tab.pageSize)
 	tasks, hasNext, err := database.GetTasksPaginated(dp.mode, lastTask, limit)
 	if err != nil {
 		return fmt.Errorf("could not retrieve tasks: %w", err)
 	}
 
 	if len(tasks) == 0 {
-		delete(pages, pageIndex)
+		delete(tab.pages, pageIndex)
 		if pageIndex == 0 {
 			dp.SetPrimitive(tview.NewTextView().SetText("No tasks. Good job :)"))
 			return nil
@@ -142,7 +142,7 @@ func (dp *DisplayPanel) listTasks(pageIndex uint, scrollToEnd bool) error {
 	}
 
 	// store pagination metadata
-	pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
+	tab.pages[pageIndex] = taskPage{tasks[len(tasks)-1], hasNext}
 
 	table := components.NewTable(tasks)
 	dp.SetPrimitive(table)
