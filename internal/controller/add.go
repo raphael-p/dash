@@ -13,7 +13,7 @@ func (c *Controller) addTaskName(back func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newMenuForInput(c, mode, submitNameCandidate(c, back))
+	menu := newMenuForInput(c, mode, submitNameCandidate(c, back), back)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -24,7 +24,7 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newMenuForInput(c, mode, submitDescriptionCandidate(c, name, back))
+	menu := newMenuForInput(c, mode, submitDescriptionCandidate(c, name, back), back)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

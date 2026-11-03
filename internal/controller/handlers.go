@@ -14,7 +14,7 @@ import (
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
-func newMenuForInput(c *Controller, mode config.InputMode, onEnter tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
+func newMenuForInput(c *Controller, mode config.InputMode, onEnter tviewcomponents.KeybindHandler, back func()) *tviewcomponents.KeybindMenu {
 	menu := tviewcomponents.NewKeybindMenu()
 
 	makeDescription := func(shortcut, function string) string {
@@ -28,6 +28,7 @@ func newMenuForInput(c *Controller, mode config.InputMode, onEnter tviewcomponen
 	case config.NameInput:
 		menu.AddKeybind(0, "", tviewcomponents.BindPrintable, nil).
 			AddKeybind(0, makeDescription("CTRL+U", "clear line"), tviewcomponents.BindClearLine, c.commandLine.ClearLine)
+		menu.AddKeybind(0, makeDescription("CTRL+B", "back"), tviewcomponents.BindCtrlBack, back)
 	case config.TaskIDInput:
 		menu.AddKeybind(0, "", tviewcomponents.BindNumber, nil)
 	default:

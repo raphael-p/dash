@@ -17,14 +17,14 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 	}
 
 	if !task.CompletedAt.Valid {
-		onSuccess := func() {
+		refresh := func() {
 			if task, ok := database.Service().GetTask(task.ID); ok {
 				c.displayPanel.ShowTask(task)
 				c.editTask(&task, back)
 			}
 		}
-		menu.AddKeybind('n', "edit name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, onSuccess) }).
-			AddKeybind('d', "edit description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, onSuccess) })
+		menu.AddKeybind('n', "edit name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, refresh) }).
+			AddKeybind('d', "edit description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, refresh) })
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
@@ -47,11 +47,11 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 	c.navPanel.SetTitle("Edit Task").SetText(menu.Text())
 }
 
-func (c *Controller) editTaskName(task *database.Task, onSuccess func()) {
+func (c *Controller) editTaskName(task *database.Task, refresh func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newMenuForInput(c, mode, submitName(c, task, onSuccess))
+	menu := newMenuForInput(c, mode, submitName(c, task, refresh), refresh)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -59,11 +59,11 @@ func (c *Controller) editTaskName(task *database.Task, onSuccess func()) {
 	c.navPanel.SetTitle("Edit Task (name)").SetText(menu.Text())
 }
 
-func (c *Controller) editTaskDescription(task *database.Task, onSuccess func()) {
+func (c *Controller) editTaskDescription(task *database.Task, refresh func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newMenuForInput(c, mode, submitDescription(c, task, onSuccess))
+	menu := newMenuForInput(c, mode, submitDescription(c, task, refresh), refresh)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

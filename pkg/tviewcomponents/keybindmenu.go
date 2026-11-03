@@ -10,7 +10,10 @@ import (
 type Bind = func(eventKey tcell.Key, key rune, mod tcell.ModMask) bool
 
 var (
-	DefaultBind   Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
+	DefaultBind  Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
+	BindCtrlBack Bind = func(_ tcell.Key, r rune, m tcell.ModMask) bool {
+		return ((r == 'b' || r == 'B') && m == tcell.ModCtrl)
+	}
 	BindBackspace Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyBackspace || e == tcell.KeyBackspace2
 	}

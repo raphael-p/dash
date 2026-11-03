@@ -35,7 +35,7 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 	var mode config.InputMode
 	if hasTasks {
 		mode = config.TaskIDInput
-		menu = newMenuForInput(c, mode, openTask(c))
+		menu = newMenuForInput(c, mode, openTask(c), nil)
 	} else {
 		mode = config.KeybindInput
 		menu = tviewcomponents.NewKeybindMenu()
