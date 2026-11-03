@@ -10,7 +10,7 @@ import (
 )
 
 type CommandLine struct {
-	flex     *tview.Flex
+	flex     *HideableFlex
 	textArea *tview.TextArea
 }
 
@@ -18,7 +18,8 @@ func NewCommandLine() *CommandLine {
 	chevron := tview.NewTextView().SetDynamicColors(true).SetText(fmt.Sprintf("[%s::b]>[-:-:-] ", config.C.HighlightColour))
 	textArea := tview.NewTextArea()
 	textArea.SetPlaceholderStyle(textArea.GetPlaceholderStyle().Foreground(config.C.SecondaryColour))
-	flex := tview.NewFlex().AddItem(tview.NewBox(), 2, 0, false).AddItem(chevron, 2, 0, false).AddItem(textArea, 0, 1, true)
+	flex := NewHideableFlex()
+	flex.AddItem(tview.NewBox(), 2, 0, false).AddItem(chevron, 2, 0, false).AddItem(textArea, 0, 1, true)
 	return &CommandLine{flex, textArea}
 }
 
@@ -30,6 +31,12 @@ func (cl *CommandLine) SetChangedFunc(handler func()) *CommandLine {
 func (cl *CommandLine) Clear() *CommandLine {
 	cl.textArea.SetText("", true)
 	cl.SetChangedFunc(nil)
+	return cl
+}
+
+func (cl *CommandLine) Hide(capture func(event *tcell.EventKey) *tcell.EventKey) *CommandLine {
+	cl.flex.hidden = true
+	cl.flex.SetInputCapture(capture)
 	return cl
 }
 
@@ -69,6 +76,7 @@ func (cl *CommandLine) GetPrimitive() tview.Primitive {
 }
 
 func (cl *CommandLine) Set(charLimit int, placeholder string, capture func(event *tcell.EventKey) *tcell.EventKey) *CommandLine {
+	cl.flex.hidden = false
 	cl.flex.SetInputCapture(capture)
 	cl.textArea.SetMaxLength(charLimit).SetPlaceholder(placeholder)
 	return cl

@@ -42,8 +42,6 @@ func GetCharLimit(mode InputMode) (charLimit int) {
 	switch mode {
 	case DescriptionInput:
 		return C.DescriptionCharLimit
-	case KeybindInput:
-		return 1
 	case NameInput:
 		return C.NameCharLimit
 	case TaskIDInput:

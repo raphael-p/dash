@@ -35,7 +35,6 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 func (c *Controller) addTaskInsertionOrder(name, description string, back func()) {
 	c.infoPanel.Clear()
 
-	mode := config.KeybindInput
 	submit := func(insertionOrder database.TaskInsertionOrder) func() {
 		return func() { database.Service().AddTask(name, description, insertionOrder, back) }
 	}
@@ -44,8 +43,7 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 		AddKeybind('n', "insert next", tviewcomponents.DefaultBind, submit(database.InsertNext)).
 		AddKeybind('l', "insert last", tviewcomponents.DefaultBind, submit(database.InsertLast))
 
-	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
-	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
+	c.commandLine.Clear().Hide(menu.InputCapture())
 	text := fmt.Sprintf("name: %s\n\ndescription: %s\n\n%s", tview.Escape(name), tview.Escape(description), menu.Text())
 	c.navPanel.SetTitle("Add New Task (insert)").SetText(text)
 }

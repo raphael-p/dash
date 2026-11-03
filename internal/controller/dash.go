@@ -67,7 +67,6 @@ func (c *Controller) openDash() {
 		lastDashTask = currentDashTask
 	}
 
-	mode := config.KeybindInput
 	menu := tviewcomponents.NewKeybindMenu().
 		AddKeybind('r', "restart timer", tviewcomponents.DefaultBind, func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
 		AddKeybind('d', "mark as done", tviewcomponents.DefaultBind, markTaskDone(c))
@@ -78,8 +77,7 @@ func (c *Controller) openDash() {
 		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTask(currentDashTask, c.openDash) }).
 		AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { c.Home(); c.infoPanel.Clear() })
 
-	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
-	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
+	c.commandLine.Clear().Hide(menu.InputCapture())
 	timer.SetText(menu.Text())
 	c.navPanel.SetTitle("Dash").SetPrimitive(timer.Layout)
 

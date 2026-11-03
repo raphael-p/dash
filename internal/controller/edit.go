@@ -8,7 +8,6 @@ import (
 )
 
 func (c *Controller) editTask(task *database.Task, back func()) {
-	mode := config.KeybindInput
 	menu := tviewcomponents.NewKeybindMenu()
 
 	if task.CompletedAt.Valid {
@@ -44,8 +43,7 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 	menu.AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { back(); c.infoPanel.Clear() }).
 		AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop)
 
-	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
-	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
+	c.commandLine.Clear().Hide(menu.InputCapture())
 	c.navPanel.SetTitle("Edit Task").SetText(menu.Text())
 }
 

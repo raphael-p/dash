@@ -40,11 +40,10 @@ func newMenuForInput(c *Controller, mode config.InputMode, onEnter tviewcomponen
 }
 
 func askForConfirmation(c *Controller, action string, onYes, onNo func()) {
-	mode := config.KeybindInput
 	menu := tviewcomponents.NewKeybindMenu().
 		AddKeybind('y', "yes", tviewcomponents.DefaultBind, onYes).
 		AddKeybind('n', "no", tviewcomponents.DefaultBind, onNo)
-	c.commandLine.Clear().Set(config.GetCharLimit(mode), config.GetPlaceholder(mode), nil)
+	c.commandLine.Clear().Hide(menu.InputCapture())
 	c.navPanel.SetText(fmt.Sprintf("confirm action: %s?\n\n%s", action, menu.Text()))
 }
 
