@@ -6,7 +6,7 @@ import (
 
 // heuristic to avoid truncation
 const (
-	minArea, minHeight, minWidth int = 1200, 10, 40
+	minArea, minHeight, minWidth int = 1200, 16, 40
 	reducedHeight, reducedWidth  int = 27, 80
 	infoHeight, spacerHeight     int = 5, 1
 )
@@ -14,7 +14,7 @@ const (
 type Grid struct {
 	*tview.Grid
 	display, info, nav, command tview.Primitive
-	spacer, tooSmall            tview.Primitive
+	spacer                      tview.Primitive
 	width, height               int
 }
 
@@ -22,8 +22,7 @@ func NewGrid(display, info, nav, command tview.Primitive) *Grid {
 	g := &Grid{
 		Grid:    tview.NewGrid(),
 		display: display, info: info, nav: nav, command: command,
-		spacer:   tview.NewBox(),
-		tooSmall: tview.NewTextView().SetText("terminal too small, please resize").SetTextAlign(tview.AlignCenter),
+		spacer: tview.NewBox(),
 	}
 	g.layout(reducedWidth, reducedHeight)
 	return g
@@ -41,9 +40,9 @@ func (g *Grid) layout(width, height int) {
 	g.Clear().SetOffset(0, 0)
 	switch {
 	case width < minWidth || height < minHeight || width*height < minArea:
-		g.SetRows(spacerHeight, -1).SetColumns(-1).
-			AddItem(g.spacer, 0, 0, 1, 1, 0, 0, false).
-			AddItem(g.tooSmall, 1, 0, 1, 1, 0, 0, false)
+		g.SetRows(-1, 1).SetColumns(-1).
+			AddItem(g.display, 0, 0, 1, 1, 0, 0, false).
+			AddItem(g.command, 1, 0, 1, 1, 0, 0, true)
 	case height < reducedHeight, width < reducedWidth:
 		g.SetRows(-3, -1).SetColumns(-2, -1).
 			AddItem(g.display, 0, 0, 1, 1, 0, 0, false).
