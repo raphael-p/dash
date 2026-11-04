@@ -68,13 +68,13 @@ func (c *Controller) openDash() {
 	}
 
 	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { c.Home(); c.infoPanel.Clear() }).
-		AddKeybind('r', "restart timer", tviewcomponents.DefaultBind, func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
-		AddKeybind('d', "mark as done", tviewcomponents.DefaultBind, markTaskDone(c))
+		AddRuneKeybind('r', "restart timer", func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
+		AddRuneKeybind('d', "mark as done", markTaskDone(c))
 	if lastDashTask.ID != currentDashTask.ID {
-		menu.AddKeybind('u', "unmark as done", tviewcomponents.DefaultBind, unmarkTaskDone(c))
+		menu.AddRuneKeybind('u', "unmark as done", unmarkTaskDone(c))
 	}
-	menu.AddKeybind('a', "add task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.openDash) }).
-		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTask(currentDashTask, c.openDash) })
+	menu.AddRuneKeybind('a', "add task", func() { c.addTaskName(c.openDash) }).
+		AddRuneKeybind('e', "edit task", func() { c.editTask(currentDashTask, c.openDash) })
 
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	timer.SetText(menu.Text())

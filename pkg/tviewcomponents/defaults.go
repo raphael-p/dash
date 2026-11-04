@@ -2,11 +2,12 @@ package tviewcomponents
 
 import "github.com/gdamore/tcell/v2"
 
-var defaultHighlightColour tcell.Color
+var defaultHighlightColour, defaultSecondaryColour tcell.Color
 var defaultFallback KeybindFallback = func(_ string) {}
 
-func SetHighlightColour(highlightColour tcell.Color) {
+func SetColours(highlightColour, secondaryColour tcell.Color) {
 	defaultHighlightColour = highlightColour
+	defaultSecondaryColour = secondaryColour
 }
 
 func SetKeybindFallback(fallback KeybindFallback) {

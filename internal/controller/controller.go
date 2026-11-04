@@ -27,7 +27,7 @@ func Initialise(app *tview.Application) {
 	queueUpdateDraw := func(f func()) { app.QueueUpdateDraw(f) }
 	c := &Controller{queueUpdateDraw, commandLine, navPanel, infoPanel, displayPanel}
 	database.StartService(infoPanel.Error, infoPanel.Info, infoPanel.Warn)
-	tviewcomponents.SetHighlightColour(config.C.HighlightColour)
+	tviewcomponents.SetColours(config.C.HighlightColour, config.C.SecondaryColour)
 	tviewcomponents.SetKeybindFallback(func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) })
 
 	app.SetRoot(grid, true)

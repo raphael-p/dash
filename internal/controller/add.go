@@ -5,7 +5,6 @@ import (
 
 	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
-	"github.com/raphael-p/dash/pkg/tviewcomponents"
 	"github.com/rivo/tview"
 )
 
@@ -39,9 +38,9 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 		return func() { database.Service().AddTask(name, description, insertionOrder, back) }
 	}
 	menu := newInputKeybindMenu(c, config.KeybindInput, nil, back).
-		AddKeybind('f', "insert first", tviewcomponents.DefaultBind, submit(database.InsertFirst)).
-		AddKeybind('n', "insert next", tviewcomponents.DefaultBind, submit(database.InsertNext)).
-		AddKeybind('l', "insert last", tviewcomponents.DefaultBind, submit(database.InsertLast))
+		AddRuneKeybind('f', "insert first", submit(database.InsertFirst)).
+		AddRuneKeybind('n', "insert next", submit(database.InsertNext)).
+		AddRuneKeybind('l', "insert last", submit(database.InsertLast))
 
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	text := fmt.Sprintf("name: %s\n\ndescription: %s\n\n%s", tview.Escape(name), tview.Escape(description), menu.Text())

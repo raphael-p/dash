@@ -14,43 +14,39 @@ import (
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
-func formatKeybindDescription(shortcut, function string) string {
-	return fmt.Sprintf("[%s::b]%s[-:-:-]%s", config.C.HighlightColour, strutil.RightPad(shortcut, 8), function)
-}
-
 func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
 	menu := tviewcomponents.NewKeybindMenu()
 	switch mode {
 	case config.DescriptionInput:
-		menu.AddKeybind(0, formatKeybindDescription("CTRL+J", "new line"), tviewcomponents.BindCtrlJ, c.commandLine.NewLine)
+		menu.AddSecondaryKeybind("CTRL+J", "new line", tviewcomponents.BindCtrlJ, c.commandLine.NewLine)
 		fallthrough
 	case config.NameInput:
-		menu.AddKeybind(0, "", tviewcomponents.BindPrintable, nil).
-			AddKeybind(0, formatKeybindDescription("CTRL+U", "clear line"), tviewcomponents.BindCtrlU, c.commandLine.ClearLine)
+		menu.AddPassthroughKeybind(tviewcomponents.BindPrintable).
+			AddSecondaryKeybind("CTRL+U", "clear line", tviewcomponents.BindCtrlU, c.commandLine.ClearLine)
 	case config.TaskIDInput:
-		menu.AddKeybind(0, "", tviewcomponents.BindNumber, nil)
+		menu.AddPassthroughKeybind(tviewcomponents.BindNumber)
 	}
 	if mode == config.NameInput || mode == config.DescriptionInput || mode == config.TaskIDInput {
-		menu.AddKeybind(0, "", tviewcomponents.BindBackspace, nil)
+		menu.AddPassthroughKeybind(tviewcomponents.BindBackspace)
 	}
 
 	if onEnter != nil {
-		menu.AddKeybind(0, formatKeybindDescription("ENTER", "submit"), tviewcomponents.BindEnter, onEnter)
+		menu.AddPrimaryKeybind("ENTER", "submit", tviewcomponents.BindEnter, onEnter)
 	}
 	if onEsc == nil {
 		reset := func() { c.displayPanel.ResetPagination(); c.infoPanel.Clear(); c.Home() }
-		menu.AddKeybind(0, formatKeybindDescription("ESC", "reset"), tviewcomponents.BindEsc, reset).
-			AddKeybind(0, formatKeybindDescription("CTRL+C", "quit"), tviewcomponents.DefaultBind, nil)
+		menu.AddSecondaryKeybind("ESC", "reset", tviewcomponents.BindEsc, reset).
+			AddSecondaryKeybind("CTRL+C", "quit", tviewcomponents.BindRune, nil)
 	} else {
-		menu.AddKeybind(0, formatKeybindDescription("ESC", "back"), tviewcomponents.BindEsc, onEsc)
+		menu.AddSecondaryKeybind("ESC", "back", tviewcomponents.BindEsc, onEsc)
 	}
 	return menu
 }
 
 func askForConfirmation(c *Controller, action string, onYes, onNo func()) {
 	menu := tviewcomponents.NewKeybindMenu().
-		AddKeybind('y', "yes", tviewcomponents.DefaultBind, onYes).
-		AddKeybind('n', "no", tviewcomponents.DefaultBind, onNo)
+		AddRuneKeybind('y', "yes", onYes).
+		AddRuneKeybind('n', "no", onNo)
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	c.navPanel.SetText(fmt.Sprintf("confirm action: %s?\n\n%s", action, menu.Text()))
 }

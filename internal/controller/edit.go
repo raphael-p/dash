@@ -4,16 +4,15 @@ import (
 	"github.com/raphael-p/dash/internal/config"
 	"github.com/raphael-p/dash/internal/database"
 	"github.com/raphael-p/dash/pkg/strutil"
-	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
 func (c *Controller) editTask(task *database.Task, back func()) {
 	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { back(); c.infoPanel.Clear() })
 
 	if task.CompletedAt.Valid {
-		menu.AddKeybind('u', "reactivate", tviewcomponents.DefaultBind, reactivateTask(c, task, func() {}))
+		menu.AddRuneKeybind('u', "reactivate", reactivateTask(c, task, func() {}))
 	} else if task.PausedAt.Valid {
-		menu.AddKeybind('u', "unpause", tviewcomponents.DefaultBind, toggleTaskPause(c, task, func() {}))
+		menu.AddRuneKeybind('u', "unpause", toggleTaskPause(c, task, func() {}))
 	}
 
 	if !task.CompletedAt.Valid {
@@ -23,22 +22,22 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 				c.editTask(&task, back)
 			}
 		}
-		menu.AddKeybind('n', "edit name", tviewcomponents.DefaultBind, func() { c.editTaskName(task, refresh) }).
-			AddKeybind('d', "edit description", tviewcomponents.DefaultBind, func() { c.editTaskDescription(task, refresh) })
+		menu.AddRuneKeybind('n', "edit name", func() { c.editTaskName(task, refresh) }).
+			AddRuneKeybind('d', "edit description", func() { c.editTaskDescription(task, refresh) })
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
-		menu.AddKeybind('f', "put first", tviewcomponents.DefaultBind, bumpTask(c, task, func() {})).
-			AddKeybind('p', "pause", tviewcomponents.DefaultBind, toggleTaskPause(c, task, func() {}))
+		menu.AddRuneKeybind('f', "put first", bumpTask(c, task, func() {})).
+			AddRuneKeybind('p', "pause", toggleTaskPause(c, task, func() {}))
 
 	}
 
-	menu.AddKeybind('c', "copy description", tviewcomponents.DefaultBind, copy(c, task.Description)).
-		AddKeybind('r', "remove", tviewcomponents.DefaultBind, removeTaskFromEdit(c, task, back))
+	menu.AddRuneKeybind('c', "copy description", copy(c, task.Description)).
+		AddRuneKeybind('r', "remove", removeTaskFromEdit(c, task, back))
 
 	if strutil.LineCount(task.Description) > 2 { // heuristic to reduce visual clutter
-		menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, scrollDownEdit(c)).
-			AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, scrollUpEdit(c))
+		menu.AddRuneKeybind('j', "scroll down", scrollDownEdit(c)).
+			AddRuneKeybind('k', "scroll up", scrollUpEdit(c))
 	}
 
 	c.commandLine.Clear().Hide(menu.InputCapture())

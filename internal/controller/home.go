@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/raphael-p/dash/internal/config"
@@ -47,32 +46,32 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 
 	if hasInput {
 		onSuccess := func() { c.Home() }
-		menu.AddKeybind('o', "open task", tviewcomponents.DefaultBind, openTask(c))
+		menu.AddRuneKeybind('o', "open task", openTask(c))
 		switch taskMode {
 		case database.CompletedTasks:
-			menu.AddKeybind('u', "reactivate task", tviewcomponents.DefaultBind, reactivateTask(c, nil, onSuccess))
+			menu.AddRuneKeybind('u', "reactivate task", reactivateTask(c, nil, onSuccess))
 		case database.ActiveTasks:
-			menu.AddKeybind('f', "put task first", tviewcomponents.DefaultBind, bumpTask(c, nil, onSuccess))
-			menu.AddKeybind('p', "pause task", tviewcomponents.DefaultBind, toggleTaskPause(c, nil, onSuccess))
+			menu.AddRuneKeybind('f', "put task first", bumpTask(c, nil, onSuccess))
+			menu.AddRuneKeybind('p', "pause task", toggleTaskPause(c, nil, onSuccess))
 		case database.PausedTasks:
-			menu.AddKeybind('u', "unpause task", tviewcomponents.DefaultBind, toggleTaskPause(c, nil, onSuccess))
+			menu.AddRuneKeybind('u', "unpause task", toggleTaskPause(c, nil, onSuccess))
 		}
-		menu.AddKeybind('r', "remove task", tviewcomponents.DefaultBind, removeTaskFromHome(c))
+		menu.AddRuneKeybind('r', "remove task", removeTaskFromHome(c))
 	} else {
 		if taskMode == database.ActiveTasks && hasTasks {
-			menu.AddKeybind('d', "dash", tviewcomponents.DefaultBind, c.openDash)
+			menu.AddRuneKeybind('d', "dash", c.openDash)
 		}
 		if taskMode == database.ActiveTasks {
-			menu.AddKeybind('a', "add task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.Home) })
+			menu.AddRuneKeybind('a', "add task", func() { c.addTaskName(c.Home) })
 		}
-
-		toggleText := fmt.Sprintf("show %s", strings.ToLower(taskMode.GetNext().ToString()))
-		menu.AddKeybind('t', toggleText, tviewcomponents.DefaultBind, func() { c.displayPanel.ToggleTaskMode(); c.Home() })
 
 		if hasTasks {
-			menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, scrollDownHome(c)).
-				AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, scrollUpHome(c))
+			menu.AddRuneKeybind('j', "scroll down", scrollDownHome(c)).
+				AddRuneKeybind('k', "scroll up", scrollUpHome(c))
 		}
+
+		toggleText := strings.ToLower(taskMode.GetNext().ToString())
+		menu.AddPrimaryKeybind("TAB", toggleText, tviewcomponents.BindTab, func() { c.displayPanel.ToggleTaskMode(); c.Home() })
 	}
 	return menu, mode
 }

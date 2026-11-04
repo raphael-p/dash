@@ -2,16 +2,16 @@ package tviewcomponents
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/raphael-p/dash/pkg/strutil"
 )
 
 type Bind = func(eventKey tcell.Key, key rune, mod tcell.ModMask) bool
 
 var (
-	DefaultBind Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
-
 	BindBackspace Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyBackspace || e == tcell.KeyBackspace2
 	}
@@ -33,37 +33,64 @@ var (
 	BindPrintable Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
 		return e == tcell.KeyRune
 	}
+	BindRune Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
+	BindTab  Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
+		return e == tcell.KeyTab || e == tcell.KeyTAB
+	}
 )
+
+type orderedKeybinds struct {
+	runeKeybinds, primaryKeybinds, secondaryKeybinds, passthroughKeybinds []Keybind
+}
+
+func (kg orderedKeybinds) getAll() []Keybind {
+	return slices.Concat(kg.runeKeybinds, kg.primaryKeybinds, kg.secondaryKeybinds, kg.passthroughKeybinds)
+}
+
+func (kg orderedKeybinds) getVisible() []Keybind {
+	return slices.Concat(kg.runeKeybinds, kg.primaryKeybinds, kg.secondaryKeybinds)
+}
 
 type KeybindFallback = func(commandName string)
 type KeybindMenu struct {
-	fallback        KeybindFallback
-	footnote        string
-	highlightColour tcell.Color
-	keybinds        []Keybind
-	isScrollable    bool
+	fallback     KeybindFallback
+	keybinds     orderedKeybinds
+	isScrollable bool
 }
 
 type KeybindHandler = func()
 type DisableKeybind = func() bool
 type Keybind struct {
-	handler     KeybindHandler
-	bind        Bind
-	description string
-	key         rune
+	handler KeybindHandler
+	bind    Bind
+	display string
+	key     rune
 }
 
 func NewKeybindMenu() *KeybindMenu {
-	return &KeybindMenu{defaultFallback, "", defaultHighlightColour, []Keybind{}, true}
+	return &KeybindMenu{defaultFallback, orderedKeybinds{}, true}
 }
 
-func (hm *KeybindMenu) SetFootnote(footnote string) *KeybindMenu {
-	hm.footnote = footnote
+func (hm *KeybindMenu) AddRuneKeybind(key rune, description string, handler KeybindHandler) *KeybindMenu {
+	display := fmt.Sprintf("([%s::b]%c[-:-:-])  %s", defaultHighlightColour, key, description)
+	hm.keybinds.runeKeybinds = append(hm.keybinds.runeKeybinds, Keybind{handler, BindRune, display, key})
 	return hm
 }
 
-func (hm *KeybindMenu) AddKeybind(key rune, description string, bind Bind, handler KeybindHandler) *KeybindMenu {
-	hm.keybinds = append(hm.keybinds, Keybind{handler, bind, description, key})
+func (hm *KeybindMenu) AddPrimaryKeybind(shortcut, function string, bind Bind, handler KeybindHandler) *KeybindMenu {
+	display := fmt.Sprintf("[%s::b]%s[-:-:-]%s", defaultHighlightColour, strutil.RightPad(shortcut, 8), function)
+	hm.keybinds.primaryKeybinds = append(hm.keybinds.primaryKeybinds, Keybind{handler, bind, display, 0})
+	return hm
+}
+
+func (hm *KeybindMenu) AddSecondaryKeybind(shortcut, function string, bind Bind, handler KeybindHandler) *KeybindMenu {
+	display := fmt.Sprintf("[%s::b]%s[-:-:-]%s", defaultSecondaryColour, strutil.RightPad(shortcut, 8), function)
+	hm.keybinds.secondaryKeybinds = append(hm.keybinds.secondaryKeybinds, Keybind{handler, bind, display, 0})
+	return hm
+}
+
+func (hm *KeybindMenu) AddPassthroughKeybind(bind Bind) *KeybindMenu {
+	hm.keybinds.passthroughKeybinds = append(hm.keybinds.passthroughKeybinds, Keybind{nil, bind, "", 0})
 	return hm
 }
 
@@ -75,39 +102,18 @@ func (hm *KeybindMenu) DisableScrolling() *KeybindMenu {
 func (hm *KeybindMenu) Text() string {
 	builder := new(strings.Builder)
 
-	descriptionOnly := []Keybind{}
-	for _, keybind := range hm.keybinds {
-		hasKey := keybind.key != 0
-		hasDescription := keybind.description != ""
-		if hasKey {
-			if builder.Len() != 0 {
-				fmt.Fprintf(builder, "\n")
-			}
-			fmt.Fprintf(builder, "([%s::b]%c[-:-:-])", hm.highlightColour, keybind.key)
-			if hasDescription {
-				fmt.Fprintf(builder, "\t%s", keybind.description)
-			}
-		} else if hasDescription {
-			descriptionOnly = append(descriptionOnly, keybind)
+	numRuneKeybinds := len(hm.keybinds.runeKeybinds)
+	for idx, keybind := range hm.keybinds.getVisible() {
+		if keybind.display == "" {
+			continue
 		}
-	}
-
-	// display keybinds with a description but no keys in a separate block
-	for i, keybind := range descriptionOnly {
 		if builder.Len() != 0 {
-			fmt.Fprintf(builder, "\n")
-			if i == 0 {
-				fmt.Fprintf(builder, "\n")
+			builder.WriteRune('\n')
+			if idx == numRuneKeybinds {
+				builder.WriteRune('\n')
 			}
 		}
-		fmt.Fprintf(builder, "%s", keybind.description)
-	}
-
-	if hm.footnote != "" {
-		if builder.Len() != 0 {
-			fmt.Fprintf(builder, "\n")
-		}
-		fmt.Fprintf(builder, "[::d]%s[::-]", hm.footnote)
+		builder.WriteString(keybind.display)
 	}
 
 	return builder.String()
@@ -124,7 +130,7 @@ func (hm *KeybindMenu) InputCapture() func(event *tcell.EventKey) *tcell.EventKe
 		}
 
 		hasTriggered := false
-		for _, keybind := range hm.keybinds {
+		for _, keybind := range hm.keybinds.getAll() {
 			if (key != 0 && key == keybind.key && mods == tcell.ModNone) || keybind.bind(eventKey, key, mods) {
 				// intentionally allow default behaviour
 				if keybind.handler == nil {
