@@ -14,30 +14,37 @@ import (
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
-func newMenuForInput(c *Controller, mode config.InputMode, onEnter tviewcomponents.KeybindHandler, back func()) *tviewcomponents.KeybindMenu {
+func formatKeybindDescription(shortcut, function string) string {
+	return fmt.Sprintf("[%s::b]%s[-:-:-]%s", config.C.HighlightColour, strutil.RightPad(shortcut, 8), function)
+}
+
+func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
 	menu := tviewcomponents.NewKeybindMenu()
-
-	makeDescription := func(shortcut, function string) string {
-		return fmt.Sprintf("[%s::b]%s[-:-:-]\t%s", config.C.HighlightColour, shortcut, function)
-	}
-
 	switch mode {
 	case config.DescriptionInput:
-		menu.AddKeybind(0, makeDescription("CTRL+J", "new line"), tviewcomponents.BindNewLine, c.commandLine.NewLine)
+		menu.AddKeybind(0, formatKeybindDescription("CTRL+J", "new line"), tviewcomponents.BindCtrlJ, c.commandLine.NewLine)
 		fallthrough
 	case config.NameInput:
 		menu.AddKeybind(0, "", tviewcomponents.BindPrintable, nil).
-			AddKeybind(0, makeDescription("CTRL+U", "clear line"), tviewcomponents.BindClearLine, c.commandLine.ClearLine)
-		menu.AddKeybind(0, makeDescription("CTRL+B", "back"), tviewcomponents.BindCtrlBack, back)
+			AddKeybind(0, formatKeybindDescription("CTRL+U", "clear line"), tviewcomponents.BindCtrlU, c.commandLine.ClearLine)
 	case config.TaskIDInput:
 		menu.AddKeybind(0, "", tviewcomponents.BindNumber, nil)
-	default:
-		return menu // should not be used
+	}
+	if mode == config.NameInput || mode == config.DescriptionInput || mode == config.TaskIDInput {
+		menu.AddKeybind(0, "", tviewcomponents.BindBackspace, nil)
 	}
 
-	return menu.
-		AddKeybind(0, makeDescription("ENTER", "submit"), tviewcomponents.BindEnter, onEnter).
-		AddKeybind(0, "", tviewcomponents.BindBackspace, nil)
+	if onEnter != nil {
+		menu.AddKeybind(0, formatKeybindDescription("ENTER", "submit"), tviewcomponents.BindEnter, onEnter)
+	}
+	if onEsc == nil {
+		reset := func() { c.displayPanel.ResetPagination(); c.infoPanel.Clear(); c.Home() }
+		menu.AddKeybind(0, formatKeybindDescription("ESC", "reset"), tviewcomponents.BindEsc, reset).
+			AddKeybind(0, formatKeybindDescription("CTRL+C", "quit"), tviewcomponents.DefaultBind, nil)
+	} else {
+		menu.AddKeybind(0, formatKeybindDescription("ESC", "back"), tviewcomponents.BindEsc, onEsc)
+	}
+	return menu
 }
 
 func askForConfirmation(c *Controller, action string, onYes, onNo func()) {

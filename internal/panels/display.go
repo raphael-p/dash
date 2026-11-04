@@ -78,6 +78,7 @@ func (dp *DisplayPanel) ToggleTaskMode() {
 }
 
 func (dp *DisplayPanel) ResetPagination() {
+	dp.mode = database.ActiveTasks
 	dp.getTab().currentPageIndex = 0
 }
 

@@ -13,7 +13,7 @@ func (c *Controller) addTaskName(back func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newMenuForInput(c, mode, submitNameCandidate(c, back), back)
+	menu := newInputKeybindMenu(c, mode, submitNameCandidate(c, back), back)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -24,7 +24,7 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newMenuForInput(c, mode, submitDescriptionCandidate(c, name, back), back)
+	menu := newInputKeybindMenu(c, mode, submitDescriptionCandidate(c, name, back), back)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -38,7 +38,7 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 	submit := func(insertionOrder database.TaskInsertionOrder) func() {
 		return func() { database.Service().AddTask(name, description, insertionOrder, back) }
 	}
-	menu := tviewcomponents.NewKeybindMenu().
+	menu := newInputKeybindMenu(c, config.KeybindInput, nil, back).
 		AddKeybind('f', "insert first", tviewcomponents.DefaultBind, submit(database.InsertFirst)).
 		AddKeybind('n', "insert next", tviewcomponents.DefaultBind, submit(database.InsertNext)).
 		AddKeybind('l', "insert last", tviewcomponents.DefaultBind, submit(database.InsertLast))

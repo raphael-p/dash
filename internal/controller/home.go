@@ -35,10 +35,14 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 	var mode config.InputMode
 	if hasTasks {
 		mode = config.TaskIDInput
-		menu = newMenuForInput(c, mode, openTask(c), nil)
+		var onEnter tviewcomponents.KeybindHandler
+		if hasInput {
+			onEnter = openTask(c)
+		}
+		menu = newInputKeybindMenu(c, mode, onEnter, nil)
 	} else {
 		mode = config.KeybindInput
-		menu = tviewcomponents.NewKeybindMenu()
+		menu = newInputKeybindMenu(c, mode, nil, nil)
 	}
 
 	if hasInput {
@@ -70,5 +74,5 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 				AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, scrollUpHome(c))
 		}
 	}
-	return menu.AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop), mode
+	return menu, mode
 }

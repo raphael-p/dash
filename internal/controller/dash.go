@@ -67,15 +67,14 @@ func (c *Controller) openDash() {
 		lastDashTask = currentDashTask
 	}
 
-	menu := tviewcomponents.NewKeybindMenu().
+	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { c.Home(); c.infoPanel.Clear() }).
 		AddKeybind('r', "restart timer", tviewcomponents.DefaultBind, func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
 		AddKeybind('d', "mark as done", tviewcomponents.DefaultBind, markTaskDone(c))
 	if lastDashTask.ID != currentDashTask.ID {
 		menu.AddKeybind('u', "unmark as done", tviewcomponents.DefaultBind, unmarkTaskDone(c))
 	}
 	menu.AddKeybind('a', "add task", tviewcomponents.DefaultBind, func() { c.addTaskName(c.openDash) }).
-		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTask(currentDashTask, c.openDash) }).
-		AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { c.Home(); c.infoPanel.Clear() })
+		AddKeybind('e', "edit task", tviewcomponents.DefaultBind, func() { c.editTask(currentDashTask, c.openDash) })
 
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	timer.SetText(menu.Text())

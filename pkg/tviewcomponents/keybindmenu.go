@@ -10,21 +10,22 @@ import (
 type Bind = func(eventKey tcell.Key, key rune, mod tcell.ModMask) bool
 
 var (
-	DefaultBind  Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
-	BindCtrlBack Bind = func(_ tcell.Key, r rune, m tcell.ModMask) bool {
-		return ((r == 'b' || r == 'B') && m == tcell.ModCtrl)
-	}
+	DefaultBind Bind = func(_ tcell.Key, _ rune, _ tcell.ModMask) bool { return false } // just binds on Keybind.key
+
 	BindBackspace Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyBackspace || e == tcell.KeyBackspace2
 	}
-	BindClearLine Bind = func(_ tcell.Key, r rune, m tcell.ModMask) bool {
+	BindCtrlJ Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
+		return (e == tcell.KeyEnter && m == tcell.ModShift) || ((r == 'j' || r == 'J') && m == tcell.ModCtrl)
+	}
+	BindCtrlU Bind = func(_ tcell.Key, r rune, m tcell.ModMask) bool {
 		return ((r == 'u' || r == 'U') && m == tcell.ModCtrl)
 	}
 	BindEnter Bind = func(e tcell.Key, _ rune, m tcell.ModMask) bool {
 		return e == tcell.KeyEnter && m == tcell.ModNone
 	}
-	BindNewLine Bind = func(e tcell.Key, r rune, m tcell.ModMask) bool {
-		return (e == tcell.KeyEnter && m == tcell.ModShift) || ((r == 'j' || r == 'J') && m == tcell.ModCtrl)
+	BindEsc Bind = func(e tcell.Key, _ rune, _ tcell.ModMask) bool {
+		return e == tcell.KeyEscape
 	}
 	BindNumber Bind = func(e tcell.Key, r rune, _ tcell.ModMask) bool {
 		return e == tcell.KeyRune && r >= '0' && r <= '9'

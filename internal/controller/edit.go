@@ -8,7 +8,7 @@ import (
 )
 
 func (c *Controller) editTask(task *database.Task, back func()) {
-	menu := tviewcomponents.NewKeybindMenu()
+	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { back(); c.infoPanel.Clear() })
 
 	if task.CompletedAt.Valid {
 		menu.AddKeybind('u', "reactivate", tviewcomponents.DefaultBind, reactivateTask(c, task, func() {}))
@@ -40,8 +40,6 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 		menu.AddKeybind('j', "scroll down", tviewcomponents.DefaultBind, scrollDownEdit(c)).
 			AddKeybind('k', "scroll up", tviewcomponents.DefaultBind, scrollUpEdit(c))
 	}
-	menu.AddKeybind('b', "back", tviewcomponents.DefaultBind, func() { back(); c.infoPanel.Clear() }).
-		AddKeybind('q', "quit", tviewcomponents.DefaultBind, c.stop)
 
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	c.navPanel.SetTitle("Edit Task").SetText(menu.Text())
@@ -51,7 +49,7 @@ func (c *Controller) editTaskName(task *database.Task, refresh func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newMenuForInput(c, mode, submitName(c, task, refresh), refresh)
+	menu := newInputKeybindMenu(c, mode, submitName(c, task, refresh), refresh)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -63,7 +61,7 @@ func (c *Controller) editTaskDescription(task *database.Task, refresh func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newMenuForInput(c, mode, submitDescription(c, task, refresh), refresh)
+	menu := newInputKeybindMenu(c, mode, submitDescription(c, task, refresh), refresh)
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

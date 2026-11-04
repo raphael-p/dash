@@ -12,7 +12,6 @@ import (
 
 type Controller struct {
 	queueUpdateDraw func(func())
-	stop            func()
 	commandLine     *tviewcomponents.CommandLine
 	navPanel        *panels.NavigationPanel
 	infoPanel       *panels.InfoPanel
@@ -26,21 +25,10 @@ func Initialise(app *tview.Application) {
 	configureResizeHandling(app, grid)
 
 	queueUpdateDraw := func(f func()) { app.QueueUpdateDraw(f) }
-	c := &Controller{queueUpdateDraw, app.Stop, commandLine, navPanel, infoPanel, displayPanel}
+	c := &Controller{queueUpdateDraw, commandLine, navPanel, infoPanel, displayPanel}
 	database.StartService(infoPanel.Error, infoPanel.Info, infoPanel.Warn)
 	tviewcomponents.SetHighlightColour(config.C.HighlightColour)
 	tviewcomponents.SetKeybindFallback(func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) })
-
-	// global ESC shortcut that returns the user to the home screen
-	grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEscape {
-			displayPanel.ResetPagination()
-			c.infoPanel.Clear()
-			c.Home()
-			return nil
-		}
-		return event
-	})
 
 	app.SetRoot(grid, true)
 	go app.QueueUpdateDraw(c.Home)
