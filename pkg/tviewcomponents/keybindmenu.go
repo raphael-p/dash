@@ -77,15 +77,32 @@ func (hm *KeybindMenu) AddRuneKeybind(key rune, description string, handler Keyb
 	return hm
 }
 
+func formatDisplay(shortcut, function string, colour tcell.Color) string {
+	builder := new(strings.Builder)
+	if shortcut != "" {
+		fmt.Fprintf(builder, "[%s::b]%s[-:-:-]", colour, strutil.RightPad(shortcut, 8))
+	}
+	if function != "" {
+		builder.WriteString(function)
+	}
+	return builder.String()
+}
+
 func (hm *KeybindMenu) AddPrimaryKeybind(shortcut, function string, bind Bind, handler KeybindHandler) *KeybindMenu {
-	display := fmt.Sprintf("[%s::b]%s[-:-:-]%s", defaultHighlightColour, strutil.RightPad(shortcut, 8), function)
+	display := formatDisplay(shortcut, function, defaultHighlightColour)
 	hm.keybinds.primaryKeybinds = append(hm.keybinds.primaryKeybinds, Keybind{handler, bind, display, 0})
 	return hm
 }
 
 func (hm *KeybindMenu) AddSecondaryKeybind(shortcut, function string, bind Bind, handler KeybindHandler) *KeybindMenu {
-	display := fmt.Sprintf("[%s::b]%s[-:-:-]%s", defaultSecondaryColour, strutil.RightPad(shortcut, 8), function)
+	display := formatDisplay(shortcut, function, defaultSecondaryColour)
 	hm.keybinds.secondaryKeybinds = append(hm.keybinds.secondaryKeybinds, Keybind{handler, bind, display, 0})
+	return hm
+}
+
+func (hm *KeybindMenu) AddSecondaryRuneKeybind(key rune, shortcut, function string, handler KeybindHandler) *KeybindMenu {
+	display := formatDisplay(shortcut, function, defaultSecondaryColour)
+	hm.keybinds.secondaryKeybinds = append(hm.keybinds.secondaryKeybinds, Keybind{handler, BindRune, display, key})
 	return hm
 }
 

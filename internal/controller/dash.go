@@ -67,7 +67,7 @@ func (c *Controller) openDash() {
 		lastDashTask = currentDashTask
 	}
 
-	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { c.Home(); c.infoPanel.Clear() }).
+	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { c.Home(); c.infoPanel.Clear() }, nil, nil).
 		AddRuneKeybind('r', "restart timer", func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
 		AddRuneKeybind('d', "mark as done", markTaskDone(c))
 	if lastDashTask.ID != currentDashTask.ID {

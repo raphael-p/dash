@@ -34,14 +34,16 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 	var mode config.InputMode
 	if hasTasks {
 		mode = config.TaskIDInput
-		var onEnter tviewcomponents.KeybindHandler
+		var onEnter, onScrollDown, onScrollUp tviewcomponents.KeybindHandler
 		if hasInput {
 			onEnter = openTask(c)
+		} else {
+			onScrollDown, onScrollUp = scrollDownHome(c), scrollUpHome(c)
 		}
-		menu = newInputKeybindMenu(c, mode, onEnter, nil)
+		menu = newInputKeybindMenu(c, mode, onEnter, nil, onScrollDown, onScrollUp)
 	} else {
 		mode = config.KeybindInput
-		menu = newInputKeybindMenu(c, mode, nil, nil)
+		menu = newInputKeybindMenu(c, mode, nil, nil, nil, nil)
 	}
 
 	if hasInput {
@@ -65,12 +67,7 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 			menu.AddRuneKeybind('a', "add task", func() { c.addTaskName(c.Home) })
 		}
 
-		if hasTasks {
-			menu.AddRuneKeybind('j', "scroll down", scrollDownHome(c)).
-				AddRuneKeybind('k', "scroll up", scrollUpHome(c))
-		}
-
-		toggleText := strings.ToLower(taskMode.GetNext().ToString())
+		toggleText := "show " + strings.ToLower(taskMode.GetNext().ToString())
 		menu.AddPrimaryKeybind("TAB", toggleText, tviewcomponents.BindTab, func() { c.displayPanel.ToggleTaskMode(); c.Home() })
 	}
 	return menu, mode

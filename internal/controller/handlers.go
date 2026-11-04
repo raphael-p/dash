@@ -14,7 +14,7 @@ import (
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
-func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
+func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc, onScrollDown, onScrollUp tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
 	menu := tviewcomponents.NewKeybindMenu()
 	switch mode {
 	case config.DescriptionInput:
@@ -32,6 +32,10 @@ func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc tv
 
 	if onEnter != nil {
 		menu.AddPrimaryKeybind("ENTER", "submit", tviewcomponents.BindEnter, onEnter)
+	}
+	if onScrollDown != nil && onScrollUp != nil {
+		menu.AddSecondaryRuneKeybind('j', "j/k", "scroll", onScrollDown).
+			AddSecondaryRuneKeybind('k', "", "", onScrollUp)
 	}
 	if onEsc == nil {
 		reset := func() { c.displayPanel.ResetPagination(); c.infoPanel.Clear(); c.Home() }
