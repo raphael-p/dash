@@ -1,20 +1,23 @@
 package logger
 
 import (
+	"cmp"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	MaxFileCount    = 1000
-	MaxFileBytes    = 10 * 1024 * 1024
-	MaxMessageBytes = 10 * 1024
+	MaxFileCount                  int    = 10
+	MaxFileBytes, MaxMessageBytes int64  = 10 * 1024 * 1024, 10 * 1024
+	DirName, Extension, Prefix    string = "logs", ".log", "server"
 )
 
 type MyLogger struct {
@@ -22,7 +25,7 @@ type MyLogger struct {
 	fileLogger   *log.Logger
 	logLevel     logLevel
 	cumBytes     int64
-	workingDir   string
+	dir          string
 }
 
 type logLevel uint8
@@ -35,67 +38,139 @@ const (
 	logLevelError
 )
 
-type nowFunc func() string
-
-var now nowFunc = func() string {
-	return time.Now().UTC().Format("2006-01-02 15:04:05.000")
-}
-
 func newLogger(out io.Writer) *log.Logger {
 	return log.New(out, "", 0)
 }
 
 var Logger *MyLogger = &MyLogger{nil, nil, logLevel(0), 0, "."}
 
-func openLogFile() *os.File {
-	directory := filepath.Join(Logger.workingDir, "logs")
-	path := filepath.Join(directory, generateFilename("server", directory))
-	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func setDir(dir string) {
+	err := os.MkdirAll(dir, 0755)
 	if err != nil {
-		err = os.MkdirAll(directory, 0755)
-		if err != nil {
-			panic(fmt.Sprintf("failed to create log directory: %s", err))
-		}
-
-		logFile, err = os.Create(path)
-		if err != nil {
-			panic(fmt.Sprintf("failed to create log file: %s", err))
-		}
+		panic(fmt.Sprintf("failed to create log directory: %s", err))
 	}
-	return logFile
+	Logger.dir = dir
 }
 
-func generateFilename(name, directory string) string {
-	filenameArr := strings.SplitN(name, ".", 2)
-	basename := filenameArr[0]
-	extension := ".log"
-	if len(filenameArr) > 1 && filenameArr[1] != "" {
-		extension = "." + filenameArr[1]
+func setFileLogger() {
+	parsedNames, err := listNames()
+	if err != nil {
+		panic(fmt.Sprintf("failed to list log files: %s", err))
 	}
-	basename += "-" + time.Now().UTC().Format("20060102")
+	file, err := openLogFile(parsedNames)
+	if err != nil {
+		panic(fmt.Sprintf("failed to open log file: %s", err))
+	}
 
-	count := 1
-	lastUsedFile := ""
-	for {
-		filename := fmt.Sprint(basename, "-", count, extension)
-		path := filepath.Join(directory, filename)
-		stats, err := os.Stat(path)
+	Logger.fileLogger = newLogger(file)
+
+	go func() {
+		if err := prune(); err != nil {
+			Error(fmt.Sprintf("failed to prune log files: %s", err))
+		}
+	}()
+}
+
+type parsedName struct {
+	name    string
+	dateStr string
+	count   uint8
+}
+
+// Expected format: <prefix>-20060102-1<Extension>
+func parseName(name string) (parsedName, bool) {
+	parsedName := parsedName{name: name}
+	if !strings.HasPrefix(name, Prefix) || !strings.HasSuffix(name, Extension) {
+		return parsedName, false
+	}
+	splitN := strings.SplitN(name, "-", 3)
+	if len(splitN) != 3 || splitN[0] != Prefix {
+		return parsedName, false
+	}
+	if _, err := time.Parse("20060102", splitN[1]); err != nil {
+		return parsedName, false
+	} else {
+		parsedName.dateStr = splitN[1]
+	}
+	if _index, err := strconv.ParseUint(strings.TrimSuffix(splitN[2], Extension), 10, 8); err != nil {
+		return parsedName, false
+	} else {
+		parsedName.count = uint8(_index)
+	}
+	return parsedName, true
+}
+
+func listNames() ([]parsedName, error) {
+	entries, err := os.ReadDir(Logger.dir)
+	if err != nil {
+		return []parsedName{}, err
+	}
+
+	var names []parsedName
+	for _, entry := range entries {
+		if entry.Type().IsRegular() {
+			if name, ok := parseName(entry.Name()); ok {
+				names = append(names, name)
+			}
+		}
+	}
+	slices.SortFunc(names, func(a, b parsedName) int {
+		return cmp.Or(
+			cmp.Compare(a.dateStr, b.dateStr),
+			cmp.Compare(a.count, b.count),
+		)
+	})
+	return names, nil
+}
+
+func getNextLogPath(parsedNames []parsedName) string {
+	dateStr := time.Now().UTC().Format("20060102")
+	var latestName parsedName
+	for _, p := range parsedNames {
+		if p.dateStr == dateStr {
+			if p.count > latestName.count {
+				latestName = p
+			}
+		}
+	}
+
+	if latestName.name != "" {
+		latestPath := filepath.Join(Logger.dir, latestName.name)
+		stats, err := os.Stat(latestPath)
 		if err == nil && stats.Size() < MaxFileBytes {
-			lastUsedFile = filename
-		} else if err != nil && lastUsedFile != "" {
-			return lastUsedFile
-		} else if err != nil {
-			return filename
-		}
-
-		count++
-		if count > MaxFileCount {
-			panic(fmt.Sprint(
-				"reached maximum allowed number of log files: ",
-				MaxFileCount,
-			))
+			return latestPath
 		}
 	}
+
+	return filepath.Join(Logger.dir, fmt.Sprintf("%s-%s-%d%s", Prefix, dateStr, latestName.count+1, Extension))
+}
+
+func openLogFile(parsedNames []parsedName) (*os.File, error) {
+	path := getNextLogPath(parsedNames)
+	logFile, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		logFile, err = os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return logFile, nil
+}
+
+func prune() error {
+	parsedNames, err := listNames()
+	if err != nil {
+		return err
+	}
+	for len(parsedNames) > MaxFileCount {
+		path := filepath.Join(Logger.dir, parsedNames[0].name)
+		if err := os.Remove(path); err != nil {
+			return err
+		}
+		Debugf("pruned log file: %s", path)
+		parsedNames = parsedNames[1:]
+	}
+	return nil
 }
 
 // Create a logger which manages its logs files and logs to the console.
@@ -104,9 +179,10 @@ func Create(workingDir string, hasConsoleLog bool) {
 	if hasConsoleLog {
 		Logger.stdOutLogger = newLogger(os.Stdout)
 	}
-	Logger.workingDir = workingDir
-	Logger.fileLogger = newLogger(openLogFile())
+	setDir(filepath.Join(workingDir, DirName))
+	setFileLogger()
 	Info("file logger initialised")
+	Debugf("logger directory: %s", Logger.dir)
 }
 
 // Close the log file
@@ -125,8 +201,8 @@ func Close() {
 
 func logMessage(level string, ansiColour string, message string) {
 	reset := "\033[0m"
-	time := now()
-	if len(message) > MaxMessageBytes {
+	time := time.Now().UTC().Format("2006-01-02 15:04:05.000")
+	if int64(len(message)) > MaxMessageBytes {
 		message = message[:MaxMessageBytes]
 	}
 	if Logger.stdOutLogger != nil {
@@ -149,8 +225,8 @@ func rollover() {
 				MaxFileBytes,
 			)) // can cause infinite loop if MAX_FILE_BYTES is too low
 			Close()
-			Logger.fileLogger = newLogger(openLogFile())
-			Info("new log file opened")
+			setFileLogger()
+			Debug("new log file opened")
 		}
 	}
 }
