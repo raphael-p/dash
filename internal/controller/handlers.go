@@ -127,19 +127,6 @@ func openTask(c *Controller) tviewcomponents.KeybindHandler {
 	}
 }
 
-func reactivateTask(c *Controller, task *database.Task, onSuccess func()) tviewcomponents.KeybindHandler {
-	return func() {
-		service := database.Service()
-		task = cmp.Or(task, service.GetTaskFromString(c.commandLine.GetInput()))
-		if task != nil {
-			task.CompletedAt = sql.NullTime{Valid: false}
-			if service.UpdateTask(task, "reactivated") {
-				onSuccess()
-			}
-		}
-	}
-}
-
 func removeTaskFromHome(c *Controller) tviewcomponents.KeybindHandler {
 	return func() {
 		if id, ok := strutil.ParseIDOrWarn(c.commandLine.GetInput(), c.infoPanel.Warn); ok {
@@ -164,49 +151,40 @@ func removeTaskFromEdit(c *Controller, task *database.Task, back func()) tviewco
 	}
 }
 
-func markTaskDone(c *Controller) tviewcomponents.KeybindHandler {
-	return func() {
-		currentDashTask.CompletedAt = sqlutil.NowNullTime()
-		if database.Service().UpdateTask(currentDashTask, "done") {
-			lastDashTask = currentDashTask
-			c.openDash()
-		} else {
-			currentDashTask.CompletedAt = sql.NullTime{Valid: false}
-		}
-	}
-}
-
-func unmarkTaskDone(c *Controller) tviewcomponents.KeybindHandler {
-	return func() {
-		if lastDashTask.ID == currentDashTask.ID {
-			return // noop
-		}
-		lastDashTask.CompletedAt = sql.NullTime{Valid: false}
-
-		if database.Service().UpdateTask(lastDashTask, "undone") {
-			c.openDash()
-		}
-	}
-}
-
-func toggleTaskPause(c *Controller, task *database.Task, onSuccess func()) tviewcomponents.KeybindHandler {
+func toggleTaskDone(c *Controller, task *database.Task, callback func()) tviewcomponents.KeybindHandler {
 	return func() {
 		service := database.Service()
 		task = cmp.Or(task, service.GetTaskFromString(c.commandLine.GetInput()))
 		if task != nil {
+			var action string
+			if task.CompletedAt.Valid {
+				task.CompletedAt = sql.NullTime{Valid: false}
+				action = "undone"
+			} else {
+				task.CompletedAt = sqlutil.NowNullTime()
+				action = "done"
+			}
+			service.UpdateTask(task, action)
+			callback()
+		}
+	}
+}
+
+func toggleTaskPause(c *Controller, task *database.Task, callback func()) tviewcomponents.KeybindHandler {
+	return func() {
+		service := database.Service()
+		task = cmp.Or(task, service.GetTaskFromString(c.commandLine.GetInput()))
+		if task != nil {
+			var action string
 			if task.PausedAt.Valid {
 				task.PausedAt = sql.NullTime{Valid: false}
-				if service.UpdateTask(task, "unpaused") {
-					onSuccess()
-				}
-
+				action = "unpaused"
 			} else {
 				task.PausedAt = sqlutil.NowNullTime()
-				if service.UpdateTask(task, "paused") {
-					onSuccess()
-				}
-
+				action = "paused"
 			}
+			service.UpdateTask(task, action)
+			callback()
 		}
 	}
 }

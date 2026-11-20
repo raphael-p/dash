@@ -67,14 +67,17 @@ func (c *Controller) openDash() {
 		lastDashTask = currentDashTask
 	}
 
+	onDo := func() { lastDashTask = currentDashTask; c.openDash() }
 	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { c.Home(); c.infoPanel.Clear() }, nil, nil).
-		AddRuneKeybind('r', "restart timer", func() { timer.Reset(); timer.Start(c.queueUpdateDraw) }).
-		AddRuneKeybind('d', "mark as done", markTaskDone(c))
-	if lastDashTask.ID != currentDashTask.ID {
-		menu.AddRuneKeybind('u', "unmark as done", unmarkTaskDone(c))
+		AddRuneKeybind('d', "done", toggleTaskDone(c, currentDashTask, onDo)).
+		AddRuneKeybind('p', "pause", toggleTaskPause(c, currentDashTask, onDo)).
+		AddRuneKeybind('e', "edit", func() { c.editTask(currentDashTask, c.openDash) }).
+		AddRuneKeybind('r', "restart timer", func() { timer.Reset(); timer.Start(c.queueUpdateDraw) })
+	if lastDashTask.ID != currentDashTask.ID && lastDashTask.CompletedAt.Valid {
+		menu.AddRuneKeybind('u', "undo done", toggleTaskDone(c, lastDashTask, c.openDash))
+	} else if lastDashTask.ID != currentDashTask.ID && lastDashTask.PausedAt.Valid {
+		menu.AddRuneKeybind('u', "undo pause", toggleTaskPause(c, lastDashTask, c.openDash))
 	}
-	menu.AddRuneKeybind('a', "add task", func() { c.addTaskName(c.openDash) }).
-		AddRuneKeybind('e', "edit task", func() { c.editTask(currentDashTask, c.openDash) })
 
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	timer.SetText(menu.Text())

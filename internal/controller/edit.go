@@ -14,31 +14,30 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 	}
 	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { back(); c.infoPanel.Clear() }, onScrollDown, onScrollUp)
 
-	if task.CompletedAt.Valid {
-		menu.AddRuneKeybind('u', "reactivate", reactivateTask(c, task, func() {}))
-	} else if task.PausedAt.Valid {
-		menu.AddRuneKeybind('u', "unpause", toggleTaskPause(c, task, func() {}))
-	}
-
-	if !task.CompletedAt.Valid {
-		refresh := func() {
-			if task, ok := database.Service().GetTask(task.ID); ok {
-				c.displayPanel.ShowTask(task)
-				c.editTask(&task, back)
-			}
+	refresh := func() {
+		if task, ok := database.Service().GetTask(task.ID); ok {
+			c.displayPanel.ShowTask(task)
+			c.editTask(&task, back)
 		}
-		menu.AddRuneKeybind('n', "edit name", func() { c.editTaskName(task, refresh) }).
-			AddRuneKeybind('d', "edit description", func() { c.editTaskDescription(task, refresh) })
+	}
+	if task.CompletedAt.Valid {
+		menu.AddRuneKeybind('u', "reactivate", toggleTaskDone(c, task, refresh))
+	} else if task.PausedAt.Valid {
+		menu.AddRuneKeybind('u', "unpause", toggleTaskPause(c, task, refresh))
+	}
+	if !task.CompletedAt.Valid {
+		menu.AddRuneKeybind('n', "name", func() { c.editTaskName(task, refresh) }).
+			AddRuneKeybind('d', "description", func() { c.editTaskDescription(task, refresh) })
 	}
 
 	if !task.CompletedAt.Valid && !task.PausedAt.Valid {
-		menu.AddRuneKeybind('f', "put first", bumpTask(c, task, func() {})).
-			AddRuneKeybind('p', "pause", toggleTaskPause(c, task, func() {}))
+		menu.AddRuneKeybind('b', "bump", bumpTask(c, task, func() {})).
+			AddRuneKeybind('p', "pause", toggleTaskPause(c, task, refresh))
 
 	}
 
-	menu.AddRuneKeybind('c', "copy description", copy(c, task.Description)).
-		AddRuneKeybind('r', "remove", removeTaskFromEdit(c, task, back))
+	menu.AddRuneKeybind('r', "remove", removeTaskFromEdit(c, task, back)).
+		AddRuneKeybind('c', "copy description", copy(c, task.Description))
 
 	c.commandLine.Clear().Hide(menu.InputCapture())
 	c.navPanel.SetTitle("Edit Task").SetText(menu.Text())

@@ -48,17 +48,17 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 
 	if hasInput {
 		onSuccess := func() { c.Home() }
-		menu.AddRuneKeybind('o', "open task", openTask(c))
+		menu.AddRuneKeybind('o', "open", openTask(c))
 		switch taskMode {
 		case database.CompletedTasks:
-			menu.AddRuneKeybind('u', "reactivate task", reactivateTask(c, nil, onSuccess))
+			menu.AddRuneKeybind('u', "reactivate", toggleTaskDone(c, nil, onSuccess))
 		case database.ActiveTasks:
-			menu.AddRuneKeybind('f', "put task first", bumpTask(c, nil, onSuccess))
-			menu.AddRuneKeybind('p', "pause task", toggleTaskPause(c, nil, onSuccess))
+			menu.AddRuneKeybind('b', "bump", bumpTask(c, nil, onSuccess))
+			menu.AddRuneKeybind('p', "pause", toggleTaskPause(c, nil, onSuccess))
 		case database.PausedTasks:
-			menu.AddRuneKeybind('u', "unpause task", toggleTaskPause(c, nil, onSuccess))
+			menu.AddRuneKeybind('u', "unpause", toggleTaskPause(c, nil, onSuccess))
 		}
-		menu.AddRuneKeybind('r', "remove task", removeTaskFromHome(c))
+		menu.AddRuneKeybind('r', "remove", removeTaskFromHome(c))
 	} else {
 		if taskMode == database.ActiveTasks && hasTasks {
 			menu.AddRuneKeybind('d', "dash", c.openDash)
