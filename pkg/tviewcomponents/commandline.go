@@ -58,13 +58,10 @@ func (cl *CommandLine) SetInputCapture(capture func(event *tcell.EventKey) *tcel
 }
 
 func (cl *CommandLine) ClearLine() {
-	s := cl.GetInput()
-	i := strings.LastIndex(s, "\n")
-	if i == -1 {
-		cl.SetInput("")
-	} else {
-		cl.SetInput(s[:i])
-	}
+	rowToRemove, _, _, _ := cl.textArea.GetCursor()
+	rows := strings.Split(cl.GetInput(), "\n")
+	rows = append(rows[:rowToRemove], rows[rowToRemove+1:]...)
+	cl.SetInput(strings.Join(rows, "\n"))
 }
 
 func (cl *CommandLine) NewLine() {
