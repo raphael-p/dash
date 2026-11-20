@@ -30,7 +30,7 @@ func Initialise(app *tview.Application) {
 	tviewcomponents.SetColours(config.C.HighlightColour, config.C.SecondaryColour)
 	tviewcomponents.SetKeybindFallback(func(commandName string) { c.infoPanel.Warn("invalid command: " + commandName) })
 
-	app.SetRoot(grid, true)
+	app.SetRoot(grid, true).EnablePaste(true)
 	go app.QueueUpdateDraw(c.Home)
 }
 
