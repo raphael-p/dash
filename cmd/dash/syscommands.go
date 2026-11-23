@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/raphael-p/dash/pkg/cli"
+	"github.com/raphael-p/dash/pkg/ghutil"
 )
 
 func handleSysCommand(command string) bool {
@@ -16,18 +16,15 @@ func handleSysCommand(command string) bool {
 	case "help":
 		fmt.Print(helpText())
 	case "update":
-		if !cli.PromptConfirmation("are you sure you want to update dash?") {
+		prompt := "are you sure you want to update dash?"
+		if latestVersion, err := ghutil.GetLatestTag(gitRepo); err == nil && latestVersion == AppVersion {
+			prompt = fmt.Sprintf("already on latest version (%s), update anyway?", AppVersion)
+		}
+		if !cli.PromptConfirmation(prompt) {
 			fmt.Println("update cancelled")
 			os.Exit(0)
 		}
-		cmdStr := "curl -fsSL https://github.com/raphael-p/dash/releases/latest/download/install.sh | sh"
-		cmd := exec.Command("sh", "-c", cmdStr)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Printf("udpdate failed: %v\n", err)
-			os.Exit(1)
-		}
+		installUpdate()
 	case "version":
 		fmt.Println(AppVersion)
 	default:
