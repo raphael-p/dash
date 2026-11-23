@@ -12,7 +12,7 @@ builds:
     binary: dsh
     ldflags:
         - -s -w
-        - -X main.AppVersion={{ .Version }}
+        - -X main.AppVersion=v{{ .Version }}
     goos:
       - linux
       - darwin

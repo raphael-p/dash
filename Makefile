@@ -66,7 +66,7 @@ tidy:
 ## build: build the application
 .PHONY: build
 build:
-	go build -ldflags="-X 'main.AppVersion=$(version)'" -o=/tmp/bin/${binary_name} ${main_package_path}
+	go build -ldflags="-X 'main.AppVersion=v$(version)'" -o=/tmp/bin/${binary_name} ${main_package_path}
 
 ## run: run the  application
 .PHONY: run
@@ -97,10 +97,3 @@ release-version-check:
 	@test -n "$(release_version)" || (echo 'usage: make release release_version=0.1.0' >&2; exit 1)
 	@case "$(release_version)" in v*) echo 'release_version must not start with v' >&2; exit 1;; esac
 	@git check-ref-format "refs/tags/v$(release_version)"
-
-## production/deploy: deploy the application to production
-.PHONY: production/deploy
-production/deploy: confirm audit no-dirty
-	GOOS=darwin GOARCH=arm64 go build -ldflags="-s -X 'main.AppVersion=$(version)'" -o=/tmp/bin/darwin_arm64/${binary_name} ${main_package_path}
-	GOOS=darwin GOARCH=amd64 go build -ldflags="-s -X 'main.AppVersion=$(version)'" -o=/tmp/bin/darwin_amd64/${binary_name} ${main_package_path}
-	GOOS=linux GOARCH=amd64 go build -ldflags="-s -X 'main.AppVersion=$(version)'" -o=/tmp/bin/linux_amd64/${binary_name} ${main_package_path}
