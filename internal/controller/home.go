@@ -40,15 +40,14 @@ func configureHomeKeybinds(c *Controller) (*tviewcomponents.KeybindMenu, config.
 		} else {
 			onScrollDown, onScrollUp = scrollDownHome(c), scrollUpHome(c)
 		}
-		menu = newInputKeybindMenu(c, mode, onEnter, nil, onScrollDown, onScrollUp)
+		menu = newInputKeybindMenu(c, mode, menuOptions{onEnter, nil, onScrollDown, onScrollUp, "open"})
 	} else {
 		mode = config.KeybindInput
-		menu = newInputKeybindMenu(c, mode, nil, nil, nil, nil)
+		menu = newInputKeybindMenu(c, mode, menuOptions{})
 	}
 
 	if hasInput {
 		onSuccess := func() { c.Home() }
-		menu.AddRuneKeybind('o', "open", openTask(c))
 		switch taskMode {
 		case database.CompletedTasks:
 			menu.AddRuneKeybind('u', "reactivate", toggleTaskDone(c, nil, onSuccess))

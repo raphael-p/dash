@@ -12,7 +12,8 @@ func (c *Controller) editTask(task *database.Task, back func()) {
 	if strutil.LineCount(task.Description) > 2 { // heuristic to reduce visual clutter
 		onScrollDown, onScrollUp = scrollDownEdit(c), scrollUpEdit(c)
 	}
-	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { back(); c.infoPanel.Clear() }, onScrollDown, onScrollUp)
+	opts := menuOptions{onEsc: func() { back(); c.infoPanel.Clear() }, onScrollDown: onScrollDown, onScrollUp: onScrollUp}
+	menu := newInputKeybindMenu(c, config.KeybindInput, opts)
 
 	refresh := func() {
 		if task, ok := database.Service().GetTask(task.ID); ok {
@@ -47,7 +48,7 @@ func (c *Controller) editTaskName(task *database.Task, refresh func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newInputKeybindMenu(c, mode, submitName(c, task, refresh), refresh, nil, nil)
+	menu := newInputKeybindMenu(c, mode, menuOptions{onEnter: submitName(c, task, refresh), onEsc: refresh})
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -59,7 +60,7 @@ func (c *Controller) editTaskDescription(task *database.Task, refresh func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newInputKeybindMenu(c, mode, submitDescription(c, task, refresh), refresh, nil, nil)
+	menu := newInputKeybindMenu(c, mode, menuOptions{onEnter: submitDescription(c, task, refresh), onEsc: refresh})
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())

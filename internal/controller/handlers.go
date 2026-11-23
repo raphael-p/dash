@@ -14,7 +14,12 @@ import (
 	"github.com/raphael-p/dash/pkg/tviewcomponents"
 )
 
-func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc, onScrollDown, onScrollUp tviewcomponents.KeybindHandler) *tviewcomponents.KeybindMenu {
+type menuOptions struct {
+	onEnter, onEsc, onScrollDown, onScrollUp tviewcomponents.KeybindHandler
+	onEnterText                              string
+}
+
+func newInputKeybindMenu(c *Controller, mode config.InputMode, opts menuOptions) *tviewcomponents.KeybindMenu {
 	menu := tviewcomponents.NewKeybindMenu()
 	switch mode {
 	case config.DescriptionInput:
@@ -30,19 +35,19 @@ func newInputKeybindMenu(c *Controller, mode config.InputMode, onEnter, onEsc, o
 		menu.AddPassthroughKeybind(tviewcomponents.BindBackspace)
 	}
 
-	if onEnter != nil {
-		menu.AddPrimaryKeybind("ENTER", "submit", tviewcomponents.BindEnter, onEnter)
+	if opts.onEnter != nil {
+		menu.AddPrimaryKeybind("ENTER", cmp.Or(opts.onEnterText, "submit"), tviewcomponents.BindEnter, opts.onEnter)
 	}
-	if onScrollDown != nil && onScrollUp != nil {
-		menu.AddSecondaryRuneKeybind('j', "j/k", "scroll", onScrollDown).
-			AddSecondaryRuneKeybind('k', "", "", onScrollUp)
+	if opts.onScrollDown != nil && opts.onScrollUp != nil {
+		menu.AddSecondaryRuneKeybind('j', "j/k", "scroll", opts.onScrollDown).
+			AddSecondaryRuneKeybind('k', "", "", opts.onScrollUp)
 	}
-	if onEsc == nil {
+	if opts.onEsc == nil {
 		reset := func() { c.displayPanel.ResetPagination(); c.infoPanel.Clear(); c.Home() }
 		menu.AddSecondaryKeybind("ESC", "reset", tviewcomponents.BindEsc, reset).
 			AddSecondaryKeybind("CTRL+C", "quit", tviewcomponents.BindRune, nil)
 	} else {
-		menu.AddSecondaryKeybind("ESC", "back", tviewcomponents.BindEsc, onEsc)
+		menu.AddSecondaryKeybind("ESC", "back", tviewcomponents.BindEsc, opts.onEsc)
 	}
 	return menu
 }

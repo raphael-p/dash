@@ -68,7 +68,7 @@ func (c *Controller) openDash() {
 	}
 
 	onDo := func() { lastDashTask = currentDashTask; c.openDash() }
-	menu := newInputKeybindMenu(c, config.KeybindInput, nil, func() { c.Home(); c.infoPanel.Clear() }, nil, nil).
+	menu := newInputKeybindMenu(c, config.KeybindInput, menuOptions{onEsc: func() { c.Home(); c.infoPanel.Clear() }}).
 		AddRuneKeybind('d', "done", toggleTaskDone(c, currentDashTask, onDo)).
 		AddRuneKeybind('p', "pause", toggleTaskPause(c, currentDashTask, onDo)).
 		AddRuneKeybind('e', "edit", func() { c.editTask(currentDashTask, c.openDash) }).

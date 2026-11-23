@@ -12,7 +12,7 @@ func (c *Controller) addTaskName(back func()) {
 	c.infoPanel.Clear()
 
 	mode := config.NameInput
-	menu := newInputKeybindMenu(c, mode, submitNameCandidate(c, back), back, nil, nil)
+	menu := newInputKeybindMenu(c, mode, menuOptions{onEnter: submitNameCandidate(c, back), onEsc: back})
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -23,7 +23,7 @@ func (c *Controller) addTaskDescription(name string, back func()) {
 	c.infoPanel.Clear()
 
 	mode := config.DescriptionInput
-	menu := newInputKeybindMenu(c, mode, submitDescriptionCandidate(c, name, back), back, nil, nil)
+	menu := newInputKeybindMenu(c, mode, menuOptions{onEnter: submitDescriptionCandidate(c, name, back), onEsc: back})
 
 	charLimit, placeholder := config.GetCharLimit(mode), config.GetPlaceholder(mode)
 	c.commandLine.Clear().Set(charLimit, placeholder, menu.InputCapture())
@@ -37,7 +37,7 @@ func (c *Controller) addTaskInsertionOrder(name, description string, back func()
 	submit := func(insertionOrder database.TaskInsertionOrder) func() {
 		return func() { database.Service().AddTask(name, description, insertionOrder, back) }
 	}
-	menu := newInputKeybindMenu(c, config.KeybindInput, nil, back, nil, nil).
+	menu := newInputKeybindMenu(c, config.KeybindInput, menuOptions{onEsc: back}).
 		AddRuneKeybind('f', "insert first", submit(database.InsertFirst)).
 		AddRuneKeybind('n', "insert next", submit(database.InsertNext)).
 		AddRuneKeybind('l', "insert last", submit(database.InsertLast))
